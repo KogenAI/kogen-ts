@@ -4,7 +4,8 @@ Status: **IMPLEMENTED, AWAITING INTEGRATION ACCEPTANCE**
 
 Base SHA: `13617acef5c0d0fe1cd8865ee930c0fd7aba7443`
 
-Implementation head SHA: `ab18393` (`Implement safe filesystem publication and restore`).
+Implementation head SHA: `ab1839383b4a893e5dea3b9b1dd46f49c5b80741`
+(`Implement safe filesystem publication and restore`).
 This source SHA was checked before the receipt-only commit.
 
 Branch: `kts/04-safe-publication-restore-and-removal`
@@ -38,7 +39,7 @@ Host: macOS 26.7.1, arm64; Apple clang 21.0.0 (`clang-2100.1.1.101`); Bun 1.4.2;
 - Named local acceptance: `bun --no-install test --max-concurrency 1 ./tests/fs-publish/publish.test.ts` — **PASS**, 7 cases, 0 failures, 72 assertions. Cases cover private atomic modes and executable state, append, symlink parents/finals, external sentinel preservation, regular/link/directory restore and removal, five rename crash points, and a racing parent-link publication attempt.
 - Rename crash matrix: failpoints after temp creation, data write, file `fsync`, rename, and parent `fsync`. The first three retain the old complete target; the last two expose the complete new target. Temporary files left before rename remain private mode `0600`.
 - `GIT_CONFIG_GLOBAL=/dev/null make check` — **PASS**, 158 tests, 0 failures, 1,766 assertions. Biome, TypeScript, frozen-input and dispatcher checks, warning-as-error native compilation, and the isolated suite passed.
-- `git diff --check` — **PASS** before commit.
+- `git show --check --oneline ab18393` and staged receipt `git diff --cached --check` — **PASS**.
 - No directly owned B-set: assigned **0 cases / 0 instances**. Fake provider requests: **0 unmatched**; no provider requests were made. Replay is not assigned: hand cases 0, seeds 17/23/41 not run, first divergence not applicable.
 
 ## Pending integration and gaps
