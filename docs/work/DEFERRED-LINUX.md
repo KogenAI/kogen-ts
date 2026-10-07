@@ -19,5 +19,5 @@ release gate I7 and before any public claim.
   1. `native/paths.c:112`: `implicit declaration of function 'realpath'` with `-std=c17 -Werror`; `_POSIX_C_SOURCE 200809L` alone does not expose it on glibc.
   2. `tests/sandbox-linux/linux.test.ts:458`, “real Linux mounts hide secrets, keep the origin read-only, and allow workspace/cache writes”: fails at `test ! -r "$HOME/auth.json"`; the plan replaced the injected auth file with readable `/dev/null`.
   3. `tests/sandbox-macos/sandbox.test.ts:383` and `:443`: platform-specific tests assert `process.platform === "darwin"` instead of skipping on other platforms.
-- Fix commit: `9f5831991874c4e39db9c724772dcbdcc857ac6c`.
+- Fix commit: `7768fabff8f49b1908d22f6911505a564a0291c3`.
 - Status: awaiting Linux re-run. Keep OPEN until that run passes.
