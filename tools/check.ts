@@ -1,8 +1,11 @@
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
 	mkdirSync,
 	mkdtempSync,
 	readdirSync,
+	readFileSync,
+	realpathSync,
 	rmSync,
 	writeFileSync,
 } from "node:fs";
@@ -10,6 +13,30 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
 const root = resolve(import.meta.dir, "..");
+interface ToolPin {
+	readonly version: string;
+	readonly resolved_binary?: string;
+	readonly binary_sha256?: string;
+}
+
+interface ToolchainLock {
+	readonly platform: string;
+	readonly tools: Record<string, ToolPin>;
+	readonly npm_pins: Record<string, string>;
+}
+
+interface RootPackage {
+	readonly packageManager: string;
+	readonly devDependencies: Record<string, string>;
+	readonly overrides: Record<string, string>;
+}
+
+const toolchain = JSON.parse(
+	readFileSync(join(root, "toolchain.lock.json"), "utf8"),
+) as ToolchainLock;
+const rootPackage = JSON.parse(
+	readFileSync(join(root, "package.json"), "utf8"),
+) as RootPackage;
 const scratch = mkdtempSync(join(tmpdir(), "kts-check-"));
 const testHome = join(scratch, "home");
 const testTmp = join(scratch, "tmp");
@@ -66,24 +93,46 @@ function run(argv: string[], capture = false): string {
 	return result.stdout?.toString().trim() ?? "";
 }
 try {
-	if (Bun.version !== "1.4.2")
-		throw new Error(`Expected Bun 1.4.2, got ${Bun.version}`);
-	for (const [name, version] of Object.entries({
-		typescript: "5.9.3",
-		"@biomejs/biome": "2.3.11",
-		"@types/bun": "1.4.2",
-		"bun-types": "1.4.2",
-		"@types/node": "24.10.1",
-		"undici-types": "7.16.0",
-	})) {
+	const bunPin = toolchain.tools.bun;
+	const gitPin = toolchain.tools.git;
+	if (!bunPin || !gitPin)
+		throw new Error("Toolchain lock must pin Bun and Git");
+	if (Bun.version !== bunPin.version)
+		throw new Error(`Expected Bun ${bunPin.version}, got ${Bun.version}`);
+	if (rootPackage.packageManager !== `bun@${bunPin.version}`)
+		throw new Error(`packageManager must pin bun@${bunPin.version}`);
+	for (const [name, version] of Object.entries(toolchain.npm_pins)) {
+		const declared =
+			rootPackage.devDependencies[name] ?? rootPackage.overrides[name];
+		if (declared !== version)
+			throw new Error(`package.json must pin ${name} ${version}`);
 		const installed = await Bun.file(
 			join(root, "node_modules", name, "package.json"),
 		).json();
 		if (installed.version !== version)
 			throw new Error(`Expected ${name} ${version}, got ${installed.version}`);
 	}
-	if (run([git, "--version"], true) !== "git version 2.54.0")
-		throw new Error("Expected provisioned Git 2.54.0");
+	if (run([git, "--version"], true) !== gitPin.version)
+		throw new Error(`Expected provisioned ${gitPin.version}`);
+	const hostPlatform = `${process.platform}-${process.arch}`;
+	if (toolchain.platform === hostPlatform) {
+		for (const [name, path, expectedHash] of [
+			["bun", process.execPath, bunPin.binary_sha256],
+			["git", git, gitPin.binary_sha256],
+		] as const) {
+			if (!expectedHash)
+				throw new Error(`Toolchain lock is missing ${name} binary hash`);
+			const actualHash = createHash("sha256")
+				.update(readFileSync(realpathSync(path)))
+				.digest("hex");
+			if (actualHash !== expectedHash)
+				throw new Error(`${name} binary does not match toolchain.lock.json`);
+		}
+	} else {
+		console.log(
+			`check: binary hashes not asserted for host ${hostPlatform}; lock records ${toolchain.platform}`,
+		);
+	}
 	const biome = join(root, "node_modules/@biomejs/biome/bin/biome");
 	run([process.execPath, "--no-install", biome, "check", "."]);
 	run([
@@ -93,6 +142,8 @@ try {
 		"--noEmit",
 	]);
 	run(["/bin/bash", "-n", "tools/kdispatch-ts.sh"]);
+	run([process.execPath, "--no-install", "tools/freeze.ts", "--check"]);
+	run([process.execPath, "--no-install", "tools/dispatch.ts", "--check"]);
 	const nativeSources = readdirSync(join(root, "native")).filter((name) =>
 		name.endsWith(".c"),
 	);

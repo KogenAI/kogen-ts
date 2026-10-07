@@ -1,10 +1,14 @@
-# Provision outside checks. Resolve Bun once before isolating test HOME.
-MISE := $(shell command -v mise 2>/dev/null || test ! -x "$(HOME)/.local/bin/mise" || echo "$(HOME)/.local/bin/mise")
-BUN ?= $(shell if test -n "$(MISE)"; then "$(MISE)" which bun; else command -v bun; fi)
-GIT_TOOL ?= $(shell "$(MISE)" which git)
-.PHONY: check format conformance replay
+# Provision tools before checks; checks never install or fetch dependencies.
+MISE ?= $(shell command -v mise 2>/dev/null || true)
+BUN ?= $(shell if test -n "$(MISE)"; then MISE_AUTO_INSTALL=0 "$(MISE)" which bun; else command -v bun; fi)
+GIT_TOOL ?= $(shell if test -n "$(MISE)"; then MISE_AUTO_INSTALL=0 "$(MISE)" which git; else command -v git; fi)
+.PHONY: check freeze dispatch-dry-run format conformance replay
 check:
 	@KTS_CHECK_GIT="$(GIT_TOOL)" "$(BUN)" --no-install tools/check.ts
+freeze:
+	@"$(BUN)" --no-install tools/freeze.ts --check
+dispatch-dry-run:
+	@"$(BUN)" --no-install tools/dispatch.ts --dry-run
 format:
 	@"$(BUN)" --no-install node_modules/@biomejs/biome/bin/biome format --write packages tools tests *.json
 conformance:

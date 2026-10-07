@@ -10,6 +10,8 @@
 	],
 	"scripts": {
 		"check": "make check",
+		"freeze": "bun --no-install tools/freeze.ts --check",
+		"dispatch:plan": "bun --no-install tools/dispatch.ts --dry-run",
 		"format": "biome format --write packages tools tests *.json"
 	},
 	"devDependencies": {

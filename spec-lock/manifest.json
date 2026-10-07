@@ -621,7 +621,6 @@
     "kogen-spec/quint/slices/approve/TIME.txt": "3a9bc9e0556e742ab5b16fde44dc52fe19548f7ace104b1204c69a914b9a5feb",
     "kogen-spec/quint/slices/approve/adapter/adapter.exs": "3ae8dfdbcd9d85fa04186f15da27db6a5d04499917c177d234968601b29b77d6",
     "kogen-spec/quint/slices/approve/adapter/run.sh": "e94028bfb73359dcf0a3607f89b5e6f9c3159cf749cd59ba4cf614ebbc92fa52",
-    "kogen-spec/quint/slices/approve/attempts.log": "7f28187e43ce21278e37d30985f9eeb85cc30207fd1f65e0670302a6dfd41116",
     "kogen-spec/quint/slices/approve/golden/hand/01-card-then-approve.json": "fdc69ac0e4f74b910d2a37904bc18cc623230bb5b4eb240cc6ad08fa43b7f9b0",
     "kogen-spec/quint/slices/approve/golden/hand/02-hash-mismatch.json": "50da87b042dbd96bf07470c11a885e38259607c64a8ab13da638dd9f374ceb1d",
     "kogen-spec/quint/slices/approve/golden/hand/03-hash-checked-first.json": "58589d2c01a793b989906ea12e2cb2c7c79cffd335ebb5bcb1da71ca5b3d9ec8",
@@ -769,7 +768,6 @@
     "kogen-spec/quint/slices/resilience/TIME.txt": "9768f6c4753d697849b4bbafc819efd3115dfee5abf6a45bb0a25a3a34c7706c",
     "kogen-spec/quint/slices/resilience/adapter/adapter.exs": "c6bbd9dcf16f2ebe263280faa6c18cdedae436814dc6f4a4ce923d57de8d6c05",
     "kogen-spec/quint/slices/resilience/adapter/run.sh": "ecd4ca73c9e40a457b4c4b9a20bfc6c4efb058a058bfd9c6fa3c5579e9c6baea",
-    "kogen-spec/quint/slices/resilience/attempts.log": "d2a442c903868e63f93e619ac426558ecba83c079a346f520688bd638e3a6805",
     "kogen-spec/quint/slices/resilience/golden/hand/01-backoff-ladder.json": "5ccc75903c09b8e54285b988b7d29df01744581c50ebb66cdc3cab2286fd2cbf",
     "kogen-spec/quint/slices/resilience/golden/hand/02-switch-after-three-overloads.json": "1614d317284be68f52d7c3d525d26345a9cd6e7c02c6df2d7cbdd556d7a3ce4c",
     "kogen-spec/quint/slices/resilience/golden/hand/03-mixed-overload-timeout-switch.json": "aee54d0c158647cca2727249fd41113a4b17693914cdf91bf940706006421ffb",
@@ -926,8 +924,18 @@
     "kogen-spec.diff": "1fa72f5df8725013ffad3a258d7f851dcb38b187ae06727880b47db2f6b64378"
   },
   "known_open_items": [
-    "CHANGES-v1.3 findings 4,5,8,11\u201316 require common owner decisions",
+    "CHANGES-v1.3 findings 4,5,8,11–16 require common owner decisions",
     "Affected approve/recovery/session/gate trace goldens need coordinated migration; frozen data is provenance, not release evidence",
     "Prompt and effective role experiment tables must be frozen before experiments"
-  ]
+  ],
+  "excluded_ignored_artifacts": {
+    "kogen-spec/quint/slices/approve/attempts.log": {
+      "sha256": "7f28187e43ce21278e37d30985f9eeb85cc30207fd1f65e0670302a6dfd41116",
+      "reason": "Generated harness attempt log, omitted from immutable source bundle; not a model, scenario, golden, adapter protocol, or normative spec input."
+    },
+    "kogen-spec/quint/slices/resilience/attempts.log": {
+      "sha256": "d2a442c903868e63f93e619ac426558ecba83c079a346f520688bd638e3a6805",
+      "reason": "Generated harness attempt log, omitted from immutable source bundle; not a model, scenario, golden, adapter protocol, or normative spec input."
+    }
+  }
 }
