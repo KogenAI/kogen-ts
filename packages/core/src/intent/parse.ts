@@ -22,6 +22,14 @@ export function isValidIntentSlug(slug: string): boolean {
 export interface IntentParseError {
 	readonly line: number;
 	readonly message: string;
+	/** Semantic refusals retain a strict parse failure and their public lint class. */
+	readonly lint?: {
+		readonly rule:
+			| "unknown_size"
+			| "invalid_verify"
+			| "unsupported_verify_kind";
+		readonly message: string;
+	};
 }
 
 export interface IntentPredicate {
@@ -133,8 +141,12 @@ function hasDelimiter(bytes: Uint8Array, line: ByteLine): boolean {
 	);
 }
 
-function error(line: number, message: string): IntentParseError {
-	return { line, message };
+function error(
+	line: number,
+	message: string,
+	lint?: IntentParseError["lint"],
+): IntentParseError {
+	return { line, message, ...(lint === undefined ? {} : { lint }) };
 }
 
 function isMapNode(node: YamlBlockNode): node is YamlMapNode {
@@ -358,6 +370,10 @@ function parseFrontmatter(
 				error(
 					localLine(keyLines, "size"),
 					"frontmatter `size` must be small, medium, or large",
+					{
+						rule: "unknown_size",
+						message: "size must be small, medium, or large",
+					},
 				),
 			);
 		} else size = sizeNode.value;
@@ -556,11 +572,21 @@ function parseVerifyBody(
 		return null;
 	}
 	if (first === "example" || first === "check") {
-		errors.push(error(line.number, `${first} is not supported in core v1`));
+		errors.push(
+			error(line.number, `${first} is not supported in core v1`, {
+				rule: "unsupported_verify_kind",
+				message: `${first} is not supported in core v1`,
+			}),
+		);
 		return null;
 	}
 	if (first !== "test") {
-		errors.push(error(line.number, "invalid Verify entry"));
+		errors.push(
+			error(line.number, "invalid Verify entry", {
+				rule: "invalid_verify",
+				message: `unknown Verify word "${first}"`,
+			}),
+		);
 		return null;
 	}
 

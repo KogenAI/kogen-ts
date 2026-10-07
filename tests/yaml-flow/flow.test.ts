@@ -190,3 +190,12 @@ test("the parser keeps strings untyped and empty flow collections distinct", () 
 	expect(root.get("empty")).toEqual(new Map());
 	expect(root.get("list")).toEqual([]);
 });
+
+test("a forbidden tab in a child does not invent a missing value on its parent", () => {
+	const result = parseYaml(encode("name: kt\nchecks:\n\t- name: x\n"));
+	expect(result.issue).toMatchObject({ code: "tab_character", line: 3 });
+	const earlierError = parseYaml(
+		encode("name: [one,, two]\nchecks:\n\t- name: x\n"),
+	);
+	expect(earlierError.issue).toMatchObject({ code: "malformed_flow", line: 1 });
+});

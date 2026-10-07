@@ -41,7 +41,9 @@ interface ScannedLine {
 
 function leadingSpaces(text: string): number {
 	let index = 0;
-	while (text[index] === " ") index += 1;
+	// Tabs remain fatal lexical issues, but still indicate an indented child.
+	// Otherwise block parsing invents a missing value on the preceding key.
+	while (text[index] === " " || text[index] === "\t") index += 1;
 	return index;
 }
 
@@ -51,7 +53,9 @@ function isWhitespace(character: string | undefined): boolean {
 
 function hasAllowedQuoteTail(text: string, closeAt: number): boolean {
 	let index = closeAt + 1;
-	while (text[index] === " ") index += 1;
+	// Tabs remain fatal lexical issues, but still indicate an indented child.
+	// Otherwise block parsing invents a missing value on the preceding key.
+	while (text[index] === " " || text[index] === "\t") index += 1;
 	const next = text[index];
 	return (
 		next === undefined ||

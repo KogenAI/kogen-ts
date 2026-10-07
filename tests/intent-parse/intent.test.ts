@@ -36,6 +36,24 @@ function parseErrors(text: string) {
 	return result.errors;
 }
 
+test("semantic parse refusals retain their public lint rule without accepting invalid Intent data", () => {
+	const size = parseErrors(
+		"---\ntitle: A title\nsize: enormous\ndomains: [app]\n---\n",
+	);
+	expect(size[0]?.lint).toEqual({
+		rule: "unknown_size",
+		message: "size must be small, medium, or large",
+	});
+	const verify = parseErrors(
+		"---\ntitle: A title\nsize: small\ndomains: [app]\n---\n## Acceptance\n- A1: Item.\n## Verify\n- A1: manual\n",
+	);
+	expect(verify[0]?.lint).toEqual({
+		rule: "invalid_verify",
+		message: 'unknown Verify word "manual"',
+	});
+	expect(parseErrors("plain text")[0]?.lint).toBeUndefined();
+});
+
 test("accepts strict frontmatter defaults and leaves lint policy to its owner", () => {
 	const parsed = parseOrThrow(
 		source("---\ntitle: A title\nsize: medium\ndomains: [app]\n---\n"),

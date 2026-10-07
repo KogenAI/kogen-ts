@@ -174,11 +174,17 @@ export async function validateProjectCommand(
 		if (!source.ok)
 			return renderErrorLine("intent/not_found: Intent does not exist", 2);
 		const intent = parseIntent(source.value);
-		if (!intent.ok)
+		if (!intent.ok) {
+			if (intent.errors.every((error) => error.lint !== undefined))
+				return renderErrorLine(
+					`intent/lint: the Intent needs changes\n${intent.errors.map((error) => `  ${error.lint?.rule} at line ${error.line}: ${error.lint?.message}`).join("\n")}`,
+					1,
+				);
 			return renderErrorLine(
 				`intent/parse: the Intent cannot be read\n${intent.errors.map((error) => `  line ${error.line}: ${error.message}`).join("\n")}`,
 				1,
 			);
+		}
 		const findings = lintIntent(intent.intent).filter(
 			(finding) => finding.severity === "error",
 		);
