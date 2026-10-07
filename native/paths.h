@@ -7,7 +7,7 @@
 #define KOGEN_HOST_OP_FS_READ 0x0301u
 #define KOGEN_FS_MAX_PATH_BYTES (64u * 1024u)
 #define KOGEN_FS_MAX_ENTRIES 4096u
-#define KOGEN_FS_MAX_RESPONSE_BYTES (1024u * 1024u - 8u)
+#define KOGEN_FS_MAX_RESPONSE_BYTES (2u * 1024u * 1024u - 8u)
 
 enum kogen_fs_status {
 	KOGEN_FS_OK = 0,

@@ -2,7 +2,7 @@ import { accessSync, closeSync, constants, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
 export const HOST_PROTOCOL_VERSION = 1;
-export const HOST_MAX_FRAME_BYTES = 1024 * 1024;
+export const HOST_MAX_FRAME_BYTES = 2 * 1024 * 1024;
 export const HOST_MAX_PAYLOAD_BYTES = HOST_MAX_FRAME_BYTES - 8;
 
 const FRAME_HEADER_BYTES = 8;

@@ -4,7 +4,7 @@ import type { FileReadRequest, FileSystemPort } from "../contracts/ports";
 export const FILESYSTEM_HOST_OPERATION = 0x0301;
 export const FILESYSTEM_MAX_PATH_BYTES = 64 * 1024;
 export const FILESYSTEM_MAX_ENTRIES = 4096;
-export const FILESYSTEM_MAX_RESPONSE_BYTES = 1024 * 1024 - 8;
+export const FILESYSTEM_MAX_RESPONSE_BYTES = 2 * 1024 * 1024 - 8;
 
 const REQUEST_HEADER_BYTES = 17;
 const RESPONSE_STATUS_BYTES = 1;
@@ -79,6 +79,13 @@ function errorForStatus(status: number): PortError {
 				"Filesystem handle is not a regular file or directory.",
 			);
 		case FileSystemStatus.tooLarge:
+			return {
+				...portError(
+					"invalid_input",
+					"Filesystem file exceeds its byte limit.",
+				),
+				cause: { status: FileSystemStatus.tooLarge },
+			};
 		case FileSystemStatus.limit:
 			return portError(
 				"invalid_input",

@@ -15,6 +15,9 @@ import {
 	createControllerRuntime,
 } from "../../packages/cli/src/composition";
 import { helpText } from "../../packages/cli/src/output";
+import { FileSystemStatus } from "../../packages/core/src/fs/read";
+import { parseProjectConfig } from "../../packages/core/src/project/schema";
+import { YAML_MAX_BYTES } from "../../packages/core/src/yaml/preflight";
 
 let scratch: string;
 let runtime: ControllerRuntime;
@@ -117,4 +120,46 @@ test("production supervisor and Git port run through the registered bridge", asy
 	expect(git.ok).toBe(true);
 	if (git.ok)
 		expect(new TextDecoder().decode(git.value.stdout)).toMatch(/^git version /);
+});
+
+test("production bridge preserves the exact YAML byte boundary and oversized rejection", async () => {
+	const prefix = "name: kt\nchecks: []\n#";
+	const path = "project.yaml";
+	writeFileSync(
+		join(scratch, path),
+		prefix + "x".repeat(YAML_MAX_BYTES - prefix.length),
+	);
+	const atLimit = await runtime.filesystem.readFile({
+		root: scratch,
+		path,
+		maxBytes: YAML_MAX_BYTES + 1,
+	});
+	expect(atLimit.ok).toBe(true);
+	if (atLimit.ok) {
+		expect(atLimit.value.byteLength).toBe(YAML_MAX_BYTES);
+		expect(parseProjectConfig(atLimit.value).ok).toBe(true);
+	}
+	writeFileSync(
+		join(scratch, path),
+		prefix + "x".repeat(YAML_MAX_BYTES + 1 - prefix.length),
+	);
+	const oneOver = await runtime.filesystem.readFile({
+		root: scratch,
+		path,
+		maxBytes: YAML_MAX_BYTES + 1,
+	});
+	expect(oneOver.ok).toBe(true);
+	if (oneOver.ok) expect(parseProjectConfig(oneOver.value).ok).toBe(false);
+	writeFileSync(
+		join(scratch, path),
+		prefix + "x".repeat(YAML_MAX_BYTES + 2 - prefix.length),
+	);
+	const twoOver = await runtime.filesystem.readFile({
+		root: scratch,
+		path,
+		maxBytes: YAML_MAX_BYTES + 1,
+	});
+	expect(twoOver.ok).toBe(false);
+	if (!twoOver.ok)
+		expect(twoOver.error.cause).toEqual({ status: FileSystemStatus.tooLarge });
 });

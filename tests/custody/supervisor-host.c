@@ -47,7 +47,7 @@ int main(void) {
 		if (read_result == 0) return 0;
 		if (read_result < 0) return 65;
 		if (frame.operation == KOGEN_HOST_OP_PING && frame.payload_length == 0) {
-			const uint8_t ping[6] = {
+			uint8_t ping[6] = {
 				0,
 				(uint8_t)KOGEN_HOST_PROTOCOL_VERSION,
 				0,
@@ -55,6 +55,7 @@ int main(void) {
 				0,
 				0,
 		};
+			write_u32be(ping + 2, KOGEN_HOST_MAX_FRAME_BYTES);
 			if (kogen_host_write_frame(STDOUT_FILENO,
 				(uint16_t)(frame.operation | KOGEN_HOST_RESPONSE_BIT),
 				frame.request_id, ping, sizeof(ping)) < 0)

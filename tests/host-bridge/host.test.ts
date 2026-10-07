@@ -12,6 +12,7 @@ import {
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import {
+	HOST_MAX_FRAME_BYTES,
 	HOST_MAX_PAYLOAD_BYTES,
 	HostBridgeError,
 	hostHelperName,
@@ -200,7 +201,11 @@ test("test-only supervisor probe is absent from the product helper", async () =>
 test("oversized and unknown-version frames fail before payload allocation", async () => {
 	const tooLarge = rawHelper();
 	const oversizedPrefix = new Uint8Array(4);
-	new DataView(oversizedPrefix.buffer).setUint32(0, 1024 * 1024 + 1, false);
+	new DataView(oversizedPrefix.buffer).setUint32(
+		0,
+		HOST_MAX_FRAME_BYTES + 1,
+		false,
+	);
 	await writeRaw(tooLarge.child, oversizedPrefix);
 	const oversizedExit = await tooLarge.child.exited;
 	closeSync(tooLarge.controlFd);

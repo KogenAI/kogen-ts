@@ -3,6 +3,7 @@ import { createPublicationFileSystemPort } from "../../core/src/fs/publish";
 import {
 	createReadFileSystemPort,
 	type FileSystemHostRequest,
+	FileSystemStatus,
 } from "../../core/src/fs/read";
 import { createGitPort } from "../../core/src/git/command";
 import {
@@ -23,6 +24,7 @@ import {
 } from "../../core/src/project/schema";
 import { probeLinuxSandbox } from "../../core/src/sandbox/linux";
 import { probeMacOSSandbox } from "../../core/src/sandbox/macos";
+import { YAML_MAX_BYTES } from "../../core/src/yaml/preflight";
 import type { ParsedCommand, ProjectOptions } from "./argv";
 import { type CliOutput, renderErrorLine } from "./output";
 
@@ -125,13 +127,22 @@ export async function validateProjectCommand(
 	const bytes = await runtime.filesystem.readFile({
 		root: checkout,
 		path: configPath,
-		maxBytes: 256 * 1024,
+		maxBytes: YAML_MAX_BYTES + 1,
 	});
-	if (!bytes.ok)
+	if (!bytes.ok) {
+		const cause = bytes.error.cause;
+		const message =
+			typeof cause === "object" &&
+			cause !== null &&
+			"status" in cause &&
+			cause.status === FileSystemStatus.tooLarge
+				? `document exceeds the maximum size of ${YAML_MAX_BYTES} bytes`
+				: bytes.error.message;
 		return renderErrorLine(
-			`environment/project_config_invalid: ${checkout}/${configPath}\n  ${bytes.error.message}`,
+			`environment/project_config_invalid: ${checkout}/${configPath}\n  ${message}`,
 			3,
 		);
+	}
 	const config = parseProjectConfig(bytes.value);
 	if (!config.ok)
 		return renderErrorLine(
