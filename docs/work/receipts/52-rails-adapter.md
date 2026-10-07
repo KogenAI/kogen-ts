@@ -5,11 +5,13 @@
 **Status:** Implemented; awaiting production selection and integration acceptance.
 
 - Base SHA: `b6b8b407ad6a56b15b84276d9097dc1b3fd95fa2`
-- Tested implementation head: `48d8aa06df0506d7975b2a7308decfdc77911657`
+- Rebased onto: `95b20e7369298a612ecd2b57770f5522d3b1bfac`
+- Rebased implementation commit: `d62a76b` (`Implement packet 52 Rails adapter`)
+- Rechecked source tree before this receipt update: `5950f919d2345bd5f71151c4452279435da5fd25`
 - Branch: `kts/52-rails-adapter`
 - Target contract: frozen v1.3-draft `e19dd1c21c19c5be1201c3b6a42c59c28b5c2887`
 - Host: macOS 26.7.1 arm64; Git 2.54.0; Bun 1.4.2; Ruby 3.4.10; Bundler 2.6.9. Rails is not installed.
-- Active effort: approximately 20 minutes. Model: GPT-6 Codex; exact served variant and token count are not exposed by this worker interface.
+- Active effort: approximately 26 minutes cumulative (about 20 minutes implementation plus 6 minutes integration follow-up). Model: GPT-6 Codex; exact served variant and token count are not exposed by this worker interface.
 
 ## Owned files
 
@@ -34,8 +36,10 @@ The frozen spec does not define Rails test tag syntax. The ledger bridge therefo
 ## Validation
 
 - Named local acceptance: `GIT_CONFIG_GLOBAL=/dev/null bun --no-install test tests/rails-adapter/rails.test.ts` — **PASS**, 8 tests, 40 assertions. Covers P12, both single-marker refusals, explicit override, staging, setup/env/gate defaults, formatter choice, syntax/runner argv, Minitest ledger rows, the fake command-to-ledger run, finding parsing and unavailable detection. The fake process consumed exactly two requests (Rails runner and report writer); unmatched fake requests: **0**.
-- `GIT_CONFIG_GLOBAL=/dev/null make check` — **final run PASS**, 313 passed, 1 Linux-only skip, 0 failed, 2,837 assertions across 314 tests and 34 files. Formatting, lint, TypeScript, shell, frozen-input, dispatcher, native compilation and isolated tests passed.
-- An earlier full check on the initial adapter revision timed out in the unrelated `tests/fs-read/read.test.ts` parent-link-swap race at 5 seconds and its cleanup raised `ENOENT`. A separate diagnostic run of that file passed 7/7 tests; the final full check also passed it. No files outside this packet's allowlist were changed.
+- Original pre-rebase `GIT_CONFIG_GLOBAL=/dev/null make check` — **PASS**, 313 passed, 1 Linux-only skip, 0 failed, 2,837 assertions across 314 tests and 34 files.
+- Post-rebase integration check from `/Users/almirsarajcic/cx/kts/logs/52-rails-adapter.integration.log` — **FAIL**, 318 passed, 1 Linux-only skip, 1 failed. The sole failure was the unrelated `tests/fs-read/read.test.ts` case `parent link swaps never redirect the opened path`, which timed out at 5,001 ms. The Rails tests all passed in that run. No files outside this packet's allowlist were changed.
+- Post-rebase exact local acceptance rerun — **PASS**, 8 tests and 40 assertions.
+- Post-rebase `GIT_CONFIG_GLOBAL=/dev/null make check` rerun — **PASS**, 319 passed, 1 Linux-only skip, 0 failed, 2,862 assertions across 320 tests and 35 files. The filesystem parent-link-swap test passed in 3,422 ms. Formatting, lint, TypeScript, shell, frozen-input, dispatcher, native compilation and isolated tests passed.
 - `git diff --cached --check` — **PASS** before the implementation commit.
 - P12: local only, 1 named test passed. No directly owned standard B-set; external cases/instances run: **0/0**. No executable CLI was available for integrated Rails selection, so public wiring remains pending, not accepted. No provider HTTP requests were made; unmatched fake HTTP requests: **0**.
 - Optional actual Rails fixture: not run because Rails is not installed. The available Ruby is 3.4.10 rather than the planned fixture pin 3.4.4. Linux adapter validation remains pending.
