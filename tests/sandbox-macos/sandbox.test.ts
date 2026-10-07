@@ -379,8 +379,11 @@ test("sandbox capability probe distinguishes a denied write from an unavailable 
 	});
 });
 
-test("real macOS sandbox blocks checkout/origin writes and secret reads while allowing workspace, cache and network", async () => {
-	expect(process.platform).toBe("darwin");
+const macOSOnlyTest = test.skipIf(process.platform !== "darwin");
+const realMacOSSandboxTestName =
+	"real macOS sandbox blocks checkout/origin writes and secret reads while allowing workspace, cache and network";
+
+macOSOnlyTest(realMacOSSandboxTestName, async () => {
 	const paths = makeProfilePaths();
 	const profile = createMacOSSandboxProfile(fakePathOptions(paths));
 	const scriptPath = join(paths.runDirectory, "sandbox-fixture.sh");
@@ -439,8 +442,10 @@ test("real macOS sandbox blocks checkout/origin writes and secret reads while al
 	}
 });
 
-test("the production macOS probe confirms sandbox-exec and kernel write denial", async () => {
-	expect(process.platform).toBe("darwin");
+const productionMacOSSandboxTestName =
+	"the production macOS probe confirms sandbox-exec and kernel write denial";
+
+macOSOnlyTest(productionMacOSSandboxTestName, async () => {
 	expect(await probeMacOSSandbox({ process: bunProcessPort() })).toEqual({
 		available: true,
 	});

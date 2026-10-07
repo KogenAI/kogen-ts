@@ -639,7 +639,8 @@ export function createLinuxSandboxProcessRequest(
 			: options.authPath;
 	const authFile = hiddenAuthFile(authPath, hiddenDirectories);
 	if (authFile !== null) {
-		argv.push("--ro-bind", "/dev/null", authFile);
+		// /dev/null is readable; an empty mode-000 tmpfs denies reads entirely.
+		argv.push("--perms", "000", "--tmpfs", authFile);
 	}
 
 	argv.push(

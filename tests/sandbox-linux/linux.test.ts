@@ -229,6 +229,7 @@ test("mount plan exposes only the workspace, run directory, and declared caches 
 	const canonicalGnupg = realpathSync(gnupg);
 	const canonicalCodex = realpathSync(codex);
 	const canonicalKeyrings = realpathSync(keyrings);
+	const canonicalAuthPath = realpathSync(authPath);
 	const checkout = join(root, "checkout");
 	const origin = join(root, "origin");
 	mkdirSync(checkout, { recursive: true });
@@ -279,7 +280,23 @@ test("mount plan exposes only the workspace, run directory, and declared caches 
 	expect(optionIndex(argv, "--bind", canonicalCacheDirectory)).toBeGreaterThan(
 		-1,
 	);
-	expect(optionIndex(argv, "--ro-bind", "/dev/null")).toBeGreaterThan(-1);
+	const authMaskIndex = optionIndex(argv, "--tmpfs", canonicalAuthPath);
+	expect(authMaskIndex).toBeGreaterThan(-1);
+	expect(argv.slice(authMaskIndex - 2, authMaskIndex + 2)).toEqual([
+		"--perms",
+		"000",
+		"--tmpfs",
+		canonicalAuthPath,
+	]);
+	for (const writableDirectory of [
+		canonicalWorkspace,
+		canonicalRunDirectory,
+		canonicalCacheDirectory,
+	]) {
+		expect(authMaskIndex).toBeGreaterThan(
+			optionIndex(argv, "--bind", writableDirectory),
+		);
+	}
 	expect(optionIndex(argv, "--ro-bind", canonicalCheckout)).toBeGreaterThan(-1);
 	expect(optionIndex(argv, "--ro-bind", canonicalOrigin)).toBeGreaterThan(-1);
 	expect(argv).not.toContain("--unshare-net");
