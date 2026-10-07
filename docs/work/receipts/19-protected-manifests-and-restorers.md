@@ -78,3 +78,16 @@ The remaining check failures need repair by the owners of packets 03 and 05 (or 
 - Complete post-rebase admission is recorded in the dispatcher's integration log
   and I0 receipt. B19 public cases still await approval/Build integration as above;
   Linux and the draft oracle/golden limitations are unchanged.
+
+## Final coordinator admission
+
+- The custody fixture also needed a pipe handshake: the parent now waits until
+  the child has entered its new session and published its PID before exiting.
+  Signed shared fix: `92ee80d`, followed by another signed rebase.
+- Dispatcher-equivalent serialized scope/rebase/check/ff admission succeeded at
+  `ad17fc8899b91991b43fb02351ebe16ddef4ebad`: **325 passed, 1 Linux-only skip,
+  0 failures**. State is MERGED. The clean worktree was removed through the normal
+  dispatcher path; the package branch and all receipts are retained.
+- Actual integration-round checks, source SHAs, case results and Linux/draft
+  limitations are recorded in `docs/work/receipts/I0.md`. I0 remains blocked on
+  Linux validation; package integration is not public B19 or release acceptance.
