@@ -4,8 +4,9 @@
 
 ## Source and effort
 
-- Base SHA: `98bb15412435b9c2fc66477f33c9dae4e09c8154`.
-- Implementation commit/head SHA: `d5af85b3111d36b9a3c3431a8e815600df603629` (`Implement shell and tool output budgets`). This receipt is a separate follow-up commit.
+- Original packet base SHA: `98bb15412435b9c2fc66477f33c9dae4e09c8154`.
+- Rebased integration base SHA: `a96219d979333f86ea8b7864a6cad7ada64171bb`.
+- Implementation commit SHA: `cd3b5e133afb53686393f9999e59e7711e6aed1e` (`Implement shell and tool output budgets`). The integration recheck ran at `d71072f9955d848a01b931c297fd9c89ab738a24`; this receipt update follows that check.
 - Dependency commits in the base: packet 06 `0a01ba3` (private script transport), packet 23 `6111327` (durable run/request journal and redaction), and packet 31 `f80f260` (tool schemas, dispatch, and file tools).
 - Exact implementation files:
   - `packages/core/src/provider/tools/shell.ts`
@@ -13,7 +14,7 @@
   - `packages/core/src/provider/tools/output.ts`
   - `tests/shell-tools/tools.test.ts`
   - `docs/work/receipts/32-shell-finish-and-tool-output-budgets.md`
-- Active effort: approximately 7 minutes, estimated; about 2 minutes of test/conformance wait. Worker-time telemetry is unavailable.
+- Active effort: approximately 11 minutes total (about 7 minutes initial implementation and 4 minutes integration follow-up); automated check wait was about 55 seconds. Worker-time telemetry is unavailable.
 - Model: GPT-6 runtime; serving submodel, effort label, and token count were not exposed.
 - Host: macOS arm64; Bun 1.4.2 and Git 2.54.0. Linux was not available for this packet.
 - Frozen target: v1.3-draft `e19dd1c21c19c5be1201c3b6a42c59c28b5c2887`.
@@ -27,9 +28,9 @@
 
 ## Verification
 
-- Named local acceptance, `GIT_CONFIG_GLOBAL=/dev/null bun test --max-concurrency 1 ./tests/shell-tools`: **PASS**, 8 tests / 0 failures / 42 expectations. Covers a >300 KiB heredoc with exact file bytes on disk, private mode and argv bounds; timeout scaling with the fixed visible notice; exact 8,000-byte range notice and full output file; redaction-bound handles; UTF-8 boundaries; complete binary base64; regular-file/digest/symlink checks; finish-alone, text continuation, and first/second empty finish.
-- `GIT_CONFIG_GLOBAL=/dev/null make check`: **PASS**, 361 tests / 0 failures / 1 OS-specific skip / 3,104 expectations. The skipped case is `real Linux mounts require Linux user namespaces and bubblewrap`; host was macOS arm64. Biome, TypeScript, shell syntax, input freeze, dispatcher checks, native compilation, and isolated tests passed.
-- Exact B32 conformance command from the brief, selecting `v1.2-121-custody-08,v1.2-31-provider-23-tool-result-budget`: **not accepted**. The runner recorded 0 passed, 0 failed, 2 harness errors across 2 instances because `/Users/almirsarajcic/Areas/Kogen/kogen-ts-wt/32-shell-finish-and-tool-output-budgets/dist/kogen` does not exist (`FileNotFoundError`). The fake provider received no requests; unmatched fake requests: **0**. Result file: `/var/folders/8f/khnp6qk51mvgk_jkxz169nr40000gn/T//kts-32-sP9HEk/results.jsonl`.
+- Named local acceptance on the rebased check tree, `GIT_CONFIG_GLOBAL=/dev/null bun test --max-concurrency 1 ./tests/shell-tools`: **PASS**, 8 tests / 0 failures / 42 expectations. Covers a >300 KiB heredoc with exact file bytes on disk, private mode and argv bounds; timeout scaling with the fixed visible notice; exact 8,000-byte range notice and full output file; redaction-bound handles; UTF-8 boundaries; complete binary base64; regular-file/digest/symlink checks; finish-alone, text continuation, and first/second empty finish.
+- The integration log's first `GIT_CONFIG_GLOBAL=/dev/null make check` after rebase failed in the out-of-scope custody test `tests/custody/supervise.test.ts:286`: it expected two process PIDs and read one (381 pass, 1 skip, 1 fail; 3,249 expectations). The requested full recheck at `d71072f9955d848a01b931c297fd9c89ab738a24` **PASS**ed: 382 tests / 0 failures / 1 OS-specific skip / 3,252 expectations. The same parent-SIGKILL custody test passed on recheck. No custody files were changed. The skipped case is `real Linux mounts require Linux user namespaces and bubblewrap`; host was macOS arm64. Biome, TypeScript, shell syntax, input freeze, dispatcher checks, native compilation, and isolated tests passed.
+- Exact B32 conformance command from the brief, selecting `v1.2-121-custody-08,v1.2-31-provider-23-tool-result-budget`: **not accepted**. It recorded 0 passed, 0 failed, 2 harness errors across 2 instances because `/Users/almirsarajcic/Areas/Kogen/kogen-ts-wt/32-shell-finish-and-tool-output-budgets/dist/kogen` does not exist (`FileNotFoundError`). The fake server received no requests; unmatched fake requests: **0**. Result file: `/var/folders/8f/khnp6qk51mvgk_jkxz169nr40000gn/T//kts-32-pVfFEW/results.jsonl`.
 - Replay: this packet owns no xspec slice; hand cases **0**, seeds 17/23/41 not run, first divergence not applicable.
 - Exact incompatible historical v1.1 assertions: `provider-23` expected the retired 10,000-character tail clip and partial base64 marker, and treated text as completion; `custody-08` treated text as completion and omitted `finish`. The frozen v1.2 profile supersedes these with the two requested replacement cases. No v1.3 suite is available, so this is not a v1.3 conformance claim.
 
