@@ -2,8 +2,8 @@
 
 Status: AWAITING_INTEGRATION
 Base SHA: `041bc2ace953ab6e648b3041402034a6030822d2`
-Head SHA: `f454fd4fc095251df233f7d5d53655fab3be6fba`
-Active effort: approximately 20 minutes
+Head SHA: `48fae4be3bc3437b0ce820aeb574a8cec87f5cd1`
+Active effort: approximately 30 minutes
 Model: GPT-6; exact serving variant and token count are not exposed by this runtime.
 
 ## Changes
@@ -51,8 +51,9 @@ Model: GPT-6; exact serving variant and token count are not exposed by this runt
   `sandbox-exec -p '(version 1)(allow default)(deny network*)' /usr/bin/make check`.
 - `make freeze`: PASS; 896 included files verified, with two documented ignored-log
   exclusions.
-- `make dispatch-dry-run`: PASS; packet 00 was the sole ready packet and the other 65
-  were blocked by unmerged receipts or integration gates. No worker started.
+- `make dispatch-dry-run`: PASS; after the packet receipt was committed, packet 00 was
+  awaiting integration and the other 65 were blocked by unmerged receipts or gates. No
+  worker started.
 - Local cases: `Bash 3 dry-run respects every DAG dependency and performs no dispatch
   writes` (PASS); `integration rejects a red check, preserves work, and admits the
   repaired commit` (PASS); `isolated checks never inherit user Git signing or identity`
