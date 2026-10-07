@@ -5,7 +5,7 @@
 ## Source and ownership
 
 - Base SHA: `196005c8f5e676afd8f0953517b7328d3598ff9d`
-- Implementation commit: `14e86d31a69ca8cf79d5c813522e4a1f8407890e`
+- Implementation commit after integration rebase: `118544e6e0a3a13ec11ea9c1bbc4169fead765c2`
 - Dependencies are ancestors of the base: packet 12 `faf71abdbea676765614146f369852af239784e1`, packet 23 `6111327ac4af6c7605792e67f03b0f502903051b`, packet 29 `20d0778cc7a21ddf9e30dc37dfd9dd6d15beaea1`.
 - Contract inputs: v1.3-draft `e19dd1c21c19c5be1201c3b6a42c59c28b5c2887`, frozen `CLI-RULE.txt`, and v1.2 suite `0f93bad988fb8d7a8eff4e94954d1db0a046c89d`.
 - Owned implementation files:
@@ -16,7 +16,7 @@
   - `packages/core/src/provider/session/prefix.ts`
   - `tests/session/session.test.ts`
   - `docs/work/receipts/30-canonical-sessions-and-wire-shapes.md`
-- Active effort: approximately 11 minutes; verification wait: approximately 3 minutes, manually estimated. The GPT-6 Codex runtime did not expose its specific model variant, effort setting, or token count.
+- Initial implementation effort: approximately 11 active minutes plus 3 minutes of verification wait, manually estimated. The GPT-6 Codex runtime did not expose its specific model variant, effort setting, or token count.
 
 ## Behavior
 
@@ -48,3 +48,12 @@ The session API exposes the identities and wire metadata needed by packet 23's r
 - Tests ran on macOS 26.7.1 arm64. Linux execution is unverified; the make-check Linux mount case skipped on this macOS host. The frozen v1.2 suite has no v1.3 overlay for claiming target parity.
 
 **Next owner:** I2 coordinator for provider composition, journal wiring, and B30 black-box rerun; packet 60 for mandatory session replay.
+
+## Integration recheck after rebase — 8 October 2026
+
+- Rebased implementation commit: `118544e6e0a3a13ec11ea9c1bbc4169fead765c2`; follow-up started from branch HEAD `9793f71eea392114bcbc267d7e0c543719b35321`, whose parent is the merged base `a86eb3dc886e0201b0b1da65a85248a225c0e2d7`. The packet brief's original base remains `196005c8f5e676afd8f0953517b7328d3598ff9d`.
+- Re-ran `bun test --max-concurrency 1 tests/session`: **PASS**, 10 tests / 61 assertions.
+- Re-ran `GIT_CONFIG_GLOBAL=/dev/null make check`: **PASS**, 269 passed / 1 skipped / 0 failed across 270 tests (2,532 assertions). The skip remains the Linux-only mount test on macOS. In the failed integration run, `tests/fs-read/read.test.ts`'s parent-link-swap race exceeded its 5-second test limit; this run passed that case in 2.88 seconds. The failure was outside packet 30's allowlist and required no source edit.
+- Re-ran the exact B30 command: **8 cases / 8 instances; 0 pass, 0 fail, 8 errors, 0 skipped**. All eight report `FileNotFoundError` for the absent `dist/kogen`; the runner confirms no provider request reached the fake server. Unmatched fake requests were **not evaluated**, not zero unmatched. Results: `/var/folders/8f/khnp6qk51mvgk_jkxz169nr40000gn/T/kts-30-QrUREK/results.jsonl`.
+- Follow-up effort is approximately 8 active minutes plus 1 minute of verification wait, manually estimated; cumulative effort is approximately 19 active minutes plus 4 minutes of verification wait. Model: GPT-6 Codex; exact runtime variant, effort setting, and token count remain unavailable.
+- Source edits in this follow-up: receipt only. No `fs-read` or other out-of-allowlist files were changed. Public provider wiring and the v1.2/v1.3 assertion conflict remain pending as described above.
