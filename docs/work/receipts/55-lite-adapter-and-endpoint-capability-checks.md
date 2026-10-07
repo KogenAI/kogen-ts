@@ -1,10 +1,14 @@
 # Packet 55 — Lite adapter and endpoint capability checks
 
-Status: **IMPLEMENTED LOCALLY, AWAITING INTEGRATION ACCEPTANCE**
+Status: **RECHECK PASSED, AWAITING COORDINATOR INTEGRATION ACCEPTANCE**
 
-Base SHA: `3da7beee2f2eff4feba911143ea46931a86a7057`
+Original worker base SHA: `3da7beee2f2eff4feba911143ea46931a86a7057`
 
-Implementation head SHA: `e0d07ff01928206626e6566a69a096096f611988`
+Post-rebase integration base SHA: `6511b4f70c70bb3b4238cee9b7fdbb658286fe7f`
+
+Implementation head SHA: `ed654d36ea9d14c47ca60e96174db16add06a077` (rebased)
+
+Pre-follow-up receipt head SHA: `4b3d4387eb29e580651d6a6d62bd61ea6878fecc`
 
 Branch: `kts/55-lite-adapter-and-endpoint-capability-checks`
 
@@ -12,7 +16,7 @@ Target: spec v1.3-draft `e19dd1c21c19c5be1201c3b6a42c59c28b5c2887`; frozen confo
 
 Dependencies packet 30 and packet 34 are merged ancestors of the base. Their session identity/wire and account/credential interfaces are used directly.
 
-Active effort: approximately 25 minutes; about 2 minutes of unattended check wait excluded. Model: GPT-6 Codex; exact served model variant, effort setting, and token count are not exposed in this session.
+Active effort: approximately 33 minutes total, including about 8 minutes for the post-rebase investigation and recheck; unattended check wait excluded. Model: GPT-6 Codex; exact served model variant, effort setting, and token count are not exposed in this session.
 
 Host: macOS 26.7.1 arm64; Bun 1.4.2; Git 2.54.0.
 
@@ -35,6 +39,9 @@ Host: macOS 26.7.1 arm64; Bun 1.4.2; Git 2.54.0.
 - `GIT_CONFIG_GLOBAL=/dev/null bun test tests/lite/lite.test.ts` — **PASS**, 4 tests, 54 assertions. Covers P6 Lite shape/schema/header order and IDs, identity stability, owned/non-Luna/cap refusal before credentials, and unknown/mismatched/explicit endpoint-cap fixtures.
 - `GIT_CONFIG_GLOBAL=/dev/null bun test tests/lite/lite.test.ts tests/session/session.test.ts` — **PASS**, 14 tests, 115 assertions.
 - Required `GIT_CONFIG_GLOBAL=/dev/null make check` — **PASS**, 349 passed, 1 skipped, 0 failed across 350 tests; 3,084 assertions. Biome, TypeScript, shell, frozen-input and dispatcher checks, native warning-as-error compilation, and isolated tests passed. The one skip is the real Linux mount case, which requires Linux user namespaces and bubblewrap; this run was on macOS.
+- Post-rebase required `GIT_CONFIG_GLOBAL=/dev/null make check` at `4b3d4387eb29e580651d6a6d62bd61ea6878fecc` — **PASS**, 367 passed, 1 skipped, 0 failed across 368 tests; 3,176 assertions. Biome, TypeScript, shell, frozen-input and dispatcher checks, native warning-as-error compilation, and isolated tests passed. The one skip remains the Linux-only mount case on this macOS host.
+- Post-rebase `GIT_CONFIG_GLOBAL=/dev/null bun test tests/lite/lite.test.ts` — **PASS**, 4 tests, 54 assertions.
+- Post-rebase `GIT_CONFIG_GLOBAL=/dev/null bun test tests/lite/lite.test.ts tests/session/session.test.ts` — **PASS**, 14 tests, 115 assertions.
 - No directly owned standard B-set. The local acceptance used injected test effects only: 0 HTTP fake requests sent and 0 unmatched requests. No public conformance command was run because `dist/kogen` is absent; this is pending integration, not a pass.
 - Replay hand cases: 0. Seeds 17/23/41: not run. First divergence: not applicable. `packages/xspec` has no source implementation at this base; packet 60 owns session replay. The local compatibility helper rejects unknown endpoint capabilities by default, but replay acceptance remains pending that wiring.
 
@@ -44,5 +51,12 @@ Host: macOS 26.7.1 arm64; Bun 1.4.2; Git 2.54.0.
 - Provider retry/composition still calls the Responses session encoder; it does not dispatch to this Lite encoder or the endpoint capability guard. `dist/kogen` is absent. The coordinator must wire capability preflight before credential loading and select the Lite adapter in the provider route before integrated acceptance.
 - No other incompatible old assertion was identified. No v1.3 conformance claim is made.
 - Linux behavior is unverified. The final `make check` skipped its Linux-only mount fixture on this macOS host.
+
+## Integration failure follow-up
+
+- The integration excerpt reported `tests/host-bridge/host.test.ts` failing in “SIGKILL of the Kogen parent closes control EOF and kills the child group” while parsing `parent-report.json` (`Unexpected EOF`). That test and its implementation are outside this packet's owned files; the Lite adapter does not write that report or launch that process group.
+- The specified integration log path `/Users/almirsarajc/cx/kts/logs/55-lite-adapter-and-endpoint-capability-checks.integration.log` was not present in this environment. The failure excerpt was included in the worker request.
+- The full required post-rebase check above reran the affected host-bridge case, which passed. The failure did not reproduce. No files outside this packet were changed, and no Lite source change was indicated by the failure.
+- No replay or public route was available to verify Lite dispatch: `dist/kogen` and xspec provider/session replay wiring remain pending integration. Unknown endpoint capability behavior is covered by local fixtures only; replay must not infer unsupported capabilities.
 
 Next owner: coordinator for provider route and capability-preflight wiring; packet 60 for session replay; suite owner for a versioned P6 Lite session-ID assertion.
