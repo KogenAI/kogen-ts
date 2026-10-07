@@ -322,10 +322,8 @@ test("disabling Build fallback retries an eligible overload as long as budget al
 			"build",
 			() => 100_000,
 			new ProviderPauseBudget(),
-			{ fallbackEnabled: false },
 		),
 		resolvedRole: { ...fixture.resolved, overloadFallback: null },
-		fallbackEnabled: false,
 	});
 
 	expect(result.kind).toBe("completed");

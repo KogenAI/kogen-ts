@@ -159,9 +159,8 @@ export async function respondWithRetry(
 			model: input.session.model,
 			effort: input.session.effort,
 			overloadFallback: input.resolvedRole.overloadFallback,
-			...(input.fallbackEnabled === undefined
-				? {}
-				: { fallbackEnabled: input.fallbackEnabled }),
+			fallbackEnabled:
+				input.fallbackEnabled ?? input.resolvedRole.overloadFallback !== null,
 			mode: input.mode,
 		}),
 		resumed: false,
