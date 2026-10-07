@@ -2,7 +2,9 @@
 MISE ?= $(shell command -v mise 2>/dev/null || true)
 BUN ?= $(shell if test -n "$(MISE)"; then MISE_AUTO_INSTALL=0 "$(MISE)" which bun; else command -v bun; fi)
 GIT_TOOL ?= $(shell if test -n "$(MISE)"; then MISE_AUTO_INSTALL=0 "$(MISE)" which git; else command -v git; fi)
-.PHONY: check freeze dispatch-dry-run format conformance replay
+.PHONY: check freeze dispatch-dry-run format conformance replay build-foundation
+build-foundation:
+	@"$(BUN)" --no-install tools/build-foundation.ts
 check:
 	@KTS_CHECK_GIT="$(GIT_TOOL)" "$(BUN)" --no-install tools/check.ts
 freeze:

@@ -116,10 +116,29 @@ beforeAll(() => {
 	workerPath = join(probeDirectory, "probe-worker");
 	writeFileSync(cliPath, "compiled CLI placeholder\n", { mode: 0o700 });
 	writeFileSync(probeCliPath, "compiled CLI placeholder\n", { mode: 0o700 });
-	compile(["native/main.c", "native/protocol.c"], helperPath);
-	compile(["native/main.c", "native/protocol.c"], probeHelperPath, [
-		"-DKOGEN_HOST_TESTING=1",
-	]);
+	compile(
+		[
+			"native/main.c",
+			"native/protocol.c",
+			"native/paths.c",
+			"native/read.c",
+			"native/publish.c",
+			"native/supervisor.c",
+		],
+		helperPath,
+	);
+	compile(
+		[
+			"native/main.c",
+			"native/protocol.c",
+			"native/paths.c",
+			"native/read.c",
+			"native/publish.c",
+			"native/supervisor.c",
+		],
+		probeHelperPath,
+		["-DKOGEN_HOST_TESTING=1"],
+	);
 	compile(["tests/host-bridge/probe-worker.c"], workerPath);
 });
 

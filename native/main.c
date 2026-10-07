@@ -1,6 +1,9 @@
 #define _POSIX_C_SOURCE 200809L
 
 #include "protocol.h"
+#include "paths.h"
+#include "publish.h"
+#include "supervisor.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -199,6 +202,25 @@ static int dispatch_frame(const struct kogen_host_frame *frame) {
 		payload[1] = (uint8_t)KOGEN_HOST_PROTOCOL_VERSION;
 		write_u32be(payload + 2, KOGEN_HOST_MAX_FRAME_BYTES);
 		return respond_frame(frame, payload, sizeof(payload)) < 0 ? 74 : 0;
+	}
+	/* Registrations belong to the coordinator; these are the production drivers. */
+	if (frame->operation == KOGEN_HOST_OP_FS_READ ||
+		frame->operation == KOGEN_HOST_OP_FS_PUBLISH ||
+		frame->operation == KOGEN_HOST_OP_PROCESS_SUPERVISE) {
+		uint8_t response[KOGEN_HOST_MAX_PAYLOAD_BYTES];
+		size_t length = 0;
+		if (frame->operation == KOGEN_HOST_OP_FS_READ) {
+			(void)kogen_fs_handle_read_request(frame->payload, frame->payload_length,
+				response, sizeof(response), &length);
+		} else if (frame->operation == KOGEN_HOST_OP_FS_PUBLISH) {
+			(void)kogen_fs_handle_publish_request(frame->payload, frame->payload_length,
+				response, sizeof(response), &length);
+		} else if (kogen_supervisor_handle_request(frame->payload,
+			frame->payload_length, KOGEN_HOST_CONTROL_FD, response,
+			sizeof(response), &length) < 0) {
+			return respond_error(frame->request_id, errno == 0 ? EIO : errno) < 0 ? 74 : 0;
+		}
+		return respond_frame(frame, response, length) < 0 ? 74 : 0;
 	}
 #ifdef KOGEN_HOST_TESTING
 	if (frame->operation == KOGEN_HOST_OP_TEST_GROUP)
