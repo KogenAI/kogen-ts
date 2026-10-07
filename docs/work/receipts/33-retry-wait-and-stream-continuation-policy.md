@@ -45,4 +45,4 @@
 - v1.3-draft has no frozen executable conformance suite; no v1.3 parity is claimed. Tests ran on macOS 26.7.1 arm64; Linux execution remains unverified.
 - Retry/session xspec hand cases run: 0. Seeds 17/23/41: not run. First divergence: not applicable. Packet 60 owns mandatory stream/session replay and full observations.
 
-**Next owners:** I2 coordinator for public provider composition and B33 rerun; packet 60 for mandatory stream/session replay; suite owner for the future frozen v1.3 conformance release.
+**Next owners:** Packet 03 owner for the filesystem race; packet 05 owner for the escaped-session custody failure; I2 coordinator for public provider composition and B33 closure; packet 60 for mandatory stream/session replay; suite owner for the future frozen v1.3 conformance release.
