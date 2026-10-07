@@ -797,6 +797,12 @@ async function commitApproval(
 			3,
 			"Approval base does not match the origin Git object format.",
 		);
+	if (!validObjectId(request.preflight.checkedBaseTree, oidLength))
+		refuse(
+			"environment/approval_commit_failed",
+			3,
+			"Approval preflight does not identify a valid checked base tree.",
+		);
 	const baseType = await git(
 		request,
 		["cat-file", "-t", request.baseSha],
@@ -808,6 +814,22 @@ async function commitApproval(
 			"environment/approval_commit_failed",
 			3,
 			"Resolved approval base is not a commit.",
+		);
+	const resolvedBaseTree = objectIdFromResult(
+		await git(
+			request,
+			["rev-parse", `${request.baseSha}^{tree}`],
+			undefined,
+			4096,
+		),
+		"checked base tree lookup",
+		oidLength,
+	);
+	if (resolvedBaseTree !== request.preflight.checkedBaseTree)
+		refuse(
+			"environment/approval_commit_failed",
+			3,
+			"Approval preflight checked a different base tree.",
 		);
 	const intentBlob = await writeBlob(request, intentSnapshot, oidLength);
 	const approvalBlob = await writeBlob(

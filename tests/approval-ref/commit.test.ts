@@ -450,6 +450,33 @@ test("missing public Git identity refuses without creating an approval ref", asy
 	}
 });
 
+test("a preflight checked against another base tree cannot publish", async () => {
+	const fixture = await createFixture();
+	try {
+		const request = {
+			...fixture.request,
+			preflight: {
+				...fixture.request.preflight,
+				checkedBaseTree: "f".repeat(40),
+			},
+		};
+		const result = await commitApprovalPackage(request);
+		expect(result.ok).toBe(false);
+		if (result.ok) return;
+		expect(result.error.code).toBe("environment/approval_commit_failed");
+		expect(result.error.message).toContain("different base tree");
+		expect(
+			await gitText(fixture.git, fixture.origin, [
+				"for-each-ref",
+				"--format=%(refname)",
+				`refs/kogen/intents/${SLUG}`,
+			]),
+		).toBe("");
+	} finally {
+		fixture.close();
+	}
+});
+
 test("a present ledger is included and SHA-256 repositories keep 64-character ids", async () => {
 	const fixture = await createFixture({ objectFormat: "sha256" });
 	try {
