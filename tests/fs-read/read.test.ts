@@ -3,7 +3,6 @@ import { spawnSync } from "node:child_process";
 import {
 	mkdirSync,
 	mkdtempSync,
-	renameSync,
 	rmSync,
 	symlinkSync,
 	writeFileSync,
@@ -35,6 +34,7 @@ function compileDriver(output: string): void {
 			"-Wall",
 			"-Wextra",
 			"-Werror",
+			"-Dopenat=kogen_test_openat",
 			"-I",
 			"native",
 			"native/paths.c",
@@ -96,22 +96,17 @@ function encodeTestRequest(
 	return payload;
 }
 
-async function runParentSwapDriver(payload: Uint8Array): Promise<string> {
-	const child = Bun.spawn({
-		cmd: [driver, "--repeat-parent-swap"],
-		stdin: "pipe",
-		stdout: "pipe",
-		stderr: "pipe",
+function runParentSwapDriver(payload: Uint8Array): string {
+	const result = spawnSync(driver, ["--repeat-parent-swap"], {
+		input: payload,
+		timeout: 3000,
 	});
-	child.stdin.write(payload);
-	await child.stdin.flush();
-	child.stdin.end();
-	const stderrPromise = new Response(child.stderr).text();
-	const exitCode = await child.exited;
-	const stderr = await stderrPromise;
-	if (exitCode !== 0)
-		throw new Error(`parent swap driver failed (${exitCode}): ${stderr}`);
-	return stderr;
+	if (result.error) throw result.error;
+	if (result.status !== 0)
+		throw new Error(
+			`parent swap driver failed (${result.status}): ${result.stderr}`,
+		);
+	return result.stderr.toString();
 }
 
 beforeAll(() => {
@@ -284,7 +279,6 @@ test("nonregular handles are refused without blocking", async () => {
 test("parent link swaps never redirect the opened path outside the root", async () => {
 	const parent = join(filesystemRoot, "swap-parent");
 	const alternate = join(outsideRoot, "swap-alternate");
-	const holding = join(filesystemRoot, ".swap-holding");
 	mkdirSync(parent);
 	mkdirSync(alternate);
 	writeFileSync(join(parent, "probe"), "inside");
@@ -292,29 +286,16 @@ test("parent link swaps never redirect the opened path outside the root", async 
 	const parentLink = join(filesystemRoot, "swap-link");
 	symlinkSync(alternate, parentLink);
 
-	let swapping = true;
-	const swapTask = (async () => {
-		while (swapping) {
-			renameSync(parent, holding);
-			renameSync(parentLink, parent);
-			renameSync(holding, parentLink);
-			await Bun.sleep(0);
-		}
-	})();
 	const payload = encodeTestRequest(
 		2,
 		textBytes(filesystemRoot),
 		textBytes("swap-parent/probe"),
 		128,
 	);
-	let report = "";
-	try {
-		report = await runParentSwapDriver(payload);
-	} finally {
-		swapping = false;
-		await swapTask;
-	}
-	expect(report).toMatch(/inside=\d+/);
+	const report = runParentSwapDriver(payload);
+	// Both interleavings execute 16 times: reject a replaced parent before
+	// openat, or keep reading the pinned directory after its name is replaced.
+	expect(report).toBe("inside=16 blocked=16 outside=0\n");
 });
 
 test("FileSystemPort adapts text paths and rejects non-Unicode JS strings", async () => {

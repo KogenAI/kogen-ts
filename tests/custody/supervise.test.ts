@@ -235,11 +235,15 @@ test("an escaped session is outside group custody and cannot hold output open fo
 		);
 		expect(result.termination).toBe("exited");
 		expect(result.exitCode).toBe(0);
-		expect(result.durationMs).toBeGreaterThanOrEqual(600);
 		escapedPid = Number(readFileSync(escapedPath, "utf8").trim());
+		// The escaped process holds the output pipe open, yet the leader exits
+		// normally and the supervisor returns before the command deadline.
+		expect(result.durationMs).toBeLessThan(5000);
 		expect(escapedPid).toBeGreaterThan(0);
 		expect(isAlive(escapedPid, "sleep")).toBe(true);
 	} finally {
+		if (escapedPid === 0 && existsSync(escapedPath))
+			escapedPid = Number(readFileSync(escapedPath, "utf8").trim());
 		if (escapedPid > 0 && isAlive(escapedPid, "sleep")) {
 			try {
 				process.kill(escapedPid, "SIGKILL");
