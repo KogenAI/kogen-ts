@@ -9,7 +9,7 @@
 - Branch: `kts/17-command-adapter-and-acceptance-ledger`
 - Target contract: frozen v1.3-draft `e19dd1c21c19c5be1201c3b6a42c59c28b5c2887`
 - Host: macOS 26.7.1 arm64; Git 2.54.0; Bun 1.4.2
-- Active effort: approximately 25 minutes. Model: GPT-6 Codex; exact served variant and token count are not exposed by this worker interface.
+- Active effort: approximately 30 minutes. Model: GPT-6 Codex; exact served variant and token count are not exposed by this worker interface.
 
 ## Owned files
 
@@ -28,7 +28,7 @@
 ## Validation
 
 - Named local acceptance: `GIT_CONFIG_GLOBAL=/dev/null bun --no-install test --max-concurrency 1 ./tests/ledger/ledger.test.ts` — **PASS**, 8 tests, 38 assertions, 0 failures. The fake process calls in the runner fixtures were consumed as expected; unmatched fake calls: **0**.
-- `GIT_CONFIG_GLOBAL=/dev/null make check` — an earlier run passed (279 passed, 1 Linux-only skip, 0 failed, 2,672 assertions) before the final UTF-8 ordering and absolute-workdir guard. The final-state run completed static checks and native compilation but **failed** in two unrelated existing tests: `tests/fs-read/read.test.ts` parent-link swap timed out at 5 seconds, and `tests/custody/supervise.test.ts` could not read `escaped-grandchild.pid` (ENOENT). Summary: 277 passed, 1 Linux-only skip, 2 failed, 1 error, 2,669 assertions. No owned source was implicated.
+- `GIT_CONFIG_GLOBAL=/dev/null make check` — **final run PASS**, 279 passed, 1 Linux-only skip, 0 failed, 2,672 assertions. An intervening run on the final implementation completed static checks and native compilation but **failed** in two unrelated existing tests: `tests/fs-read/read.test.ts` parent-link swap timed out at 5 seconds, and `tests/custody/supervise.test.ts` could not read `escaped-grandchild.pid` (ENOENT); summary 277 passed, 1 skip, 2 failed, 1 error, 2,669 assertions. A preceding full check also passed before the final UTF-8 ordering and absolute-workdir guard. No owned source was implicated by the transient failures.
 - Diagnostic reruns, kept separate from the full check: `tests/fs-read/read.test.ts` — 6 passed, 1 failed (the same 5-second parent-link-swap timeout); `tests/custody/supervise.test.ts` — 9 passed, 0 failed. No files outside the allowlist were changed.
 - `git diff --check` — **PASS**.
 - No directly owned standard B-set. B18/B20 production callers were not run; the brief assigns those exercises to later production wiring. No CLI executable exists at `dist/kogen`, so this is pending integration, not a conformance pass. B18/B20 observed cases: 0; instances: 0; unmatched fake requests: 0 (no CLI or provider request was made).
