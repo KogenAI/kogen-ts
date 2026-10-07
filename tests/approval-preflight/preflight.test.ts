@@ -359,7 +359,6 @@ test("approval card renders the frozen card fields and exact approval hash", asy
 		`SHA-256: ${hashApprovalBytes(INTENT, ACCEPTANCE)}`,
 		"Approver: Kogen Test <test@kogen.invalid>",
 		`Base: main at ${BASE_COMMIT}`,
-		"Feasibility: not checked",
 		"",
 		"Brief",
 		"  Change the greeting in lib/greet.txt so that it names Almir,",

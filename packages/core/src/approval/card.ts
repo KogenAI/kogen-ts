@@ -35,7 +35,6 @@ export interface ApprovalCardInput {
 	readonly intent: ParsedIntent;
 	readonly warnings: readonly ApprovalCardWarning[];
 	readonly checkBaseline: readonly ApprovalCheckBaseline[];
-	readonly feasibility?: string;
 }
 
 function acceptanceKind(
@@ -112,7 +111,6 @@ export function renderApprovalCard(input: ApprovalCardInput): string {
 		`SHA-256: ${input.approvalSha256}`,
 		`Approver: ${input.approver}`,
 		`Base: ${input.base} at ${input.baseSha}`,
-		`Feasibility: ${input.feasibility ?? "not checked"}`,
 		"",
 		"Brief",
 		...input.intent.brief.split("\n").map((line) => `  ${line}`),
