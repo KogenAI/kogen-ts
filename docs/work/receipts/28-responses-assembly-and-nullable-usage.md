@@ -2,10 +2,10 @@
 
 ## Source and ownership
 
-- Base SHA: `83228217497682229a47ac96aacdf22ef9f323f6`
-- Head SHA: `8e10ea08545ba64316e9542f9e415efc7633c0bc`
-- Branch: `kts/28-responses-assembly-and-nullable-usage`
-- Status: AWAITING_INTEGRATION
+Base SHA: `83228217497682229a47ac96aacdf22ef9f323f6`
+Head SHA: `8e10ea08545ba64316e9542f9e415efc7633c0bc`
+Branch: `kts/28-responses-assembly-and-nullable-usage`
+Status: AWAITING_INTEGRATION
 - Exact owned files:
   - `packages/core/src/provider/sse/assemble.ts`
   - `packages/core/src/provider/sse/usage.ts`
