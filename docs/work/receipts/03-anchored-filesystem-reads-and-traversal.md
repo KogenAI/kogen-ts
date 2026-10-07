@@ -5,7 +5,7 @@
 Base SHA: `8a97a3c1a51ed399e477bf6e5c5d90ebaff9589c`
 Head SHA: `8ccb15d9b2d666fd9137ce1e547e921113a170a1`
 Branch: `kts/03-anchored-filesystem-reads-and-traversal`
-Status: **AWAITING_INTEGRATION**
+Status: AWAITING_INTEGRATION
 
 - Exact owned files:
   - `native/paths.c`
