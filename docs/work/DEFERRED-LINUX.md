@@ -21,3 +21,12 @@ release gate I7 and before any public claim.
   3. `tests/sandbox-macos/sandbox.test.ts:383` and `:443`: platform-specific tests assert `process.platform === "darwin"` instead of skipping on other platforms.
 - Fix commit: `7768fabff8f49b1908d22f6911505a564a0291c3`.
 - Status: awaiting Linux re-run. Keep OPEN until that run passes.
+
+### I1 follow-up rerun and fix progress
+
+- Host: `kogen-bench-us` (Linux).
+- Source SHAs: benchmark rerun kogen-ts `9c10511`; integration base kogen-ts `147515cf5c1786bb3d20eabbd144dbe33deaedc8`; fix commit `b0be31c50fb7d464bc4a4a06047367a64aabc036`.
+- Rerun result before this fix: `make check` ran 392 tests: 389 passed, 2 skipped, 1 failed.
+- Exact remaining failure: `tests/sandbox-linux/linux.test.ts:476`, `expect(execution.stderr).toBe("")`. The stderr contained `kogen-sandbox-test: 1: cannot create …/home/checkout/sentinel: Read-only file system` and the same error for `…/home/origin/sentinel`. Both paths are intentionally read-only. The shell redirections previously applied left to right, so the failing append wrote its diagnostic before `2>/dev/null` took effect. Both probes now wrap the append in `{ ...; } 2>/dev/null`.
+- Linux items reported passing in the rerun: native compile, auth.json mask, custody, bridge, restorer, mount tests, and capability probe. The exact-stderr Linux mount integration item still needs the final Linux rerun.
+- Status: awaiting Linux re-run. Keep OPEN until that run passes.
