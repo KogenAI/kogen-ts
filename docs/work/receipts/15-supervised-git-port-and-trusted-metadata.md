@@ -5,7 +5,7 @@
 ## Source and ownership
 
 - Base SHA: `c6c143ade697e586c3b4159e4fec98ff2df5108f`
-- Implementation head: `e56052c` (`Implement supervised Git metadata port`)
+- Implementation head: `e56052c1dc757bce0dee13afc44288e17d619b6f` (`Implement supervised Git metadata port`)
 - Exact packet files:
   - `packages/core/src/git/command.ts`
   - `packages/core/src/git/repository.ts`
