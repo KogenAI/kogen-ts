@@ -3,7 +3,7 @@
 ## Source and scope
 
 - Base SHA: `196005c8f5e676afd8f0953517b7328d3598ff9d`
-- Implementation SHA: `6f96ea9bf6968b7a9ceea370d15240330b0cc585`
+- Source head SHA (implementation commit, before the receipt-only commit): `6f96ea9bf6968b7a9ceea370d15240330b0cc585`
 - Dependencies 12 and 13 are ancestors of the implementation base.
 - Owned implementation files:
   - `packages/core/src/intent/lint.ts`
