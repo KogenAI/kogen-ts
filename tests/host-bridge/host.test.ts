@@ -187,6 +187,24 @@ test("oversized and unknown-version frames fail before payload allocation", asyn
 	closeSync(tooLarge.controlFd);
 	expect(oversizedExit).not.toBe(0);
 
+	const undersized = rawHelper();
+	const shortPrefix = new Uint8Array(4);
+	new DataView(shortPrefix.buffer).setUint32(0, 7, false);
+	await writeRaw(undersized.child, shortPrefix);
+	const undersizedExit = await undersized.child.exited;
+	closeSync(undersized.controlFd);
+	expect(undersizedExit).not.toBe(0);
+
+	const partial = rawHelper();
+	const partialFrame = new Uint8Array(6);
+	new DataView(partialFrame.buffer).setUint32(0, 8, false);
+	partialFrame[4] = 0;
+	partialFrame[5] = 1;
+	await writeRaw(partial.child, partialFrame);
+	const partialExit = await partial.child.exited;
+	closeSync(partial.controlFd);
+	expect(partialExit).not.toBe(0);
+
 	const wrongVersion = rawHelper();
 	const frame = new Uint8Array(12);
 	const view = new DataView(frame.buffer);
