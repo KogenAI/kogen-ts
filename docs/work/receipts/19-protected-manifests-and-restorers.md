@@ -57,3 +57,24 @@ The remaining check failures need repair by the owners of packets 03 and 05 (or 
 - Tests ran on macOS 26.7.1 arm64. Linux filesystem/conformance behavior remains unverified; the Linux namespace/mount test skipped here. No v1.3 frozen executable suite exists, so no v1.3 public parity is claimed.
 
 **Next owner:** I2/coordinator for shaper refusal, post-batch restore and fourth-restore transition, pre-verify/pre-commit guard, scope-warning journaling, and rerunning the exact B19 command after CLI wiring.
+
+## Coordinator repair — 8 October 2026
+
+- Shared regression fix was developed in this worktree, then cherry-picked onto main
+  as signed commit `f1a29cf48a21d04d0279b6051a9362637f4735bf`. Package 19 was rebased
+  onto it so the package allowlist remains unchanged. Production protection code
+  did not need alteration.
+- The filesystem race now uses 32 forced interleavings in a test-only openat wrapper:
+  16 replacements between metadata lookup and open must be blocked, and 16
+  replacements after the directory descriptor opens must return only inside bytes.
+  Exact counts are asserted. No timer, asynchronous swap loop, or background child
+  survives the test; the synchronous child has a bounded timeout.
+- The shared custody regression incorrectly required at least 600 ms for a native
+  500 ms drain. It now asserts normal completion before the 5000 ms command deadline
+  and that the escaped session remains alive; cleanup also reads its PID on failure.
+- Named acceptance: `GIT_CONFIG_GLOBAL=/dev/null mise exec -- bun --no-install test
+  --max-concurrency 1 tests/fs-read tests/custody tests/protection`: PASS, 22 tests,
+  102 assertions. The synchronized parent-swap case took 60 ms on this loaded host.
+- Complete post-rebase admission is recorded in the dispatcher's integration log
+  and I0 receipt. B19 public cases still await approval/Build integration as above;
+  Linux and the draft oracle/golden limitations are unchanged.
