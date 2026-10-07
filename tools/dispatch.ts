@@ -139,7 +139,8 @@ function committedReceipt(relativePath: string): Receipt | null {
 		.exec(text)?.[1]
 		?.toUpperCase();
 	const headSha =
-		/^Head SHA:\s*([a-f0-9]{40}|[a-f0-9]{64})\s*$/im.exec(text)?.[1] ?? null;
+		/^Head SHA:\s*`?([a-f0-9]{40}|[a-f0-9]{64})`?\s*$/im.exec(text)?.[1] ??
+		null;
 	return { status: status ?? "UNKNOWN", headSha };
 }
 
@@ -150,6 +151,15 @@ function isMergedReceipt(receipt: Receipt | null): boolean {
 		(receipt.status === "MERGED" || receipt.status === "ACCEPTED") &&
 		headSha !== null &&
 		isAncestor(headSha, currentHead)
+	);
+}
+
+function isAwaitingIntegrationReceipt(receipt: Receipt | null): boolean {
+	return (
+		receipt !== null &&
+		receipt.status === "AWAITING_INTEGRATION" &&
+		receipt.headSha !== null &&
+		isAncestor(receipt.headSha, currentHead)
 	);
 }
 
@@ -295,7 +305,7 @@ for (const packet of packets) {
 	const receipt = packageReceipts.get(packet.id) ?? null;
 	const status = isMergedReceipt(receipt)
 		? "MERGED"
-		: receipt?.status === "AWAITING_INTEGRATION"
+		: isAwaitingIntegrationReceipt(receipt)
 			? "AWAITING_INTEGRATION"
 			: receipt !== null
 				? "UNVERIFIED_RECEIPT"
