@@ -86,7 +86,9 @@ gate remains unavailable as described in its receipt.
 - `native/main.c` does not yet register or link operation `0x0304`, so the
   Security.framework handler cannot be reached through the production helper.
   The coordinator owns that registration/build wiring and the auth composition
-  change that selects this port. The composition must also provision the
+  change that selects this port and supplies a cryptographically secure
+  `RandomPort` (the current foundation composition does not yet construct
+  credential or random ports). The composition must also provision the
   `$HOME/.kogen/credentials` directory through the safe filesystem layer.
 - Run the isolated, explicit OS-Keychain fixture at I6. `make check` and the
   named local tests intentionally use only mocked Keychain operations and the
