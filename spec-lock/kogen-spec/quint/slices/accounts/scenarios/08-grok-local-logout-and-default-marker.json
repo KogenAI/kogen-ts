@@ -1,0 +1,10 @@
+{
+  "name": "08-grok-local-logout-and-default-marker",
+  "about": "Grok logout is local, leaves a signed-out profile, and the selected provider determines which account row is marked default.",
+  "steps": [
+    {"do":["Login",{"provider":"grok","success":true,"email":"g@example.test","expires":400,"hasExpiry":true,"notice":false}]},
+    {"do":["SelectionDefault",{"provider":"grok"}]},
+    {"do":["ListAccounts"],"expect":{"rows":[{"provider":"grok","label":"default","isDefault":true,"signedIn":true,"email":"g@example.test","expires":400}]}},
+    {"do":["Logout",{"provider":"grok","remote":true}],"expect":{"operation":"logout_local","rows":[{"provider":"grok","label":"default","isDefault":true,"signedIn":false,"email":"g@example.test","expires":400}]}}
+  ]
+}

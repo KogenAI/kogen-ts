@@ -1,0 +1,188 @@
+{
+  "id": "v1.2-60-build-26",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for build-26: Conflict repairs exhausted: parked, and the drain continues",
+  "spec": [
+    "§3.9.2",
+    "§3.4",
+    "§3.11",
+    "§3.6",
+    "§4.7"
+  ],
+  "script": [
+    {
+      "id": "plan",
+      "expect": {
+        "role": "planner",
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "edit",
+      "expect": {
+        "role": "builder",
+        "turn": 1,
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "done",
+      "expect": {
+        "role": "builder",
+        "turn": 2,
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      },
+      "side_effect_sh": "git clone -q \"$ORIGIN\" \"$CASE_DIR/mover\" && cd \"$CASE_DIR/mover\" && printf 'Hello, World!\\n' > lib/greet.txt && git add -A && git commit -q -m 'Greet the world' && git push -q origin HEAD:refs/heads/main"
+    },
+    {
+      "id": "stubborn",
+      "expect": {
+        "role": "builder",
+        "input_contains": "Greet Almir by name",
+        "last_user_contains": "lib/greet.txt"
+      },
+      "repeat": "always",
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "far.plan",
+      "expect": {
+        "role": "planner",
+        "turn": 1,
+        "input_contains": "Add a farewell line"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/bye.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/bye.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/bye.txt.\n"
+      }
+    },
+    {
+      "id": "far.edit",
+      "expect": {
+        "role": "builder",
+        "turn": 1,
+        "input_contains": "Add a farewell line"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Bye, Almir!\\n' > lib/bye.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "far.done",
+      "expect": {
+        "role": "builder",
+        "turn": 2,
+        "input_contains": "Add a farewell line",
+        "last_output_contains": "exit 0"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "intent": "farewell"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "sleep": 1.1
+    },
+    {
+      "approve": "farewell"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "timeout": 170,
+      "expect": {
+        "exit": 1,
+        "stderr": "",
+        "stdout_lines": [
+          "building greet",
+          "~parked greet: \\S+; best candidate (green|green-with-advisory-tests|unverified|none) at refs/kogen/parked/{run_id:greet} \\(Build {id8:greet}\\)",
+          "building farewell",
+          "~\\~landed farewell [0-9a-f]{8} \\(Build {id8:farewell}\\)",
+          "queue: done; 2 Build(s), 1 landed, 1 not"
+        ]
+      }
+    },
+    {
+      "assert": {
+        "refs": {
+          "refs/kogen/parked/{run_id:greet}": true
+        },
+        "events": {
+          "slug": "greet",
+          "last": {
+            "event": "finished",
+            "status": "parked"
+          }
+        }
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "status",
+        "greet"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_starts_lines": [
+          "~greet: parked(, \\S.*)?"
+        ]
+      }
+    }
+  ],
+  "notes": "The number of integration repairs is bounded only by the landing allowance (600000 ms, scaled); the stubborn builder step repeats. v1.2 replacement for build-26. Text-only builder replies are progress; completion requires finish alone with {} (§3.6). Shell-recipe builders expose shell, finish, and tool_output (§4.7)."
+}

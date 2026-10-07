@@ -1,0 +1,271 @@
+{
+  "id": "v1.2-101-ladder-33",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for ladder-33: Witness mode: the witness is red on a moved base, so the ladder runs; there is no demotion",
+  "spec": [
+    "§3.2.7",
+    "§3.4 B3",
+    "§3.8.2",
+    "§3.6",
+    "§4.7"
+  ],
+  "script": [
+    {
+      "id": "shape.write",
+      "expect": {
+        "role": "shaper",
+        "turn": 1,
+        "tools": [
+          "read",
+          "search",
+          "write"
+        ]
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "write",
+            "arguments": {
+              "path": ".kogen/intents/greet/intent.md",
+              "content": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: replace the single line in lib/greet.txt with the new greeting text.\n"
+            }
+          },
+          {
+            "name": "write",
+            "arguments": {
+              "path": ".kogen/acceptance/greet.t.sh",
+              "content": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "shape.done",
+      "expect": {
+        "role": "shaper",
+        "turn": 2
+      },
+      "reply": {
+        "text": "Both files are written."
+      }
+    },
+    {
+      "id": "shape.ledger",
+      "expect": {
+        "role": "requirement_auditor"
+      },
+      "reply": {
+        "text": "{\"rows\": [{\"constraint\": \"The greeting in lib/greet.txt says Hello, Almir!\", \"maps_to\": \"A1\"}]}"
+      }
+    },
+    {
+      "id": "shape.audit",
+      "expect": {
+        "role": "test_auditor"
+      },
+      "reply": {
+        "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test checks the requested line.\"}]}"
+      }
+    },
+    {
+      "id": "wit.plan",
+      "expect": {
+        "role": "planner"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "wit.edit",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 1,
+        "tools": [
+          "shell",
+          "finish",
+          "tool_output"
+        ]
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "wit.done",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 2,
+        "last_item_type": "function_call_output"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "b.plan",
+      "expect": {
+        "role": "planner"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "b1.start",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 1
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "n=$(cat lib/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > lib/n; printf 'Hi R1 %s\\n' $n > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "b1.again",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "last_item_type": "message"
+      },
+      "repeat": "always",
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "n=$(cat lib/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > lib/n; printf 'Hi R1 %s\\n' $n > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "b1.claim",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "last_item_type": "function_call_output"
+      },
+      "repeat": "always",
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    }
+  ],
+  "steps": [
+    {
+      "write": {
+        "path": "{case}/request.md",
+        "text": "Make the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n"
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "intent",
+        "shape",
+        "greet",
+        "{case}/request.md"
+      ],
+      "expect": {
+        "exit": 0,
+        "stderr_any": true,
+        "stdout_contains": "Feasibility: PROVEN\n"
+      }
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "origin_commit": {
+        "files": {
+          "lib/greet.txt": "Hi!\n"
+        },
+        "message": "Change the greeting on the base"
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "assert": {
+        "fake_request_count": {
+          "test_auditor": 1,
+          "requirement_auditor": 1
+        },
+        "events": {
+          "slug": "greet",
+          "absent": [
+            "audit"
+          ],
+          "subsequence": [
+            "started",
+            "plan",
+            {
+              "event": "rung_started",
+              "rung": "R1"
+            },
+            {
+              "event": "finished",
+              "status": "failed"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "project": {
+    "shaping": {
+      "proof": "witness"
+    },
+    "build": {
+      "ladder": {
+        "max_rungs": 1
+      }
+    }
+  },
+  "notes": "test_auditor 1 would be the shaping audit; the fake counts the shaping test audit under test_auditor, so the Build auditor must add none. The requirement auditor ran once at shaping. v1.2 replacement for ladder-33. Text-only builder replies are progress; completion requires finish alone with {} (§3.6). Shell-recipe builders expose shell, finish, and tool_output (§4.7)."
+}

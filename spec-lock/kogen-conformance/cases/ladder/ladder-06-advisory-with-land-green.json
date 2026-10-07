@@ -1,0 +1,144 @@
+{
+ "id": "ladder-06",
+ "profile": "ladder",
+ "fixture": "kt",
+ "fake": true,
+ "title": "The same with land: green gives failed with the best candidate parked",
+ "spec": [
+  "§3.0",
+  "§3.8.1"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "tools": []
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+   }
+  },
+  {
+   "id": "r1.edit",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "turn": 1,
+    "tools": [
+     "shell"
+    ]
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r1.done",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "turn": 2,
+    "last_item_type": "function_call_output"
+   },
+   "reply": {
+    "text": "Done."
+   }
+  },
+  {
+   "id": "r1.keep",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "turn": 3,
+    "last_user_contains": "Kogen's controller reported this failure."
+   },
+   "reply": {
+    "text": "The greeting already matches the Request."
+   }
+  },
+  {
+   "id": "audit",
+   "expect": {
+    "role": "auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"items\": [{\"id\": \"A2\", \"verdict\": \"over_strict\", \"citation\": \"say Hello, Almir! instead of Hello!\", \"reason\": \"The Request asks for one exclamation mark.\"}]}"
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": {
+    "slug": "greet",
+    "intent_text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n- A2: lib/greet.txt contains the line Hello, Almir!!\n\n## Verify\n- A1: test\n- A2: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+    "test_text": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\nt_A2() { grep -qx 'Hello, Almir!!' lib/greet.txt; }\n",
+    "commit": true
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 1,
+    "stderr": "",
+    "stdout_lines": [
+     "building greet",
+     "~failed greet: [a-z_/]+; best candidate green-with-advisory-tests at refs/kogen/parked/[0-9a-f]{32} \\(Build [0-9a-f]{8}\\)",
+     "queue: done; 1 Build(s), 0 landed, 1 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "refs": {
+     "refs/kogen/parked/{run_id:greet}": true,
+     "refs/heads/main": "{base_sha}"
+    },
+    "git": [
+     {
+      "args": [
+       "cat-file",
+       "-p",
+       "refs/kogen/parked/{run_id:greet}:lib/greet.txt"
+      ],
+      "stdout": "Hello, Almir!\n"
+     }
+    ],
+    "events": {
+     "slug": "greet",
+     "last": {
+      "event": "finished",
+      "status": "failed",
+      "verdict": "green-with-advisory-tests"
+     }
+    }
+   }
+  }
+ ],
+ "project": {
+  "build": {
+   "land": "green",
+   "ladder": {
+    "max_rungs": 1
+   }
+  }
+ }
+}

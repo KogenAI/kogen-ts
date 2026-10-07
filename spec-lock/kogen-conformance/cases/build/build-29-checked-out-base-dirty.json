@@ -1,0 +1,69 @@
+{
+ "id": "build-29",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Checked-out base, dirty: warning on stderr",
+ "spec": [
+  "§3.9.3 step 5",
+  "§1.1"
+ ],
+ "script": [
+  {
+   "include": "r1_happy"
+  }
+ ],
+ "topology": "nonbare",
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "write": {
+    "path": "{origin}/.gitignore",
+    "text": "/build/\n# local edit in the origin worktree\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build {id8:greet}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ],
+    "stderr_regex": "\\Aland: warning: landed [0-9a-f]{40}([0-9a-f]{24})? on main; your checkout at {origin} has local changes and was not updated; run `git reset --keep [0-9a-f]+`, or merge it yourself\n\\Z"
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "contains": [
+      {
+       "event": "landing_warning",
+       "path": "{origin}",
+       "detail": "$any"
+      }
+     ]
+    },
+    "files": {
+     "{origin}/.gitignore": {
+      "text": "/build/\n# local edit in the origin worktree\n"
+     },
+     "{origin}/lib/greet.txt": {
+      "text": "Hello!\n"
+     }
+    }
+   }
+  }
+ ]
+}

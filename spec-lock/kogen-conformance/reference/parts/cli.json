@@ -1,0 +1,34 @@
+{
+ "cli-09": {
+  "class": "ref-bug",
+  "note": "Boolean flags accept =value (APPENDIX: '--json=true' accepted); then the missing project.yaml is a controller term, exit 70"
+ },
+ "cli-13": {
+  "class": "ref-bug",
+  "note": "Slug is validated only after project resolution, so a usage error becomes controller/... exit 70 (APPENDIX: invalid slug handling)"
+ },
+ "cli-21": {
+  "class": "ref-bug",
+  "note": "Invalid slug gives exit 70 or not_found instead of the usage error (APPENDIX)"
+ },
+ "cli-25": {
+  "class": "ref-bug",
+  "note": "status cannot read §2.8 run.json (schema 1: no started_ms/owner_pid/approval_sha256): controller/:invalid_run"
+ },
+ "cli-26": {
+  "class": "ref-bug",
+  "note": "status cannot read §2.8 run.json: controller/:invalid_run"
+ },
+ "cli-28": {
+  "class": "ref-bug",
+  "note": "status cannot read §2.8 run.json: controller/:invalid_run"
+ },
+ "cli-29": {
+  "class": "ref-bug",
+  "note": "No SIGINT handling: no interrupted{reason: sigint} event (APPENDIX)"
+ },
+ "cli-30": {
+  "class": "ref-bug",
+  "note": "A 401 is classed environment/login and the Build failed, not stopped provider/login with exit 4 (APPENDIX: no stopped drain line)"
+ }
+}

@@ -1,0 +1,7 @@
+[install]
+auto = "disable"
+linker = "hoisted"
+
+[test]
+root = "./tests"
+timeout = 30000

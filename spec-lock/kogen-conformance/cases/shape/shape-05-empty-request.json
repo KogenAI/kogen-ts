@@ -1,0 +1,65 @@
+{
+ "id": "shape-05",
+ "profile": "shape",
+ "fixture": "kt",
+ "fake": true,
+ "title": "An empty request gives exit 2",
+ "spec": [
+  "§1.7.1",
+  "§1.5"
+ ],
+ "rows": [
+  {
+   "label": "stdin whitespace",
+   "pre": [],
+   "argv": [
+    "-"
+   ],
+   "stdin": "  \n\n",
+   "rx": "\\Aintent/request_unavailable: stdin: empty\n\\Z"
+  },
+  {
+   "label": "empty file",
+   "pre": [
+    {
+     "write": {
+      "path": "{case}/empty.md",
+      "text": ""
+     }
+    }
+   ],
+   "argv": [
+    "{case}/empty.md"
+   ],
+   "stdin": "",
+   "rx": "\\Aintent/request_unavailable: {case}/empty\\.md: empty\n\\Z"
+  }
+ ],
+ "steps": [
+  "{*row.pre}",
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "shape",
+    "greet",
+    "{*row.argv}"
+   ],
+   "stdin": "{row.stdin}",
+   "expect": {
+    "exit": 2,
+    "stderr": "",
+    "stdout_regex": "{row.rx}"
+   }
+  },
+  {
+   "assert": {
+    "fake_request_count": 0,
+    "files": {
+     ".kogen/intents/greet/intent.md": false
+    }
+   }
+  }
+ ],
+ "notes": "Whether <path> in the message is the argument as given or absolute is not fixed; both are accepted."
+}

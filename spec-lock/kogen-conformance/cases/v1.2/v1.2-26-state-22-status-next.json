@@ -1,0 +1,133 @@
+{
+  "id": "v1.2-26-state-22-status-next",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "title": "v1.2 replacement for state-22: Queue order status includes Next",
+  "spec": [
+    "§1.7.5",
+    "§2.11"
+  ],
+  "steps": [
+    {
+      "intent": {
+        "slug": "bravo",
+        "template": "greet",
+        "replace": {
+          "Greet Almir by name": "Intent bravo"
+        },
+        "commit": true
+      }
+    },
+    {
+      "intent": {
+        "slug": "alpha",
+        "template": "greet",
+        "replace": {
+          "Greet Almir by name": "Intent alpha"
+        },
+        "commit": true
+      }
+    },
+    {
+      "intent": {
+        "slug": "charlie",
+        "template": "greet",
+        "replace": {
+          "Greet Almir by name": "Intent charlie"
+        },
+        "commit": true
+      }
+    },
+    {
+      "approve": "bravo"
+    },
+    {
+      "sleep": 1.1
+    },
+    {
+      "approve": "charlie"
+    },
+    {
+      "sleep": 1.1
+    },
+    {
+      "approve": "alpha"
+    },
+    {
+      "run": [
+        "kogen",
+        "status"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_lines": [
+          "Queue: stopped, 3 waiting; start it with kogen queue start",
+          "Next: bravo (priority 0; no dependencies; ties by approval time and slug)",
+          "Queued:",
+          "~  bravo(  +\\S.*)?",
+          "~  charlie(  +\\S.*)?",
+          "~  alpha(  +\\S.*)?"
+        ]
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "status",
+        "alpha",
+        "--json"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_json": {
+          "slug": "alpha",
+          "status": "$str",
+          "build_id": null,
+          "landed_sha": null
+        }
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "status",
+        "--json"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_jsonl": [
+          {
+            "slug": "alpha",
+            "status": "$str",
+            "build_id": null,
+            "landed_sha": null
+          },
+          {
+            "slug": "bravo",
+            "status": "$str",
+            "build_id": null,
+            "landed_sha": null
+          },
+          {
+            "slug": "charlie",
+            "status": "$str",
+            "build_id": null,
+            "landed_sha": null
+          }
+        ]
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "status",
+        "charlie"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout": "charlie: queued, 2 of 3\n"
+      }
+    }
+  ],
+  "notes": "Status includes the queue head as Next, using the priority and dependency format required by §1.7.5 and §2.11."
+}

@@ -1,0 +1,10 @@
+{
+  "spec": "spec/queue.qnt",
+  "module": "queue",
+  "init": "init",
+  "fire": "fire",
+  "invariant": "invariant",
+  "obs_var": "obs",
+  "ev_var": "ev",
+  "coverage": ["line", "phase", "exit"]
+}

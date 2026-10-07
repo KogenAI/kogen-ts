@@ -1,0 +1,1 @@
+{"name": "07-mutating-no-output-refuses", "source": "hand", "sets": [], "events": [{"tag": "Mutate", "value": {"payload": "candidate-edit"}}], "obs": [{"entryCount": 0, "last": "ok", "present": false, "reused": false, "setupRuns": 0, "work": ""}, {"entryCount": 0, "last": "no_output", "present": false, "reused": false, "setupRuns": 0, "work": ""}]}

@@ -1,0 +1,17 @@
+[
+ {
+  "id": "plan",
+  "expect": {"turn": 1},
+  "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: Hello.greet/0 returns Hello, Almir!\n\n## Technical approach\nUpdate Hello.greet/0.\n\n## Implementation steps\n1. Change the greeting returned by Hello.greet/0.\n"
+  }
+ },
+ {
+  "id": "edit",
+  "reply": {"calls": [{"name": "shell", "arguments": {"cmd": "printf 'defmodule Hello do\\n  def greet, do: ~s(Hello, Almir!)\\nend\\n' > lib/hello.ex"}}]}
+ },
+ {
+  "id": "finish",
+  "reply": {"calls": [{"name": "finish", "arguments": {}}]}
+ }
+]

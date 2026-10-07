@@ -1,0 +1,66 @@
+{
+ "id": "build-40",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "The acceptance runner unavailable on base: stopped, exit 3",
+ "spec": [
+  "§3.4 B5",
+  "§2.4.1"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+   }
+  }
+ ],
+ "project": {
+  "acceptance": {
+   "run": [
+    "kogen-conformance-missing-runner",
+    "{path}"
+   ]
+  }
+ },
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 3,
+    "stderr": "",
+    "stdout_lines": [
+     "building greet",
+     "stopped greet: environment/tool_missing; it stays queued (Build {id8:greet})",
+     "~queue: stopped because greet hit an environment error; 1 Build\\(s\\), 0 landed, 1 not"
+    ]
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "greet"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout": "greet: queued, 1 of 1\n"
+   }
+  }
+ ]
+}

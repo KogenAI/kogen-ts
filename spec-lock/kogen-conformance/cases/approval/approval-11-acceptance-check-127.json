@@ -1,0 +1,50 @@
+{
+ "id": "approval-11",
+ "profile": "approval",
+ "fixture": "kt",
+ "title": "An acceptance check exiting 127 gives exit 3",
+ "spec": [
+  "§3.3"
+ ],
+ "project": {
+  "acceptance_checks": [
+   {
+    "name": "missing",
+    "argv": [
+     "sh",
+     "checks/missing.sh",
+     "{path}"
+    ],
+    "timeout_ms": 60000
+   }
+  ]
+ },
+ "fixture_files": {
+  "checks/missing.sh": "#!/bin/sh\necho 'kt: the checker is not installed'\nexit 127\n"
+ },
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 3,
+    "stderr": "",
+    "stdout_regex": "\\Aenvironment/[a-z_]+: "
+   }
+  },
+  {
+   "assert": {
+    "refs": {
+     "refs/kogen/intents/greet": false
+    }
+   }
+  }
+ ]
+}

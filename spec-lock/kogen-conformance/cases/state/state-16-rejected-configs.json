@@ -1,0 +1,45 @@
+{
+ "id": "state-16",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "Rejected configs: env with KOGEN_*, a scalar domain, duplicate check names",
+ "spec": [
+  "§2.3"
+ ],
+ "rows": [
+  {
+   "label": "env KOGEN_SANDBOXED",
+   "patch": "env:\n  KOGEN_SANDBOXED: \"1\"\n"
+  },
+  {
+   "label": "scalar domain",
+   "patch": "domains:\n  app: lib\n"
+  },
+  {
+   "label": "duplicate check",
+   "patch": "checks:\n  - name: lint\n    argv: [sh, checks/lint.sh]\n    timeout_ms: 1000\n  - name: lint\n    argv: [sh, checks/unit.sh]\n    timeout_ms: 1000\n"
+  }
+ ],
+ "steps": [
+  {
+   "write": {
+    "path": ".kogen/project.yaml",
+    "text": "name: kt\nacceptance:\n  adapter: command\n  ext: .t.sh\n  candidate_dir: test/acceptance\n  run: [sh, run-acceptance.sh, \"{path}\"]\n{row.patch}"
+   }
+  },
+  {
+   "sh": "grep -q '^checks:' .kogen/project.yaml || printf 'checks: []\\n' >> .kogen/project.yaml"
+  },
+  {
+   "run": [
+    "kogen",
+    "status"
+   ],
+   "expect": {
+    "exit": 3,
+    "stderr": "",
+    "stdout_regex": "\\Aenvironment/project_config_invalid: {checkout}/\\.kogen/project\\.yaml\n(  .+\n)+\\Z"
+   }
+  }
+ ]
+}

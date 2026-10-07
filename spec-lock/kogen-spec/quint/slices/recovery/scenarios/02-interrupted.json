@@ -1,0 +1,12 @@
+{
+  "name": "02-interrupted",
+  "about": "A dead owner whose last event is interrupted fails as interrupted and leaves the queue until re-approved. On-base still wins over interrupted.",
+  "steps": [
+    {"do": ["Put", {"id": "r1", "status": "running", "alive": false, "onBase": false, "lastEvent": "interrupted", "incoming": true, "queued": false, "claim": true, "reason": ""}]},
+    {"do": ["Recover"], "expect": {"line": "interrupted", "claim": "", "runs": {"r1": {"status": "failed", "reason": "interrupted", "queued": false, "incoming": false}}}},
+    {"do": ["Reapprove", {"id": "r1"}], "expect": {"line": "reapproved", "runs": {"r1": {"status": "approved", "queued": true, "reason": ""}}}},
+    {"do": ["Init"]},
+    {"do": ["Put", {"id": "r1", "status": "running", "alive": false, "onBase": true, "lastEvent": "interrupted", "incoming": false, "queued": false, "claim": true, "reason": ""}]},
+    {"do": ["Recover"], "expect": {"line": "reconciled", "runs": {"r1": {"status": "landed", "reason": "reconciled"}}}}
+  ]
+}

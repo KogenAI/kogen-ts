@@ -1,0 +1,9 @@
+{
+  "name": "05-stopped-and-terminal-runs",
+  "about": "A stopped run leaves its approval queued; current-approval failed and parked runs render in their own sections.",
+  "steps": [
+    {"do":["Raw",{"slug":"alpha","trailer":false,"claimed":false,"runStatus":"stopped","event":"finished","alive":false,"approved":true,"reason":"provider","same":true,"blocks":"","priority":1,"at":1}]},
+    {"do":["Raw",{"slug":"bravo","trailer":false,"claimed":false,"runStatus":"failed","event":"finished","alive":false,"approved":true,"reason":"repair_cap","same":true,"blocks":"","priority":0,"at":2}]},
+    {"do":["Raw",{"slug":"charlie","trailer":false,"claimed":false,"runStatus":"parked","event":"finished","alive":false,"approved":true,"reason":"base_moved","same":true,"blocks":"","priority":0,"at":3}],"expect":{"alpha":"approved","bravo":"failed","charlie":"parked","queue":["alpha"],"sections":["Queued","Failed","Parked"]}}
+  ]
+}

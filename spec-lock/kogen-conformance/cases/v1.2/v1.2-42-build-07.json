@@ -1,0 +1,167 @@
+{
+  "id": "v1.2-42-build-07",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for build-07: unchanged ends the rung",
+  "spec": [
+    "§3.5",
+    "§3.6",
+    "§4.7",
+    "§3.8.2",
+    "§4.2"
+  ],
+  "script": [
+    {
+      "id": "plan",
+      "expect": {
+        "role": "planner",
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "claim1",
+      "expect": {
+        "role": "builder",
+        "turn": 1,
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "claim2",
+      "expect": {
+        "role": "builder",
+        "turn": 2,
+        "input_contains": "Greet Almir by name",
+        "last_output_contains": "Kogen found no changed files"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "audit",
+      "expect": {
+        "role": "test_auditor",
+        "turn": 1,
+        "tools": [
+          "finish",
+          "shell",
+          "tool_output"
+        ]
+      },
+      "reply": {
+        "text": "{\"items\":[{\"id\":\"A1\",\"verdict\":\"valid\",\"reason\":\"The test follows the Request.\"}]}"
+      }
+    },
+    {
+      "id": "claim3",
+      "expect": {
+        "role": "builder",
+        "turn": 3,
+        "input_contains": "Greet Almir by name",
+        "last_user_contains": "Kogen's controller reported this failure."
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    }
+  ],
+  "project": {
+    "build": {
+      "ladder": {
+        "max_rungs": 1
+      }
+    }
+  },
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 1,
+        "stderr": "",
+        "stdout_lines": [
+          "building greet",
+          "~failed greet: \\S+; best candidate (green|green-with-advisory-tests|unverified|none) at refs/kogen/parked/{run_id:greet} \\(Build {id8:greet}\\)",
+          "queue: done; 1 Build(s), 0 landed, 1 not"
+        ]
+      }
+    },
+    {
+      "assert": {
+        "events": {
+          "slug": "greet",
+          "subsequence": [
+            {
+              "event": "verification",
+              "result": "red"
+            },
+            {
+              "event": "audit",
+              "items": [
+                {
+                  "id": "A1",
+                  "verdict": "valid",
+                  "reason": "$any"
+                }
+              ]
+            },
+            {
+              "event": "acceptance_upheld",
+              "id": "A1",
+              "verdict": "valid"
+            },
+            {
+              "event": "repair"
+            },
+            {
+              "event": "rung_finished",
+              "rung": "R1",
+              "reason": "unchanged"
+            },
+            {
+              "event": "finished",
+              "status": "failed"
+            }
+          ],
+          "count": {
+            "repair": 1,
+            "audit": 1
+          }
+        }
+      }
+    }
+  ],
+  "notes": "v1.2 replacement for build-07. Text-only builder replies are progress; completion requires finish alone with {} (§3.6). Shell-recipe builders expose shell, finish, and tool_output (§4.7). The red acceptance-only rung receives its required test-auditor response before repair (§3.8.2); tool-less Build roles retain the shared schemas (§4.2). Text-only builder replies are progress; completion requires finish alone with {} (§3.6)."
+}

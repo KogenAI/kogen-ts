@@ -1,0 +1,6 @@
+#!/bin/sh
+# Logged quint wrapper: every invocation is appended to $QT_LOG with exit code and output.
+R="$(cd "$(dirname "$0")" && pwd)"
+out=$("$R/node_modules/.bin/quint" "$@" 2>&1); rc=$?
+printf '%s\t%s\texit=%s\n%s\n---\n' "$(date +%H:%M:%S)" "quint $*" "$rc" "$out" >> "${QT_LOG:-/dev/null}"
+printf '%s\n' "$out"; exit $rc

@@ -1,0 +1,125 @@
+{
+ "id": "shape-09",
+ "profile": "shape",
+ "fixture": "kt",
+ "fake": true,
+ "title": "A write outside scope returns an error result",
+ "spec": [
+  "§4.7",
+  "§3.2.1"
+ ],
+ "script": [
+  {
+   "id": "w0",
+   "expect": {
+    "role": "shaper",
+    "turn": 1
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "write",
+      "arguments": {
+       "path": "lib/greet.txt",
+       "content": "Hello, Almir!\n"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "w1",
+   "expect": {
+    "role": "shaper",
+    "turn": 2,
+    "last_output_contains": "ERROR: Write target is outside the shaper's two-file scope."
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/intents/greet/intent.md",
+       "content": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: replace the single line in lib/greet.txt with the new greeting text.\n"
+      }
+     },
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/acceptance/greet.t.sh",
+       "content": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "done",
+   "expect": {
+    "role": "shaper",
+    "turn": 3
+   },
+   "reply": {
+    "text": "Both files are written."
+   }
+  },
+  {
+   "id": "ledger",
+   "expect": {
+    "role": "requirement_auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"rows\": [{\"constraint\": \"The greeting in lib/greet.txt says Hello, Almir!\", \"maps_to\": \"A1\"}]}"
+   }
+  },
+  {
+   "id": "audit",
+   "expect": {
+    "role": "test_auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test checks the requested line.\"}]}"
+   }
+  }
+ ],
+ "steps": [
+  {
+   "write": {
+    "path": "{case}/request.md",
+    "text": "Make the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "shape",
+    "greet",
+    "{case}/request.md"
+   ],
+   "expect": {
+    "exit": 0
+   }
+  },
+  {
+   "assert": {
+    "files": {
+     "lib/greet.txt": {
+      "text": "Hello!\n"
+     }
+    },
+    "fake_requests": [
+     {
+      "select": {
+       "role": "shaper",
+       "turn": 2
+      },
+      "input_regex": "(?m)^ERROR: Write target is outside the shaper's two-file scope\\. Allowed paths: \\S*\\.kogen/intents/greet/intent\\.md, \\S*\\.kogen/acceptance/greet\\.t\\.sh\\.$"
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,72 @@
+{
+ "id": "format-12",
+ "profile": "format",
+ "title": "The status --watch frame separator",
+ "spec": [
+  "§1.7.5"
+ ],
+ "fixture": "kt",
+ "fake": true,
+ "script": [
+  {
+   "include": "r1_happy",
+   "override": {
+    "plan": {
+     "first_byte_ms": 40000
+    },
+    "edit": {
+     "first_byte_ms": 40000
+    },
+    "done": {
+     "first_byte_ms": 40000
+    }
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "background": "q"
+  },
+  {
+   "wait_until": {
+    "fake_requests": 1,
+    "timeout_s": 60
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "--watch"
+   ],
+   "timeout": 120,
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_regex": "\\A(?:[^\\n]+\\n)+(?:\\n(?:[^\\n]+\\n)+)+\\Z",
+    "watch_frames": {
+     "min": 2
+    }
+   }
+  },
+  {
+   "wait": {
+    "name": "q",
+    "expect": {
+     "exit": 0
+    }
+   }
+  }
+ ]
+}

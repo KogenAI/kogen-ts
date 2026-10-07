@@ -1,0 +1,12 @@
+{
+  "name": "04-stop-after-current",
+  "about": "queue stop does not abort the current Build. The next approval stays queued.",
+  "steps": [
+    {"do": ["Enqueue", {"slug": "alpha", "time": 1, "priority": 0}]},
+    {"do": ["Enqueue", {"slug": "bravo", "time": 2, "priority": 0}]},
+    {"do": ["Start"], "expect": {"current": "alpha"}},
+    {"do": ["Halt"], "expect": {"line": "stopping", "phase": "building", "current": "alpha", "stop": true}},
+    {"do": ["Outcome", {"kind": "landed"}], "expect": {"line": "stopped_on_request", "exit": 0, "held": false, "queue": ["bravo"]}},
+    {"do": ["Halt"], "expect": {"line": "not_running"}}
+  ]
+}

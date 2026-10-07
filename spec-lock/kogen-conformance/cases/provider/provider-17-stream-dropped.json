@@ -1,0 +1,68 @@
+{
+ "id": "provider-17",
+ "profile": "provider",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Stream dropped mid-way",
+ "spec": [
+  "§4.3",
+  "§4.4"
+ ],
+ "script": [
+  {
+   "id": "drop",
+   "expect": {
+    "role": "planner"
+   },
+   "drop_after_events": 1,
+   "reply": {
+    "text": "Difficulty: easy\n"
+   }
+  },
+  {
+   "include": "r1_happy"
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "contains": [
+      {
+       "event": "provider_retry",
+       "stage": "$str",
+       "reason": "~(provider/)?transport",
+       "delay_ms": {
+        "$ge": 1000,
+        "$le": 2000
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "notes": "Settled (v1.1): a stream cut before response.completed after the connection closes is a transport failure (reference behaviour)."
+}

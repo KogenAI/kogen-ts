@@ -1,0 +1,14 @@
+{
+ "spec": "spec/approve.qnt",
+ "module": "approve",
+ "init": "init",
+ "fire": "fire",
+ "invariant": "invariant",
+ "obs_var": "obs",
+ "ev_var": "ev",
+ "coverage": [
+  "last",
+  "exit",
+  "approvals.*.n"
+ ]
+}

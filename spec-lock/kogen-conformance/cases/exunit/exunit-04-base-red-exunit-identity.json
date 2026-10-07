@@ -1,0 +1,142 @@
+{
+ "id": "exunit-04",
+ "profile": "exunit",
+ "fixture": "exunit-hello",
+ "fake": true,
+ "needs": [
+  "elixir"
+ ],
+ "acceptance_ext": "_test.exs",
+ "title": "Base-red ExUnit identity",
+ "spec": [
+  "§3.7.2",
+  "§2.4.4"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "tools": []
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: Hello.greet/0 returns Hello, Almir!\n\n## Technical approach\nChange the return value.\n\n## Implementation steps\n1. Edit lib/hello.ex.\n"
+   }
+  },
+  {
+   "id": "edit",
+   "expect": {
+    "role": "builder",
+    "turn": 1,
+    "tools": [
+     "shell"
+    ]
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'defmodule Hello do\\n  def greet, do: \"Hello, Almir!\"\\nend\\n' > lib/hello.ex"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "done",
+   "expect": {
+    "role": "builder",
+    "turn": 2
+   },
+   "reply": {
+    "text": "Done."
+   }
+  }
+ ],
+ "fixture_files": {
+  "test/hello_test.exs": "defmodule HelloTest do\n  use ExUnit.Case\n\n  test \"legacy is broken\" do\n    assert Hello.greet() == \"Hi!\"\n  end\nend\n",
+  ".kogen/project.yaml": "name: hello\nchecks:\n  - name: compile\n    argv: [mix, compile, --warnings-as-errors]\n    timeout_ms: 300000\n  - name: unit\n    argv: [mix, test, test/hello_test.exs]\n    timeout_ms: 300000\nsetup:\n  - name: compile\n    argv: [mix, compile]\n    timeout_ms: 300000\nsetup_outputs: [_build]\ndomains:\n  app: [lib]\n"
+ },
+ "notes": "The unit check fails on the base with the ExUnit test `legacy is broken`; after the change the same identity fails, so the check is excused and the Build lands.",
+ "steps": [
+  {
+   "intent": {
+    "slug": "greet",
+    "template": "exunit-greet"
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "assert": {
+    "git": [
+     {
+      "args": [
+       "cat-file",
+       "-p",
+       "refs/kogen/intents/greet:.kogen/intents/greet/approval.json"
+      ],
+      "json": {
+       "check_baseline": {
+        "$contains": [
+         {
+          "name": "unit",
+          "status": "red",
+          "findings": {
+           "$contains": [
+            {
+             "path": "test/hello_test.exs",
+             "symbol": "~.*legacy is broken.*"
+            }
+           ]
+          }
+         }
+        ]
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "timeout": 600,
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "contains": [
+      {
+       "event": "verification",
+       "result": "green",
+       "checks": {
+        "$contains": [
+         {
+          "name": "unit",
+          "status": "red",
+          "excused": true
+         }
+        ]
+       }
+      }
+     ]
+    }
+   }
+  }
+ ]
+}

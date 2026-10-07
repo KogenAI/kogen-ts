@@ -1,0 +1,163 @@
+{
+ "id": "state-11",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "run.json and events.jsonl schemas; every event has ts; reasons are strings",
+ "spec": [
+  "§2.8"
+ ],
+ "fake": true,
+ "script": [
+  {
+   "include": "r1_happy"
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0
+   }
+  },
+  {
+   "assert": {
+    "run_json": {
+     "slug": "greet",
+     "match": {
+      "$exact": true,
+      "schema": 2,
+      "run_id": "$hex32",
+      "slug": "greet",
+      "approval_sha256": "{hash64:greet}",
+      "approval_commit": "$sha",
+      "target_branch": "main",
+      "status": "landed",
+      "landing": {
+       "approval_commit": "$sha",
+       "run_id": "$hex32",
+       "expected_parent": "$sha",
+       "final_tree": "$sha",
+       "candidate_commit": "$sha"
+      },
+      "owner_pid": "$int",
+      "owner_started_ms": "$int",
+      "started_ms": "$int"
+     }
+    },
+    "events": {
+     "slug": "greet",
+     "each": {
+      "event": "$str",
+      "ts": "$int"
+     },
+     "contains": [
+      {
+       "event": "started",
+       "approval_commit": "$sha",
+       "approved_by": "Kogen Test <test@kogen.invalid>",
+       "base_sha": "$sha",
+       "recipe": "ladder",
+       "max_rungs": 3,
+       "roles": "$obj",
+       "land": "green-or-advisory",
+       "budget_ms": 3600000,
+       "credential_source": "$str",
+       "credential_label": "$str",
+       "sandbox": {
+        "$any_of": [
+         "confined",
+         "unconfined",
+         "off"
+        ]
+       }
+      },
+      {
+       "event": "plan",
+       "difficulty": "easy",
+       "wall_ms": "$int"
+      },
+      {
+       "event": "rung_started",
+       "rung": "R1",
+       "model": "gpt-6-luna",
+       "effort": "max",
+       "entered_because": "$any"
+      },
+      {
+       "event": "model_stage",
+       "stage": "$str",
+       "model": "$str",
+       "effort": "$str",
+       "wall_ms": "$int",
+       "tokens": {
+        "input": "$int",
+        "cached_input": "$int",
+        "cache_write": "$int",
+        "output": "$int",
+        "reasoning": "$int"
+       }
+      },
+      {
+       "event": "verification",
+       "rung": "R1",
+       "tree": "$sha",
+       "result": "green",
+       "checks": "$list",
+       "acceptance": [
+        {
+         "id": "A1",
+         "status": "pass",
+         "demoted": false
+        }
+       ],
+       "count": 0
+      },
+      {
+       "event": "rung_finished",
+       "rung": "R1",
+       "reason": "green",
+       "verdict": "green",
+       "diff_lines": "$int",
+       "candidate_ref": "$any"
+      },
+      {
+       "event": "commit_result",
+       "commit": "$sha",
+       "tree": "$sha"
+      },
+      {
+       "event": "landing_prepared",
+       "landing": "$obj"
+      },
+      {
+       "event": "finished",
+       "status": "landed",
+       "reason": "$str_or_null",
+       "rung": "R1",
+       "verdict": "green",
+       "advisory_items": []
+      }
+     ],
+     "last": {
+      "event": "finished"
+     }
+    },
+    "files": {
+     "{run_dir:greet}/run.json": {
+      "regex": "\\A\\{[^\\n]*\\}\\n?\\Z"
+     }
+    }
+   }
+  }
+ ]
+}

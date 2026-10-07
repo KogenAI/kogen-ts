@@ -1,0 +1,9 @@
+{
+  "name": "05-queue-tie-by-slug",
+  "about": "Equal approval times are ordered by slug.",
+  "steps": [
+    {"do": ["Approve", {"slug": "bravo", "time": 1}]},
+    {"do": ["Approve", {"slug": "alpha", "time": 1}], "expect": {"queue": ["alpha", "bravo"]}},
+    {"do": ["Start", "r1"], "expect": {"runs": {"r1": {"slug": "alpha"}}}}
+  ]
+}

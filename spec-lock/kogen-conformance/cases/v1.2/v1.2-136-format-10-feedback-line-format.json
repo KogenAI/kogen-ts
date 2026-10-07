@@ -1,0 +1,57 @@
+{
+  "id": "v1.2-136-format-10",
+  "profile": "v1.2",
+  "title": "v1.2 replacement for format-10: feedback line format",
+  "spec": [
+    "§3.7.3",
+    "§3.6",
+    "§4.2",
+    "§4.7"
+  ],
+  "fixture": "kt",
+  "fake": true,
+  "script": [
+    {
+      "include": "r1_lint_repair_v12",
+      "prefix": "r1_lint_repair"
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "assert": {
+        "fake_requests": [
+          {
+            "select": {
+              "step": "r1_lint_repair.fix"
+            },
+            "input_contains": "Kogen's controller reported this failure. Continue the same session and fix it:\n\n",
+            "input_regex": [
+              "^lib/note\\.txt:1:1: error: \\[lint/todo\\] note\\.txt: TODO found$",
+              "^raw log: \\S+$",
+              "^raw tail \\(first failed step lint\\):$",
+              "^gate: 1 errors, 0 warnings \\([^)]*\\); checks lint=red, unit=green; acceptance 1/1$"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "notes": "The shared v1.1 script expected an empty tool schema list for the planner and treated builder text as completion. v1.2 uses the shared schemas and finish alone with {} (§3.6, §4.2, §4.7)."
+}

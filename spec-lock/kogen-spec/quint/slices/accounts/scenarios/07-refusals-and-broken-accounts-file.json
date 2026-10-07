@@ -1,0 +1,14 @@
+{
+  "name": "07-refusals-and-broken-accounts-file",
+  "about": "Use validates provider and label, requires a saved login and an existing project; malformed accounts storage is an environment error.",
+  "steps": [
+    {"do":["Seed",{"provider":"chatgpt","label":"work","present":true,"saved":true,"signedIn":true,"email":"w@example.test","expires":0,"hasExpiry":false,"notice":false,"remoteRevoked":false}]},
+    {"do":["Use",{"provider":"chatgpt","label":"x_y","project":"","projectExists":true}],"expect":{"last":"no_saved_login","exit":4}},
+    {"do":["Use",{"provider":"chatgpt","label":"bad label","project":"","projectExists":true}],"expect":{"last":"invalid_label","exit":2}},
+    {"do":["Use",{"provider":"other","label":"work","project":"","projectExists":true}],"expect":{"last":"unknown_provider","exit":2}},
+    {"do":["Use",{"provider":"chatgpt","label":"work","project":"bravo","projectExists":false}],"expect":{"last":"project_unavailable","exit":3}},
+    {"do":["Corrupt",{"broken":true}]},
+    {"do":["Use",{"provider":"chatgpt","label":"work","project":"","projectExists":true}],"expect":{"last":"invalid_accounts_file","exit":3}},
+    {"do":["Resolve",{"project":""}],"expect":{"last":"invalid_accounts_file","exit":3}}
+  ]
+}

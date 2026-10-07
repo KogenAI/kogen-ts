@@ -1,0 +1,13 @@
+{
+  "name": "05-witness-and-b0",
+  "about": "A green witness skips the ladder and lands. Invalid, wrong-branch, and held-claim approvals stop or skip at B0 with no claim.",
+  "steps": [
+    {"do": ["Begin", {"valid": false, "branchOk": true, "claimFree": true, "witness": false, "hard": false, "maxR": 3}], "expect": {"status": "stopped", "reason": "controller/approval_invalid", "exit": 70, "claim": false, "journal": []}},
+    {"do": ["Begin", {"valid": true, "branchOk": false, "claimFree": true, "witness": false, "hard": false, "maxR": 3}], "expect": {"status": "skipped", "exit": 0, "claim": false}},
+    {"do": ["Begin", {"valid": true, "branchOk": true, "claimFree": false, "witness": true, "hard": true, "maxR": 3}], "expect": {"status": "stopped", "reason": "environment/build_already_claimed", "exit": 3, "claim": false}},
+    {"do": ["Begin", {"valid": true, "branchOk": true, "claimFree": true, "witness": true, "hard": true, "maxR": 3}], "expect": {"phase": "b1", "claim": true}},
+    {"do": ["Probe", {"confined": true}]},
+    {"do": ["Witness", {"green": true}], "expect": {"phase": "b9", "planned": false, "landable": true}},
+    {"do": ["Land", {"how": "landed"}], "expect": {"status": "landed"}}
+  ]
+}

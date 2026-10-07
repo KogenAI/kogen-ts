@@ -1,0 +1,21 @@
+{
+  "name": "05-remove",
+  "about": "Drafts and landed Intents remove without --force. Approved and failed need --force. An active Build blocks removal, while shaping and approval still follow their production commands.",
+  "steps": [
+    {"do": ["Shape", {"slug": "alpha", "result": "valid"}]},
+    {"do": ["Remove", {"slug": "alpha", "force": false}], "expect": {"last": "ok", "did": "removed", "life": {}, "refs": {}}},
+    {"do": ["Shape", {"slug": "alpha", "result": "valid"}]},
+    {"do": ["Approve", {"slug": "alpha", "mode": "commit", "hash": "abcd1234", "prefixOk": true, "race": "none"}]},
+    {"do": ["Remove", {"slug": "alpha", "force": false}], "expect": {"last": "intent/remove_requires_force", "exit": 2, "life": {"alpha": "approved"}}},
+    {"do": ["Remove", {"slug": "alpha", "force": true}], "expect": {"did": "removed", "life": {}, "refs": {}}},
+    {"do": ["Shape", {"slug": "bravo", "result": "valid"}]},
+    {"do": ["Approve", {"slug": "bravo", "mode": "commit", "hash": "abcd1234", "prefixOk": true, "race": "none"}]},
+    {"do": ["Adopt", {"slug": "bravo", "status": "building"}]},
+    {"do": ["Shape", {"slug": "bravo", "result": "valid"}], "expect": {"did": "shaped", "life": {"bravo": "building"}, "refs": {"bravo": {"n": 1, "hash": "abcd1234"}}}},
+    {"do": ["Approve", {"slug": "bravo", "mode": "card", "hash": "abcd1234", "prefixOk": true, "race": "none"}], "expect": {"last": "needs_decision", "did": "card", "life": {"bravo": "building"}, "refs": {"bravo": {"n": 1, "hash": "abcd1234"}}}},
+    {"do": ["Remove", {"slug": "bravo", "force": true}], "expect": {"last": "intent/remove_blocked", "exit": 2, "life": {"bravo": "building"}}},
+    {"do": ["Adopt", {"slug": "bravo", "status": "failed"}]},
+    {"do": ["Remove", {"slug": "bravo", "force": false}], "expect": {"last": "intent/remove_requires_force"}},
+    {"do": ["Remove", {"slug": "bravo", "force": true}], "expect": {"did": "removed", "refs": {}}}
+  ]
+}

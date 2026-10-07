@@ -1,0 +1,312 @@
+{
+  "id": "v1.2-128-format-05",
+  "profile": "v1.2",
+  "title": "v1.2 replacement for format-05: strict YAML error classes",
+  "spec": [
+    "§2.6",
+    "data/yaml-errors.json"
+  ],
+  "fixture": "kt",
+  "notes": "The original size row's tr invocation produced no padding, leaving a 20-byte file. The replacement appends valid YAML comment bytes so the file exceeds 1 MiB and exercises the specified size rejection.",
+  "rows": [
+    {
+      "label": "size",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  (line [0-9]+: )?document\\ exceeds\\ the\\ maximum\\ size\\ of\\ 1048576\\ bytes\n\\Z",
+      "pre": [
+        {
+          "sh": "printf 'name: kt\\nchecks: []\\n' > .kogen/project.yaml && {python} -c 'open(\".kogen/project.yaml\", \"ab\").write(b\"#\" * 1048600)'"
+        }
+      ]
+    },
+    {
+      "label": "bom",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 1: leading\\ UTF\\-8\\ BOM\\ is\\ not\\ allowed\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": "77u/bmFtZToga3QKY2hlY2tzOiBbXQo="
+          }
+        }
+      ]
+    },
+    {
+      "label": "utf8",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: document\\ is\\ not\\ valid\\ UTF\\-8\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpiYXNlOiD//go="
+          }
+        }
+      ]
+    },
+    {
+      "label": "tab",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: tab\\ character:\\ indent\\ with\\ spaces\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": "bmFtZToga3QKY2hlY2tzOgoJLSBuYW1lOiB4Cg=="
+          }
+        }
+      ]
+    },
+    {
+      "label": "directive",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 1: directives\\ and\\ document\\ markers\\ are\\ not\\ allowed\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": "JVlBTUwgMS4yCm5hbWU6IGt0Cg=="
+          }
+        }
+      ]
+    },
+    {
+      "label": "block-scalar",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: anchors, aliases, (tags, and block scalars|and tags) are not allowed\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpiYXNlOiB8CiAgbWFpbgo="
+          }
+        }
+      ]
+    },
+    {
+      "label": "anchor",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: anchors, aliases, (tags, and block scalars|and tags) are not allowed\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpiYXNlOiAmYiBtYWluCg=="
+          }
+        }
+      ]
+    },
+    {
+      "label": "depth",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: maximum\\ nesting\\ depth\\ of\\ 64\\ collections\\ exceeded\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": "bmFtZToga3QKY2hlY2tzOiBbXQp4OiBbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXQo="
+          }
+        }
+      ]
+    },
+    {
+      "label": "merge",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: YAML\\ merge\\ key\\ `<<`\\ is\\ not\\ allowed\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": "bmFtZToga3QKY2hlY2tzOiBbXQo8PDoge2E6IGJ9Cg=="
+          }
+        }
+      ]
+    },
+    {
+      "label": "unicode-escape",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 1: Unicode\\ escape\\ \\\\u\\ is\\ not\\ supported\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": "bmFtZTogImtcdTAwNzQiCmNoZWNrczogW10K"
+          }
+        }
+      ]
+    },
+    {
+      "label": "bad-escape",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 1: unsupported\\ escape\\ \\\\x\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": "bmFtZTogImtceCIKY2hlY2tzOiBbXQo="
+          }
+        }
+      ]
+    },
+    {
+      "label": "unterminated-quote",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: unterminated\\ quoted\\ string\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpiYXNlOiAibWFpbgo="
+          }
+        }
+      ]
+    },
+    {
+      "label": "after-quote",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: text\\ after\\ closing\\ quote\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpiYXNlOiAibWFpbiIgeAo="
+          }
+        }
+      ]
+    },
+    {
+      "label": "flow-brackets",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: quote \"[^\"]*\": brackets inside a flow collection\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpwcm90ZWN0ZWRfcGF0aHM6IFthWzFdXQo="
+          }
+        }
+      ]
+    },
+    {
+      "label": "flow-malformed",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: malformed flow collection near .+\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpwcm90ZWN0ZWRfcGF0aHM6IFthLCwgYl0K"
+          }
+        }
+      ]
+    },
+    {
+      "label": "flow-unterminated",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: unterminated\\ flow\\ collection\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpwcm90ZWN0ZWRfcGF0aHM6IFthLCBi"
+          }
+        }
+      ]
+    },
+    {
+      "label": "flow-trailing",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: trailing\\ text\\ after\\ flow\\ collection\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpwcm90ZWN0ZWRfcGF0aHM6IFthXSBiCg=="
+          }
+        }
+      ]
+    },
+    {
+      "label": "colon-space",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: unquoted\\ `:\\ `\\ inside\\ a\\ value:\\ \"a:\\ b\"\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpiYXNlOiBhOiBiCg=="
+          }
+        }
+      ]
+    },
+    {
+      "label": "list-in-value",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: list\\ item\\ in\\ a\\ value\\ position\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpiYXNlOiAtIG1haW4K"
+          }
+        }
+      ]
+    },
+    {
+      "label": "indentation",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 2: unexpected\\ indentation\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": "bmFtZToga3QKICBjaGVja3M6IFtdCg=="
+          }
+        }
+      ]
+    },
+    {
+      "label": "duplicate",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: duplicate\\ key\\ \"name\"\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpuYW1lOiBrdAo="
+          }
+        }
+      ]
+    },
+    {
+      "label": "key-no-value",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: mapping\\ key\\ has\\ no\\ value\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpiYXNlOgo="
+          }
+        }
+      ]
+    },
+    {
+      "label": "item-no-value",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 4: list\\ item\\ has\\ no\\ value\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpwcm90ZWN0ZWRfcGF0aHM6CiAgLQo="
+          }
+        }
+      ]
+    },
+    {
+      "label": "empty",
+      "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  (line [0-9]+: )?empty\\ document\n\\Z",
+      "pre": [
+        {
+          "write": {
+            "path": ".kogen/project.yaml",
+            "b64": ""
+          }
+        }
+      ]
+    }
+  ],
+  "steps": [
+    "{*row.pre}",
+    {
+      "run": [
+        "kogen",
+        "status"
+      ],
+      "expect": {
+        "exit": 3,
+        "stderr": "",
+        "stdout_regex": "{row.line_rx}"
+      }
+    }
+  ]
+}

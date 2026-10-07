@@ -1,0 +1,65 @@
+{
+ "id": "cli-29",
+ "profile": "cli",
+ "title": "SIGINT exits 130",
+ "spec": [
+  "§1.8",
+  "§1.5"
+ ],
+ "fixture": "kt",
+ "fake": true,
+ "allow_remaining": true,
+ "script": [
+  {
+   "id": "stall",
+   "expect": {
+    "role": "planner"
+   },
+   "repeat": "always",
+   "first_byte_ms": 900000,
+   "reply": {
+    "text": "Difficulty: easy\n"
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "signal": {
+    "sig": "INT",
+    "when": {
+     "fake_requests": 1,
+     "timeout_s": 60
+    }
+   },
+   "expect": {
+    "exit": 130,
+    "stdout": "building greet\n",
+    "stderr": ""
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "contains": [
+      {
+       "event": "interrupted",
+       "reason": "sigint"
+      }
+     ]
+    }
+   }
+  }
+ ]
+}

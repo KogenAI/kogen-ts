@@ -1,0 +1,110 @@
+{
+ "id": "state-15",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "Machine config: the project's recipe roles win",
+ "spec": [
+  "§2.3"
+ ],
+ "fake": true,
+ "project": {
+  "build": {
+   "roles": {
+    "builder": {
+     "model": "gpt-6-luna",
+     "effort": "max"
+    }
+   }
+  }
+ },
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "model": "machine-planner",
+    "effort": "low"
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+   }
+  },
+  {
+   "id": "edit",
+   "expect": {
+    "role": "builder",
+    "turn": 1,
+    "model": "gpt-6-luna",
+    "effort": "max"
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "done",
+   "expect": {
+    "role": "builder",
+    "turn": 2,
+    "model": "gpt-6-luna",
+    "effort": "max"
+   },
+   "reply": {
+    "text": "Done."
+   }
+  }
+ ],
+ "steps": [
+  {
+   "write": {
+    "path": "{home}/.kogen/config.yaml",
+    "text": "build:\n  roles:\n    builder: {model: machine-builder, effort: low}\n    planner: {model: machine-planner, effort: low}\n"
+   }
+  },
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "contains": [
+      {
+       "event": "started",
+       "roles": {
+        "builder": {
+         "model": "gpt-6-luna",
+         "effort": "max"
+        },
+        "planner": {
+         "model": "machine-planner",
+         "effort": "low"
+        }
+       }
+      }
+     ]
+    }
+   }
+  }
+ ]
+}

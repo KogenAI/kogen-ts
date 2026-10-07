@@ -1,0 +1,55 @@
+{
+ "id": "cli-17",
+ "profile": "cli",
+ "fixture": "none",
+ "title": "help with a bad topic",
+ "spec": [
+  "§1.3.3.2"
+ ],
+ "rows": [
+  {
+   "label": "help frob",
+   "argv": [
+    "help",
+    "frob"
+   ],
+   "words": "frob"
+  },
+  {
+   "label": "help intent frob",
+   "argv": [
+    "help",
+    "intent",
+    "frob"
+   ],
+   "words": "intent frob"
+  },
+  {
+   "label": "help status extra",
+   "argv": [
+    "help",
+    "status",
+    "extra"
+   ],
+   "words": "status extra"
+  }
+ ],
+ "steps": [
+  {
+   "run": [
+    "kogen",
+    "{*row.argv}"
+   ],
+   "expect": {
+    "exit": 2,
+    "stdout": [
+     "kogen help: no command '{row.words}'\n\n",
+     {
+      "data": "help/kogen.txt"
+     }
+    ],
+    "stderr": ""
+   }
+  }
+ ]
+}

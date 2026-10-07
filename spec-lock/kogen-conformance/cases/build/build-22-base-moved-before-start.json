@@ -1,0 +1,90 @@
+{
+ "id": "build-22",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Base moved before start: builds on the tip",
+ "spec": [
+  "§3.4 B2"
+ ],
+ "script": [
+  {
+   "include": "r1_happy"
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "origin_commit": {
+    "files": {
+     "README.md": "moved before the Build\n"
+    },
+    "message": "Move the base"
+   }
+  },
+  {
+   "git": [
+    "rev-parse",
+    "main"
+   ],
+   "in": "origin",
+   "capture": {
+    "tip": "^([0-9a-f]+)"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build {id8:greet}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "contains": [
+      {
+       "event": "base_moved_at_start",
+       "tip": "{var:tip}",
+       "approved": "$sha"
+      }
+     ]
+    },
+    "git": [
+     {
+      "args": [
+       "log",
+       "-1",
+       "--format=%P",
+       "main"
+      ],
+      "stdout": "{var:tip}\n"
+     },
+     {
+      "args": [
+       "cat-file",
+       "-p",
+       "main:README.md"
+      ],
+      "stdout": "moved before the Build\n"
+     }
+    ]
+   }
+  }
+ ]
+}

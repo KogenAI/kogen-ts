@@ -1,0 +1,144 @@
+{
+ "id": "provider-26",
+ "profile": "provider",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Path escape",
+ "spec": [
+  "§4.7"
+ ],
+ "script": [
+  {
+   "id": "up",
+   "expect": {
+    "role": "shaper",
+    "turn": 1
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "read",
+      "arguments": {
+       "path": "../outside.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "link",
+   "expect": {
+    "role": "shaper",
+    "turn": 2,
+    "last_output_contains": "Path escapes the worktree."
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "read",
+      "arguments": {
+       "path": "lib/escape.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "write",
+   "expect": {
+    "role": "shaper",
+    "turn": 3,
+    "last_output_contains": "Path escapes the worktree."
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/intents/greet/intent.md",
+       "content": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: replace the single line in lib/greet.txt with the new greeting text.\n"
+      }
+     },
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/acceptance/greet.t.sh",
+       "content": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "done",
+   "expect": {
+    "role": "shaper",
+    "turn": 4
+   },
+   "reply": {
+    "text": "Both files are written."
+   }
+  },
+  {
+   "include": "shape_auditors_ok",
+   "prefix": "aud"
+  }
+ ],
+ "steps": [
+  {
+   "write": {
+    "path": "{case}/outside.txt",
+    "text": "secret outside the worktree\n"
+   }
+  },
+  {
+   "symlink": {
+    "path": "lib/escape.txt",
+    "target": "{case}/outside.txt"
+   }
+  },
+  {
+   "git": [
+    "add",
+    "lib/escape.txt"
+   ]
+  },
+  {
+   "commit": {
+    "message": "Add a symlink out of the tree",
+    "push": true
+   }
+  },
+  {
+   "write": {
+    "path": "{case}/request.md",
+    "text": "Make the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "shape",
+    "greet",
+    "{case}/request.md"
+   ],
+   "expect": {
+    "exit": 0
+   }
+  },
+  {
+   "assert": {
+    "fake_requests": [
+     {
+      "select": {
+       "step": "write"
+      },
+      "input_not_contains": "secret outside the worktree"
+     }
+    ]
+   }
+  }
+ ],
+ "notes": "Both a ../ path and a symlink resolving outside the checkout must be refused."
+}

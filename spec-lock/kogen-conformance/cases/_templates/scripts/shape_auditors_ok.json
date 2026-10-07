@@ -1,0 +1,20 @@
+[
+ {
+  "id": "ledger",
+  "expect": {
+   "role": "requirement_auditor"
+  },
+  "reply": {
+   "text": "{\"rows\": [{\"constraint\": \"The greeting in lib/greet.txt says Hello, Almir!\", \"maps_to\": \"A1\"}]}"
+  }
+ },
+ {
+  "id": "audit",
+  "expect": {
+   "role": "test_auditor"
+  },
+  "reply": {
+   "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test checks the requested line.\"}]}"
+  }
+ }
+]

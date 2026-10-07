@@ -1,0 +1,133 @@
+{
+  "id": "v1.2-87-ladder-19",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for ladder-19: The budget runs out during landing repairs: the landing allowance is used, then parked",
+  "spec": [
+    "§3.4 Landing",
+    "§3.9.2",
+    "§3.6",
+    "§4.7"
+  ],
+  "script": [
+    {
+      "id": "plan",
+      "expect": {
+        "role": "planner"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "r1.edit",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 1,
+        "tools": [
+          "shell",
+          "finish",
+          "tool_output"
+        ]
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r1.done",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 2,
+        "last_item_type": "function_call_output"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      },
+      "side_effect_sh": "git clone -q \"$ORIGIN\" \"$CASE_DIR/mover\" && cd \"$CASE_DIR/mover\" && printf 'Hello, Bob!\\n' > lib/greet.txt && git commit -q -am 'Greet Bob' && git push -q origin HEAD:refs/heads/main"
+    },
+    {
+      "id": "land.stall",
+      "expect": {
+        "role": "builder",
+        "last_user_contains": "lib/greet.txt"
+      },
+      "repeat": "always",
+      "first_byte_ms": 200000,
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 1,
+        "stdout_lines": [
+          "building greet",
+          "~parked greet: [a-z_/]+; best candidate green at refs/kogen/parked/[0-9a-f]{32} \\(Build [0-9a-f]{8}\\)",
+          "queue: done; 1 Build(s), 0 landed, 1 not"
+        ]
+      }
+    },
+    {
+      "assert": {
+        "refs": {
+          "refs/kogen/parked/{run_id:greet}": true
+        },
+        "events": {
+          "slug": "greet",
+          "last": {
+            "event": "finished",
+            "status": "parked"
+          }
+        },
+        "git": [
+          {
+            "args": [
+              "cat-file",
+              "-p",
+              "refs/heads/main:lib/greet.txt"
+            ],
+            "stdout": "Hello, Bob!\n"
+          }
+        ]
+      }
+    }
+  ],
+  "allow_remaining": true,
+  "notes": "The landing repair request stalls past the first-byte deadline on every attempt; the 10-minute landing allowance (6 s real) runs out first. Whether provider backoff waits count against the landing allowance is not specified; the outage window (18 s real) is longer than the allowance either way. v1.2 replacement for ladder-19. Text-only builder replies are progress; completion requires finish alone with {} (§3.6). Shell-recipe builders expose shell, finish, and tool_output (§4.7)."
+}

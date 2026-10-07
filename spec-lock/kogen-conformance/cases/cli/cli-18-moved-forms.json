@@ -1,0 +1,145 @@
+{
+ "id": "cli-18",
+ "profile": "cli",
+ "fixture": "none",
+ "title": "All 15 moved forms",
+ "spec": [
+  "§1.3.3.1",
+  "data/moved.json"
+ ],
+ "rows_from": {
+  "data": "moved.json",
+  "pointer": "/rows"
+ },
+ "rows_zip": [
+  {
+   "argv": [
+    "build",
+    "show",
+    "greet"
+   ],
+   "label": "build show greet"
+  },
+  {
+   "argv": [
+    "build"
+   ],
+   "label": "build"
+  },
+  {
+   "argv": [
+    "report",
+    "greet"
+   ],
+   "label": "report greet"
+  },
+  {
+   "argv": [
+    "approve",
+    "greet"
+   ],
+   "label": "approve greet"
+  },
+  {
+   "argv": [
+    "reconcile"
+   ],
+   "label": "reconcile"
+  },
+  {
+   "argv": [
+    "intent",
+    "check",
+    "greet"
+   ],
+   "label": "intent check greet"
+  },
+  {
+   "argv": [
+    "intent",
+    "close",
+    "greet"
+   ],
+   "label": "intent close greet"
+  },
+  {
+   "argv": [
+    "--version"
+   ],
+   "label": "--version"
+  },
+  {
+   "argv": [
+    "intent",
+    "shape",
+    "greet",
+    "--task-file",
+    "x.md"
+   ],
+   "label": "intent shape greet --task-file x.md"
+  },
+  {
+   "argv": [
+    "intent",
+    "approve",
+    "greet",
+    "--yes"
+   ],
+   "label": "intent approve greet --yes"
+  },
+  {
+   "argv": [
+    "provider",
+    "login",
+    "chatgpt",
+    "--borrow"
+   ],
+   "label": "provider login chatgpt --borrow"
+  },
+  {
+   "argv": [
+    "queue",
+    "start",
+    "--recipe=staged"
+   ],
+   "label": "queue start --recipe=staged"
+  },
+  {
+   "argv": [
+    "queue",
+    "start",
+    "--model",
+    "gpt-6-luna"
+   ],
+   "label": "queue start --model gpt-6-luna"
+  },
+  {
+   "argv": [
+    "status",
+    "--effort=high"
+   ],
+   "label": "status --effort=high"
+  },
+  {
+   "argv": [
+    "status",
+    "--as",
+    "work"
+   ],
+   "label": "status --as work"
+  }
+ ],
+ "steps": [
+  {
+   "run": [
+    "kogen",
+    "{*row.argv}"
+   ],
+   "expect": {
+    "exit": 2,
+    "stdout": "kogen: moved: use {row.message}\n",
+    "stderr": ""
+   }
+  }
+ ]
+}

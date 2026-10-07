@@ -1,0 +1,12 @@
+{
+ "spec": "spec/resilience.qnt",
+ "module": "resilience",
+ "init": "init",
+ "fire": "fire",
+ "invariant": "invariant",
+ "obs_var": "obs",
+ "ev_var": "ev",
+ "coverage": [
+  "last", "phase"
+ ]
+}

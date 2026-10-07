@@ -1,0 +1,101 @@
+{
+  "id": "v1.2-125-ladder-36",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for ladder-36: Planner exhaustion stops after four overload attempts without switching",
+  "spec": [
+    "§2.3",
+    "§4.5"
+  ],
+  "script": [
+    {
+      "id": "down",
+      "expect": {
+        "role": "planner",
+        "model": "gpt-6.1-sol",
+        "effort": "high"
+      },
+      "repeat": 4,
+      "reply": {
+        "http": {
+          "status": 503,
+          "body": {
+            "error": {
+              "message": "overloaded"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 4,
+        "stderr": "",
+        "stdout_lines": [
+          "building greet",
+          "~stopped greet: provider/overload; it stays queued \\(Build [0-9a-f]{8}\\)",
+          "~queue: stopped because greet hit a provider error; 1 Build\\(s\\), 0 landed, 1 not"
+        ]
+      }
+    },
+    {
+      "assert": {
+        "fake_request_count": {
+          "planner": 4,
+          "builder": 0
+        },
+        "events": {
+          "slug": "greet",
+          "contains": [
+            {
+              "event": "provider_retry",
+              "stage": "$str",
+              "reason": "~(provider/)?overload",
+              "delay_ms": {
+                "$ge": 1000,
+                "$le": 2000
+              }
+            }
+          ],
+          "absent": [
+            "provider_switch"
+          ],
+          "count": {
+            "provider_retry": 3
+          },
+          "last": {
+            "event": "finished",
+            "status": "stopped",
+            "reason": "provider/overload"
+          }
+        }
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "status",
+        "greet"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout": "greet: queued, 1 of 1\n"
+      }
+    }
+  ],
+  "notes": "The v1.1 case expects a provider_switch on the planner and describes a second stage-retry layer. In v1.2 the planner has no fallback (§2.3), overload stops after the request attempt cap, and there is no second stage-retry layer (§4.5)."
+}

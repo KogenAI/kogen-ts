@@ -1,0 +1,106 @@
+{
+  "id": "v1.2-132-state-23",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "title": "v1.2 replacement for state-23: slug reuse builds after approval",
+  "spec": [
+    "§2.11",
+    "§3.6",
+    "§4.2",
+    "§4.7"
+  ],
+  "fake": true,
+  "script": [
+    {
+      "include": "r1_happy_v12",
+      "prefix": "r1_happy"
+    }
+  ],
+  "steps": [
+    {
+      "intent": {
+        "slug": "greet",
+        "replace": {
+          "so that it names Almir.": "so that it names Almir, first try."
+        },
+        "push": true
+      }
+    },
+    {
+      "sh": "git commit -q --allow-empty -m 'Greet Almir by name' -m 'Kogen-Intent: greet' && git push -q origin HEAD:refs/heads/main"
+    },
+    {
+      "run": [
+        "kogen",
+        "status",
+        "greet"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_starts_lines": [
+          "~greet: landed [0-9a-f]{8}"
+        ]
+      }
+    },
+    {
+      "intent": {
+        "slug": "greet"
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "status",
+        "greet"
+      ],
+      "expect": {
+        "exit": 0,
+        "stderr": "",
+        "stdout": "greet: draft; review it with kogen intent approve greet\n"
+      }
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "status",
+        "greet"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout": "greet: queued, 1 of 1\n"
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_lines": [
+          "building greet",
+          "~\\~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+          "queue: done; 1 Build(s), 1 landed, 0 not"
+        ]
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "status",
+        "greet"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_starts_lines": [
+          "~greet: landed [0-9a-f]{8}"
+        ]
+      }
+    }
+  ],
+  "notes": "The shared v1.1 script expected an empty tool schema list for the planner and treated builder text as completion. v1.2 uses the shared schemas and finish alone with {} (§3.6, §4.2, §4.7)."
+}

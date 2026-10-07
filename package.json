@@ -1,0 +1,25 @@
+{
+	"name": "kogen-ts",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"license": "Apache-2.0",
+	"packageManager": "bun@1.4.2",
+	"workspaces": [
+		"packages/*"
+	],
+	"scripts": {
+		"check": "make check",
+		"format": "biome format --write packages tools tests *.json"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.3.11",
+		"@types/bun": "1.4.2",
+		"typescript": "5.9.3"
+	},
+	"overrides": {
+		"bun-types": "1.4.2",
+		"@types/node": "24.10.1",
+		"undici-types": "7.16.0"
+	}
+}

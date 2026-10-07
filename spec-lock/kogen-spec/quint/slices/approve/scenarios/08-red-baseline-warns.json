@@ -1,0 +1,8 @@
+{
+ "name": "08-red-baseline-warns",
+ "about": "Red configured checks on the base warn on the card and on approval but never block.",
+ "steps": [
+  {"do": ["Approve", {"slug": "alpha", "given": "", "prefixOk": true, "stableBeforeCas": true, "newSha8": "aaaa1111", "sha": "aaaa1111bbbb2222", "sha8": "aaaa1111", "by": "", "byBad": false, "ident": "Ann <ann@x.io>", "parseErr": false, "lintErr": false, "lintWarn": false, "missing": false, "setup": "ok", "cacheKey": "k1", "baseline": "red", "acceptance": "green", "witnessMode": false, "feas": "not checked", "commit": "c1", "baseSha": "b0"}], "expect": {"last": "needs_decision", "exit": 5, "bwarn": true, "ran": true, "checkRuns": 1}},
+  {"do": ["Approve", {"slug": "alpha", "given": "aaaa1111", "prefixOk": true, "stableBeforeCas": true, "newSha8": "aaaa1111", "sha": "aaaa1111bbbb2222", "sha8": "aaaa1111", "by": "", "byBad": false, "ident": "Ann <ann@x.io>", "parseErr": false, "lintErr": false, "lintWarn": false, "missing": false, "setup": "ok", "cacheKey": "k1", "baseline": "green", "acceptance": "green", "witnessMode": false, "feas": "not checked", "commit": "c1", "baseSha": "b0"}], "expect": {"last": "ok", "exit": 0, "bwarn": true, "ran": false, "checkRuns": 1, "approvals": {"alpha": {"n": 1, "sha": "aaaa1111bbbb2222", "by": "Ann <ann@x.io>", "commit": "c1", "base": "b0", "feas": "not checked"}}}}
+ ]
+}

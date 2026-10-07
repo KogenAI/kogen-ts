@@ -1,0 +1,19 @@
+{
+  "name": "17-refusals",
+  "about": "Every refusal leaves the state unchanged and reports its code.",
+  "steps": [
+    {"do": ["Step"], "expect": {"last": "nothing_to_step"}},
+    {"do": ["Gate", true], "expect": {"last": "not_building"}},
+    {"do": ["Crash"], "expect": {"last": "no_process"}},
+    {"do": ["Start", "r1"], "expect": {"last": "nothing_to_build"}},
+    {"do": ["Approve", {"slug": "alpha", "time": 1}]},
+    {"do": ["Start", "r1"]},
+    {"do": ["Start", "r2"], "expect": {"last": "queue_running"}},
+    {"do": ["Approve", {"slug": "alpha", "time": 2}], "expect": {"last": "intent_building"}},
+    {"do": ["PushExternal", "r1"], "expect": {"last": "commit_exists"}},
+    {"do": ["Gate", false]},
+    {"do": ["Start", "r1"], "expect": {"last": "run_id_reused"}},
+    {"do": ["PushExternal", "x1"], "expect": {"last": "ok"}},
+    {"do": ["PushExternal", "x1"], "expect": {"last": "commit_exists"}}
+  ]
+}

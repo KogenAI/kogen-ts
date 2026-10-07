@@ -1,0 +1,7 @@
+{
+  "name": "07-mutating-no-output-refuses",
+  "about": "Candidate output edits require a restored or prepared output.",
+  "steps": [
+    {"do": ["Mutate", {"payload":"candidate-edit"}], "expect": {"last":"no_output","work":"","present":false,"setupRuns":0}}
+  ]
+}

@@ -1,0 +1,57 @@
+{
+ "id": "approval-20",
+ "profile": "approval",
+ "fixture": "kt",
+ "title": "The checkout is clean after approval",
+ "spec": [
+  "§3.3"
+ ],
+ "project": {
+  "acceptance_checks": [
+   {
+    "name": "syntax",
+    "argv": [
+     "sh",
+     "-n",
+     "{path}"
+    ],
+    "timeout_ms": 60000
+   }
+  ]
+ },
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 5
+   }
+  },
+  {
+   "assert": {
+    "checkout_clean": true,
+    "files": {
+     "test/acceptance/greet.t.sh": false
+    }
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "assert": {
+    "checkout_clean": true,
+    "files": {
+     "test/acceptance/greet.t.sh": false
+    }
+   }
+  }
+ ]
+}

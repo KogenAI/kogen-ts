@@ -1,0 +1,53 @@
+{
+ "id": "provider-19",
+ "profile": "provider",
+ "fixture": "kt",
+ "fake": true,
+ "title": "An expired injected JWT: exit 4 and zero requests",
+ "spec": [
+  "§4.4",
+  "§4.6"
+ ],
+ "script": [],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 4,
+    "stderr": "",
+    "stdout_lines": [
+     "building greet",
+     "~stopped greet: provider/login; it stays queued \\(Build [0-9a-f]{8}\\)",
+     "~queue: stopped because greet hit a provider error; 1 Build\\(s\\), 0 landed, 1 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "fake_request_count": 0
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "greet"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout": "greet: queued, 1 of 1\n"
+   }
+  }
+ ],
+ "auth_expired": true
+}

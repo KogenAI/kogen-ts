@@ -1,0 +1,17 @@
+{
+  "name": "04-advisory",
+  "about": "over_strict and contradicts demote without a citation. valid and garbled stay undemoted. The default policy lands advisory tests. Policy green does not.",
+  "steps": [
+    {"do": ["Baseline", {"name": "c1", "status": "green"}]},
+    {"do": ["Now", {"name": "c1", "status": "green", "hasIds": true, "subset": true, "sameExit": true}]},
+    {"do": ["Rows", {"id": "A1", "kind": "change", "report": "ok", "runnerDown": false, "exit0": true, "mutated": false, "failed": 0, "rows": 1}]},
+    {"do": ["Rows", {"id": "A2", "kind": "keep", "report": "ok", "runnerDown": false, "exit0": true, "mutated": false, "failed": 1, "rows": 1}]},
+    {"do": ["Demote", {"id": "A2", "verdict": "valid"}], "expect": {"items": {"A2": {"demoted": false}}}},
+    {"do": ["Demote", {"id": "A2", "verdict": "garbled"}], "expect": {"items": {"A2": {"demoted": false}}}},
+    {"do": ["Score", {"policy": "green-or-advisory"}], "expect": {"verdict": "unverified", "landable": false}},
+    {"do": ["Demote", {"id": "A2", "verdict": "over_strict"}], "expect": {"items": {"A2": {"demoted": true}}}},
+    {"do": ["Demote", {"id": "A2", "verdict": "contradicts"}], "expect": {"items": {"A2": {"demoted": true}}}},
+    {"do": ["Score", {"policy": "green-or-advisory"}], "expect": {"verdict": "green-with-advisory-tests", "landable": true}},
+    {"do": ["Score", {"policy": "green"}], "expect": {"verdict": "green-with-advisory-tests", "landable": false}}
+  ]
+}

@@ -1,0 +1,171 @@
+{
+ "id": "cli-24",
+ "profile": "cli",
+ "fixture": "none",
+ "title": "--help after positionals, for each command",
+ "spec": [
+  "§1.3.3.3"
+ ],
+ "rows": [
+  {
+   "label": "status greet --help",
+   "argv": [
+    "status",
+    "greet",
+    "--help"
+   ],
+   "page": "kogen-status"
+  },
+  {
+   "label": "status greet --json --help",
+   "argv": [
+    "status",
+    "greet",
+    "--json",
+    "--help"
+   ],
+   "page": "kogen-status"
+  },
+  {
+   "label": "intent shape greet req.md --help",
+   "argv": [
+    "intent",
+    "shape",
+    "greet",
+    "req.md",
+    "--help"
+   ],
+   "page": "kogen-intent-shape"
+  },
+  {
+   "label": "intent approve greet abcdef12 --help",
+   "argv": [
+    "intent",
+    "approve",
+    "greet",
+    "abcdef12",
+    "--help"
+   ],
+   "page": "kogen-intent-approve"
+  },
+  {
+   "label": "intent approve greet --by x --help",
+   "argv": [
+    "intent",
+    "approve",
+    "greet",
+    "--by",
+    "x",
+    "--help"
+   ],
+   "page": "kogen-intent-approve"
+  },
+  {
+   "label": "intent remove greet --help",
+   "argv": [
+    "intent",
+    "remove",
+    "greet",
+    "--help"
+   ],
+   "page": "kogen-intent-remove"
+  },
+  {
+   "label": "queue start --detach --help",
+   "argv": [
+    "queue",
+    "start",
+    "--detach",
+    "--help"
+   ],
+   "page": "kogen-queue-start"
+  },
+  {
+   "label": "queue stop --help",
+   "argv": [
+    "queue",
+    "stop",
+    "--help"
+   ],
+   "page": "kogen-queue-stop"
+  },
+  {
+   "label": "provider list --help",
+   "argv": [
+    "provider",
+    "list",
+    "--help"
+   ],
+   "page": "kogen-provider-list"
+  },
+  {
+   "label": "provider login chatgpt --help",
+   "argv": [
+    "provider",
+    "login",
+    "chatgpt",
+    "--help"
+   ],
+   "page": "kogen-provider-login"
+  },
+  {
+   "label": "provider logout chatgpt --as w --help",
+   "argv": [
+    "provider",
+    "logout",
+    "chatgpt",
+    "--as",
+    "w",
+    "--help"
+   ],
+   "page": "kogen-provider-logout"
+  },
+  {
+   "label": "provider use chatgpt --help",
+   "argv": [
+    "provider",
+    "use",
+    "chatgpt",
+    "--help"
+   ],
+   "page": "kogen-provider-use"
+  },
+  {
+   "label": "version --help",
+   "argv": [
+    "version",
+    "--help"
+   ],
+   "page": "kogen-version"
+  },
+  {
+   "label": "intent shape greet - --json --help",
+   "argv": [
+    "intent",
+    "shape",
+    "greet",
+    "-",
+    "--json",
+    "--help"
+   ],
+   "page": "kogen-intent-shape"
+  }
+ ],
+ "steps": [
+  {
+   "run": [
+    "kogen",
+    "{*row.argv}"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout": [
+     {
+      "data": "help/{row.page}.txt"
+     }
+    ],
+    "stderr": ""
+   }
+  }
+ ]
+}

@@ -1,0 +1,21 @@
+{
+  "name": "03-three-retries-then-rebase",
+  "about": "Locks and a lost CAS wait 1s, 2s, 4s. The fourth transient failure rebases. Green restarts landing on the new tip.",
+  "steps": [
+    {"do": ["Record"]},
+    {"do": ["Lock"], "expect": {"line": "landing_retry", "delay": 1000, "tries": 1}},
+    {"do": ["Again"]},
+    {"do": ["Lock"], "expect": {"delay": 2000, "tries": 2}},
+    {"do": ["Again"]},
+    {"do": ["Head", {"kind": "ok"}]},
+    {"do": ["Push"]},
+    {"do": ["Cas", {"won": false}], "expect": {"delay": 4000, "tries": 3, "phase": "retrying"}},
+    {"do": ["Again"]},
+    {"do": ["Lock"], "expect": {"line": "rebase_required", "phase": "moved", "incoming": false, "claim": true}},
+    {"do": ["Rebase", {"kind": "green"}], "expect": {"line": "rebase_green", "phase": "recorded", "tries": 0}},
+    {"do": ["Head", {"kind": "ok"}]},
+    {"do": ["Push"]},
+    {"do": ["Cas", {"won": true}], "expect": {"onBase": true}},
+    {"do": ["Drop", {"ok": true}], "expect": {"status": "landed", "claim": false}}
+  ]
+}

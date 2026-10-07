@@ -1,0 +1,152 @@
+{
+ "id": "shape-20",
+ "profile": "shape",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Shaping audit: over_strict with a valid citation gives one repair",
+ "spec": [
+  "§3.2.3 step 8",
+  "§3.8.2"
+ ],
+ "script": [
+  {
+   "id": "write",
+   "expect": {
+    "role": "shaper",
+    "turn": 1,
+    "tools": [
+     "read",
+     "search",
+     "write"
+    ]
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/intents/greet/intent.md",
+       "content": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: replace the single line in lib/greet.txt with the new greeting text.\n"
+      }
+     },
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/acceptance/greet.t.sh",
+       "content": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "done",
+   "expect": {
+    "role": "shaper",
+    "turn": 2
+   },
+   "reply": {
+    "text": "Both files are written."
+   }
+  },
+  {
+   "id": "ledger",
+   "expect": {
+    "role": "requirement_auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"rows\": [{\"constraint\": \"The greeting in lib/greet.txt says Hello, Almir!\", \"maps_to\": \"A1\"}]}"
+   },
+   "repeat": 2
+  },
+  {
+   "id": "audit1",
+   "expect": {
+    "role": "test_auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"over_strict\", \"citation\": \"say Hello, Almir!\", \"reason\": \"The Request allows trailing text.\"}]}"
+   }
+  },
+  {
+   "id": "again",
+   "expect": {
+    "role": "shaper",
+    "turn": 3,
+    "last_user_contains": "Validation failed."
+   },
+   "reply": {
+    "text": "The test follows the Request."
+   }
+  },
+  {
+   "id": "audit2",
+   "expect": {
+    "role": "test_auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"over_strict\", \"citation\": \"say Hello, Almir!\", \"reason\": \"The Request allows trailing text.\"}]}"
+   }
+  }
+ ],
+ "steps": [
+  {
+   "write": {
+    "path": "{case}/request.md",
+    "text": "Make the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "shape",
+    "greet",
+    "{case}/request.md",
+    "--json"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_json": {
+     "status": "valid",
+     "rounds": 2,
+     "warnings": {
+      "$contains": [
+       {
+        "code": "audit_over_strict",
+        "item_ids": [
+         "A1"
+        ],
+        "message": "$str"
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "assert": {
+    "fake_request_count": {
+     "shaper": 3,
+     "test_auditor": 2
+    },
+    "fake_requests": [
+     {
+      "select": {
+       "role": "test_auditor",
+       "nth": 0
+      },
+      "input_contains": [
+       "Make the greeting in lib/greet.txt say Hello, Almir! instead of Hello!",
+       "t_A1()",
+       "Greet Almir by name"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

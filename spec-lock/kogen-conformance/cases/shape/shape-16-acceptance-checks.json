@@ -1,0 +1,210 @@
+{
+ "id": "shape-16",
+ "profile": "shape",
+ "fixture": "kt",
+ "fake": true,
+ "title": "An acceptance check red gives a repair; exit 127 gives exit 3",
+ "spec": [
+  "§3.2.3 step 5"
+ ],
+ "fixture_files": {
+  "checks/missing.sh": "#!/bin/sh\necho 'kt: checker not installed'\nexit 127\n"
+ },
+ "rows": [
+  {
+   "label": "red",
+   "script": [
+    {
+     "id": "write",
+     "expect": {
+      "role": "shaper",
+      "turn": 1
+     },
+     "reply": {
+      "calls": [
+       {
+        "name": "write",
+        "arguments": {
+         "path": ".kogen/intents/greet/intent.md",
+         "content": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: replace the single line in lib/greet.txt with the new greeting text.\n"
+        }
+       },
+       {
+        "name": "write",
+        "arguments": {
+         "path": ".kogen/acceptance/greet.t.sh",
+         "content": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; \n"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "done",
+     "expect": {
+      "role": "shaper",
+      "turn": 2
+     },
+     "reply": {
+      "text": "Both files are written."
+     }
+    },
+    {
+     "id": "fix",
+     "expect": {
+      "role": "shaper",
+      "turn": 3,
+      "last_user_contains": "Validation failed."
+     },
+     "reply": {
+      "calls": [
+       {
+        "name": "write",
+        "arguments": {
+         "path": ".kogen/acceptance/greet.t.sh",
+         "content": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "done2",
+     "expect": {
+      "role": "shaper",
+      "turn": 4
+     },
+     "reply": {
+      "text": "Fixed."
+     }
+    },
+    {
+     "id": "ledger",
+     "expect": {
+      "role": "requirement_auditor",
+      "tools": []
+     },
+     "reply": {
+      "text": "{\"rows\": [{\"constraint\": \"The greeting in lib/greet.txt says Hello, Almir!\", \"maps_to\": \"A1\"}]}"
+     }
+    },
+    {
+     "id": "audit",
+     "expect": {
+      "role": "test_auditor",
+      "tools": []
+     },
+     "reply": {
+      "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test checks the requested line.\"}]}"
+     }
+    }
+   ],
+   "project": {
+    "acceptance_checks": [
+     {
+      "name": "syntax",
+      "argv": [
+       "sh",
+       "-n",
+       "{path}"
+      ],
+      "timeout_ms": 60000
+     }
+    ]
+   },
+   "expect": {
+    "exit": 0,
+    "stdout_regex": "(?m)^Validated after 2 round\\(s\\)\\.$"
+   }
+  },
+  {
+   "label": "127",
+   "script": [
+    {
+     "id": "write",
+     "expect": {
+      "role": "shaper",
+      "turn": 1,
+      "tools": [
+       "read",
+       "search",
+       "write"
+      ]
+     },
+     "reply": {
+      "calls": [
+       {
+        "name": "write",
+        "arguments": {
+         "path": ".kogen/intents/greet/intent.md",
+         "content": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: replace the single line in lib/greet.txt with the new greeting text.\n"
+        }
+       },
+       {
+        "name": "write",
+        "arguments": {
+         "path": ".kogen/acceptance/greet.t.sh",
+         "content": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "done",
+     "expect": {
+      "role": "shaper",
+      "turn": 2
+     },
+     "reply": {
+      "text": "Both files are written."
+     }
+    }
+   ],
+   "project": {
+    "acceptance_checks": [
+     {
+      "name": "missing",
+      "argv": [
+       "sh",
+       "checks/missing.sh",
+       "{path}"
+      ],
+      "timeout_ms": 60000
+     }
+    ]
+   },
+   "expect": {
+    "exit": 3,
+    "stdout_regex": "\\Aenvironment/[a-z_]+: "
+   }
+  }
+ ],
+ "script": "{row.script}",
+ "project": "{row.project}",
+ "steps": [
+  {
+   "write": {
+    "path": "{case}/request.md",
+    "text": "Make the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "shape",
+    "greet",
+    "{case}/request.md"
+   ],
+   "expect": "{row.expect}"
+  },
+  {
+   "assert": {
+    "files": {
+     "test/acceptance/greet.t.sh": false
+    }
+   }
+  }
+ ]
+}

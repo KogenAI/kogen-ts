@@ -1,0 +1,129 @@
+{
+  "id": "v1.2-109-provider-07",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for provider-07: completed.output takes precedence",
+  "spec": [
+    "§4.3",
+    "§3.6",
+    "§4.7"
+  ],
+  "script": [
+    {
+      "id": "plan",
+      "expect": {
+        "role": "planner",
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "edit",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 1
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'wrong\\n' > lib/greet.txt"
+            }
+          }
+        ]
+      },
+      "completed_output": [
+        {
+          "type": "function_call",
+          "id": "fc_call_good",
+          "status": "completed",
+          "call_id": "call_good",
+          "name": "shell",
+          "arguments": "{\"cmd\": \"printf 'Hello, Almir!\\\\n' > lib/greet.txt\"}"
+        }
+      ]
+    },
+    {
+      "id": "done",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 2,
+        "last_output_contains": "exit 0",
+        "input_not_contains": "wrong"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_lines": [
+          "building greet",
+          "~\\~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+          "queue: done; 1 Build(s), 1 landed, 0 not"
+        ]
+      }
+    },
+    {
+      "assert": {
+        "git": [
+          {
+            "args": [
+              "cat-file",
+              "-p",
+              "refs/heads/main:lib/greet.txt"
+            ],
+            "stdout": "Hello, Almir!\n"
+          }
+        ],
+        "fake_requests": [
+          {
+            "select": {
+              "step": "done"
+            },
+            "match": {
+              "body": {
+                "input": {
+                  "$contains": [
+                    {
+                      "type": "function_call",
+                      "call_id": "call_good"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "notes": "v1.2 replacement for provider-07. Text-only builder replies are progress; completion requires finish alone with {} (§3.6). Shell-recipe builders expose shell, finish, and tool_output (§4.7)."
+}

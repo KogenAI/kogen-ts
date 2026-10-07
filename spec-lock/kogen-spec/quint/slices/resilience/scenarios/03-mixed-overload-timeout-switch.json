@@ -1,0 +1,134 @@
+{
+ "name": "03-mixed-overload-timeout-switch",
+ "about": "Overload and timeout errors count together towards the three consecutive; switching goes to the fallback given for the stage.",
+ "steps": [
+  {
+   "do": [
+    "Stage",
+    {
+     "name": "build",
+     "mode": "build",
+     "model": "sol",
+     "fallback": "luna",
+     "owned": true
+    }
+   ]
+  },
+  {
+   "do": [
+    "Request"
+   ]
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "overload",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ]
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "timeout",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ]
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "overload",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "switch",
+     "delay_ms": 8000,
+     "reason": "overload",
+     "model": "luna"
+    },
+    "model": "luna",
+    "switched": true,
+    "journal": [
+     {
+      "event": "provider_retry",
+      "stage": "build",
+      "rung": 1,
+      "reason": "overload",
+      "ms": 2000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_wait",
+      "stage": "",
+      "rung": 0,
+      "reason": "overload",
+      "ms": 2000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "build",
+      "rung": 2,
+      "reason": "timeout",
+      "ms": 4000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_wait",
+      "stage": "",
+      "rung": 0,
+      "reason": "timeout",
+      "ms": 4000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "build",
+      "rung": 3,
+      "reason": "overload",
+      "ms": 8000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_switch",
+      "stage": "build",
+      "rung": 0,
+      "reason": "",
+      "ms": 0,
+      "from_model": "sol",
+      "to_model": "luna"
+     },
+     {
+      "event": "provider_wait",
+      "stage": "",
+      "rung": 0,
+      "reason": "overload",
+      "ms": 8000,
+      "from_model": "",
+      "to_model": ""
+     }
+    ]
+   }
+  }
+ ]
+}

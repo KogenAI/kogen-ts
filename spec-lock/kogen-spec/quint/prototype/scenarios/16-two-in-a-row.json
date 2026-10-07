@@ -1,0 +1,23 @@
+{
+  "name": "16-two-in-a-row",
+  "about": "Two Intents land back to back; the second CAS expects the first's commit as parent.",
+  "steps": [
+    {"do": ["Approve", {"slug": "alpha", "time": 1}]},
+    {"do": ["Approve", {"slug": "bravo", "time": 2}]},
+    {"do": ["Start", "r1"]},
+    {"do": ["Gate", true]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Start", "r2"]},
+    {"do": ["Gate", true]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Recover"], "expect": {"base": ["root", "r1", "r2"], "status": {"alpha": "landed", "bravo": "landed"}, "queue": []}}
+  ]
+}

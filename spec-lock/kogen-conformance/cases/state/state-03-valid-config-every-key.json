@@ -1,0 +1,47 @@
+{
+ "id": "state-03",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "A valid config using every key",
+ "spec": [
+  "§2.3"
+ ],
+ "fixture_files": {
+  ".kogen/project.yaml": "name: kt\nbase: main\nchecks:\n  - name: lint\n    argv: [sh, checks/lint.sh]\n    timeout_ms: 60000\n  - name: unit\n    argv: [sh, checks/unit.sh]\n    timeout_ms: 60000\nacceptance_checks:\n  - name: syntax\n    argv: [sh, -n, \"{path}\"]\n    timeout_ms: 60000\nsetup:\n  - name: setup\n    argv: [sh, checks/setup.sh]\n    timeout_ms: 60000\nsetup_outputs: [build]\nfix:\n  - name: fmt\n    argv: [sh, checks/fmt.sh]\n    timeout_ms: 60000\nformat: [sh, checks/fmt.sh]\nprotected_paths: [Makefile, \"docs/**\"]\ngate_paths: [\"checks/*.sh\"]\ndomains:\n  app: [lib]\n  docs: [docs]\nenv:\n  KT_MODE: test\nsandbox: true\nacceptance:\n  adapter: command\n  ext: .t.sh\n  candidate_dir: test/acceptance\n  run: [sh, run-acceptance.sh, \"{path}\"]\n  timeout_ms: 600000\nshaping:\n  proof: none\nbuild:\n  ladder:\n    max_rungs: 3\n    experimental_r4: false\n  roles:\n    builder: {model: gpt-6-luna, effort: max}\n    planner: {model: gpt-6.1-sol, effort: high}\n    shaper: {model: gpt-6-luna, effort: max}\n    fallback_shaper: {model: gpt-6.1-sol, effort: high}\n    auditor: {model: gpt-6.1-sol, effort: high}\n    rung2: {model: gpt-6.1-sol, effort: medium}\n    rung3: {model: gpt-6.1-sol, effort: high}\n  land: green-or-advisory\n  budget_ms: 3600000\n  fallback:\n    gpt-6-luna: {model: gpt-6.1-sol, effort: medium}\n    gpt-6.1-sol: {model: gpt-6-luna, effort: max}\naccount: default\n"
+ },
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "status"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_lines": [
+     "Queue: stopped",
+     "Drafts:",
+     "~  greet(  +\\S.*)?"
+    ]
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 5,
+    "stderr": "",
+    "stdout_starts_lines": [
+     "Intent: greet — Greet Almir by name"
+    ]
+   }
+  }
+ ]
+}

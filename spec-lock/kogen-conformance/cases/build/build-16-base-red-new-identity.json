@@ -1,0 +1,157 @@
+{
+ "id": "build-16",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "A base-red check with a new identity: red",
+ "spec": [
+  "§3.7.2"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+   }
+  },
+  {
+   "id": "edit",
+   "expect": {
+    "role": "builder",
+    "turn": 1,
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt && printf 'TODO new\\n' > lib/new.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "d1",
+   "expect": {
+    "role": "builder",
+    "turn": 2,
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Done."
+   }
+  },
+  {
+   "id": "fix",
+   "expect": {
+    "role": "builder",
+    "turn": 3,
+    "input_contains": "Greet Almir by name",
+    "last_user_contains": "Kogen's controller reported this failure."
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "rm lib/new.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "d2",
+   "expect": {
+    "role": "builder",
+    "turn": 4,
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Done."
+   }
+  }
+ ],
+ "fixture_files": {
+  "lib/old.txt": "TODO from long ago\n"
+ },
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build {id8:greet}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "fake_requests": [
+     {
+      "select": {
+       "step": "fix"
+      },
+      "input_regex": "(?m)^lib/new\\.txt:1:1: error: \\[lint/todo\\] new\\.txt: TODO found$"
+     }
+    ],
+    "events": {
+     "slug": "greet",
+     "subsequence": [
+      {
+       "event": "verification",
+       "result": "red",
+       "checks": {
+        "$contains": [
+         {
+          "name": "lint",
+          "status": "red",
+          "excused": false
+         }
+        ]
+       }
+      },
+      "repair",
+      {
+       "event": "verification",
+       "result": "green",
+       "checks": {
+        "$contains": [
+         {
+          "name": "lint",
+          "status": "red",
+          "excused": true
+         }
+        ]
+       }
+      },
+      {
+       "event": "finished",
+       "status": "landed"
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "notes": "The repair request is not required to carry the Base-red warning line here, because lint is not excused in that verification."
+}

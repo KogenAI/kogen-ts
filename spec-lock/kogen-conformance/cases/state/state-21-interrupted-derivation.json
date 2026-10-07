@@ -1,0 +1,113 @@
+{
+ "id": "state-21",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "Interrupted derivation",
+ "spec": [
+  "§2.11",
+  "§3.10"
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "intent": "farewell"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "approve": "farewell"
+  },
+  {
+   "synthetic_run": {
+    "slug": "greet",
+    "run_id": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+    "status": "running",
+    "events": [
+     {
+      "event": "rung_started",
+      "rung": "R1",
+      "model": "gpt-6-luna",
+      "effort": "max",
+      "entered_because": "first"
+     },
+     {
+      "event": "interrupted",
+      "reason": "sigterm"
+     }
+    ]
+   }
+  },
+  {
+   "synthetic_run": {
+    "slug": "farewell",
+    "run_id": "b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+    "status": "running",
+    "events": [
+     {
+      "event": "rung_started",
+      "rung": "R1",
+      "model": "gpt-6-luna",
+      "effort": "max",
+      "entered_because": "first"
+     }
+    ]
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_lines": [
+     "Queue: stopped",
+     "Failed:",
+     "  farewell  crashed (Build b2b2b2b2)",
+     "Interrupted:",
+     "  greet  interrupted (Build a1a1a1a1)"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "files": {
+     "{state_root}/runs/a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1/run.json": {
+      "json": {
+       "status": "failed"
+      }
+     },
+     "{state_root}/runs/b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2/run.json": {
+      "json": {
+       "status": "failed"
+      }
+     }
+    },
+    "events": {
+     "slug": "greet",
+     "last": {
+      "event": "finished",
+      "status": "failed",
+      "reason": "interrupted"
+     }
+    }
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "farewell",
+     "last": {
+      "event": "finished",
+      "status": "failed",
+      "reason": "crashed"
+     }
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,147 @@
+{
+ "name": "10-login-one-forced-refresh",
+ "about": "A login error does one forced token refresh (owned mode) and resends at once, no journal event; a second login error on the same request stops with provider/login.",
+ "steps": [
+  {
+   "do": [
+    "Stage",
+    {
+     "name": "build",
+     "mode": "build",
+     "model": "luna",
+     "fallback": "sol",
+     "owned": true
+    }
+   ]
+  },
+  {
+   "do": [
+    "Request"
+   ]
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "login",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "refresh",
+     "delay_ms": 0,
+     "reason": "login",
+     "model": "luna"
+    },
+    "phase": "refreshing"
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "ok",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "last": "not_sending"
+   }
+  },
+  {
+   "do": [
+    "Refresh",
+    true
+   ],
+   "expect": {
+    "decision": {
+     "kind": "retry",
+     "delay_ms": 0,
+     "reason": "login",
+     "model": "luna"
+    },
+    "phase": "sending",
+    "journal": []
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "ok",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "success",
+     "delay_ms": 0,
+     "reason": ""
+    },
+    "phase": "idle"
+   }
+  },
+  {
+   "do": [
+    "Request"
+   ]
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "login",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "refresh",
+     "delay_ms": 0,
+     "reason": "login",
+     "model": "luna"
+    }
+   }
+  },
+  {
+   "do": [
+    "Refresh",
+    true
+   ]
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "login",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "stop",
+     "delay_ms": 0,
+     "reason": "provider/login"
+    },
+    "phase": "stopped",
+    "exit": 4
+   }
+  }
+ ]
+}

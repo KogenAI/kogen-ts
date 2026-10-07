@@ -1,0 +1,266 @@
+{
+ "id": "state-01",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "Project config errors give line <n> and the error class, exit 3 (20 YAML rows)",
+ "spec": [
+  "§2.6",
+  "§1.5"
+ ],
+ "rows": [
+  {
+   "label": "bom",
+   "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 1: .+\n\\Z",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "b64": "77u/bmFtZToga3QKY2hlY2tzOiBbXQo="
+     }
+    }
+   ]
+  },
+  {
+   "label": "utf8",
+   "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: .+\n\\Z",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpiYXNlOiD//go="
+     }
+    }
+   ]
+  },
+  {
+   "label": "tab",
+   "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: .+\n\\Z",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "b64": "bmFtZToga3QKY2hlY2tzOgoJLSBuYW1lOiB4Cg=="
+     }
+    }
+   ]
+  },
+  {
+   "label": "directive",
+   "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 1: .+\n\\Z",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "b64": "JVlBTUwgMS4yCm5hbWU6IGt0Cg=="
+     }
+    }
+   ]
+  },
+  {
+   "label": "block-scalar",
+   "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: .+\n\\Z",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpiYXNlOiB8CiAgbWFpbgo="
+     }
+    }
+   ]
+  },
+  {
+   "label": "anchor",
+   "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: .+\n\\Z",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpiYXNlOiAmYiBtYWluCg=="
+     }
+    }
+   ]
+  },
+  {
+   "label": "depth",
+   "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: .+\n\\Z",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "b64": "bmFtZToga3QKY2hlY2tzOiBbXQp4OiBbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXQo="
+     }
+    }
+   ]
+  },
+  {
+   "label": "merge",
+   "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: .+\n\\Z",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "b64": "bmFtZToga3QKY2hlY2tzOiBbXQo8PDoge2E6IGJ9Cg=="
+     }
+    }
+   ]
+  },
+  {
+   "label": "unicode-escape",
+   "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 1: .+\n\\Z",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "b64": "bmFtZTogImtcdTAwNzQiCmNoZWNrczogW10K"
+     }
+    }
+   ]
+  },
+  {
+   "label": "bad-escape",
+   "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 1: .+\n\\Z",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "b64": "bmFtZTogImtceCIKY2hlY2tzOiBbXQo="
+     }
+    }
+   ]
+  },
+  {
+   "label": "unterminated-quote",
+   "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: .+\n\\Z",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpiYXNlOiAibWFpbgo="
+     }
+    }
+   ]
+  },
+  {
+   "label": "after-quote",
+   "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: .+\n\\Z",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpiYXNlOiAibWFpbiIgeAo="
+     }
+    }
+   ]
+  },
+  {
+   "label": "flow-unterminated",
+   "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: .+\n\\Z",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpwcm90ZWN0ZWRfcGF0aHM6IFthLCBi"
+     }
+    }
+   ]
+  },
+  {
+   "label": "flow-trailing",
+   "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: .+\n\\Z",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpwcm90ZWN0ZWRfcGF0aHM6IFthXSBiCg=="
+     }
+    }
+   ]
+  },
+  {
+   "label": "colon-space",
+   "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: .+\n\\Z",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpiYXNlOiBhOiBiCg=="
+     }
+    }
+   ]
+  },
+  {
+   "label": "list-in-value",
+   "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: .+\n\\Z",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpiYXNlOiAtIG1haW4K"
+     }
+    }
+   ]
+  },
+  {
+   "label": "indentation",
+   "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 2: .+\n\\Z",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "b64": "bmFtZToga3QKICBjaGVja3M6IFtdCg=="
+     }
+    }
+   ]
+  },
+  {
+   "label": "duplicate",
+   "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: .+\n\\Z",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpuYW1lOiBrdAo="
+     }
+    }
+   ]
+  },
+  {
+   "label": "key-no-value",
+   "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 3: .+\n\\Z",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpiYXNlOgo="
+     }
+    }
+   ]
+  },
+  {
+   "label": "item-no-value",
+   "line_rx": "\\Aenvironment/project_config_invalid: {checkout}/.kogen/project.yaml\n  line 4: .+\n\\Z",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "b64": "bmFtZToga3QKY2hlY2tzOiBbXQpwcm90ZWN0ZWRfcGF0aHM6CiAgLQo="
+     }
+    }
+   ]
+  }
+ ],
+ "steps": [
+  "{*row.pre}",
+  {
+   "run": [
+    "kogen",
+    "status"
+   ],
+   "expect": {
+    "exit": 3,
+    "stderr": "",
+    "stdout_regex": "{row.line_rx}"
+   }
+  }
+ ]
+}

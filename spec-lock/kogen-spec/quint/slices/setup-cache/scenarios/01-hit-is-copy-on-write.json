@@ -1,0 +1,10 @@
+{
+  "name": "01-hit-is-copy-on-write",
+  "about": "Same key restores the cached output and candidate edits do not mutate the saved copy.",
+  "steps": [
+    {"do": ["Run", {"base":"a","variant":"","tracked":false,"input":"","enabled":true,"stable":true,"ok":true,"payload":"seed-a"}], "expect": {"entryCount":1,"work":"seed-a","reused":false,"setupRuns":1,"last":"miss"}},
+    {"do": ["Run", {"base":"a","variant":"","tracked":false,"input":"","enabled":true,"stable":true,"ok":true,"payload":"ignored"}], "expect": {"entryCount":1,"work":"seed-a","reused":true,"setupRuns":1,"last":"hit"}},
+    {"do": ["Mutate", {"payload":"candidate-edit"}], "expect": {"work":"candidate-edit","reused":true,"last":"ok"}},
+    {"do": ["Run", {"base":"a","variant":"","tracked":false,"input":"","enabled":true,"stable":true,"ok":true,"payload":"ignored-again"}], "expect": {"work":"seed-a","reused":true,"setupRuns":1,"entryCount":1}}
+  ]
+}

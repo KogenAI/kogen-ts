@@ -1,0 +1,690 @@
+{
+ "reference": "careful-rebuild 97ef563d + proposals/reference-seams.diff",
+ "classes": {
+  "R-gap": "a seam or a feature APPENDIX-REFERENCE.md lists as missing or not built",
+  "ref-bug": "implemented, but differs from the spec",
+  "spec": "the spec is ambiguous for the case"
+ },
+ "cases": {
+  "approval-01": {
+   "class": "ref-bug",
+   "note": "Card lacks the Feasibility line, prints (test_keep) and an extra blank line"
+  },
+  "approval-02": {
+   "class": "ref-bug",
+   "note": "Kogen-Approved-Hash trailer is the intent.md hash, not the approval hash (APPENDIX)"
+  },
+  "approval-03": {
+   "class": "ref-bug",
+   "note": "The hash is compared after setup/checks ran (APPENDIX)"
+  },
+  "approval-08": {
+   "class": "ref-bug",
+   "note": "Base-red rows are not parsed into GNU findings ([rule/failed] <whole line>); an empty 'Warnings' header is printed"
+  },
+  "approval-09": {
+   "class": "ref-bug",
+   "note": "A missing check executable is recorded red, not unavailable; baseline rows lack exit_status"
+  },
+  "approval-10": {
+   "class": "ref-bug",
+   "note": "Acceptance-check output lines are not indented two spaces"
+  },
+  "approval-13": {
+   "class": "ref-bug",
+   "note": "Setup failure wording differs ('setup command setup failed (exit status 7)')"
+  },
+  "approval-15": {
+   "class": "R-gap",
+   "note": "acceptance.run script is not a gate file (command adapter only exists in the proposal patch)"
+  },
+  "approval-17": {
+   "class": "ref-bug",
+   "note": "shape-warnings.json in the §2.4.5 shape is rejected (controller/:shape_warnings_invalid)"
+  },
+  "approval-19": {
+   "class": "ref-bug",
+   "note": "Path conflict printed as an Elixir term, exit 70"
+  },
+  "approval-21": {
+   "class": "R-gap",
+   "note": "no_change_item lint rule not built"
+  },
+  "approval-23": {
+   "class": "ref-bug",
+   "note": "remove cannot read §2.8 run.json: controller/:invalid_run"
+  },
+  "build-02": {
+   "class": "ref-bug",
+   "note": "planner request sends tools: [] (§4.2 says omit); builder first message lacks the 'Acceptance on the base:' block (§3.6); landed commit, refs and workspace assertions pass"
+  },
+  "build-03": {
+   "class": "ref-bug",
+   "note": "journal uses phase_timing/stage_ok/check_result instead of plan/rung_started/base_acceptance/verification/rung_finished (§3.4, §2.8)"
+  },
+  "build-04": {
+   "class": "ref-bug",
+   "note": "no verification/repair events in §2.8 shape; feedback lacks 'acceptance A1: failed' and the §3.7.3 gate line"
+  },
+  "build-05": {
+   "class": "R-gap",
+   "note": "progress-based repairs not built (APPENDIX: repairs capped at 2 + 1); fails done_gate_red"
+  },
+  "build-06": {
+   "class": "R-gap",
+   "note": "build.ladder key / ladder not built (project.yaml rejected)"
+  },
+  "build-07": {
+   "class": "R-gap",
+   "note": "build.ladder key / ladder not built"
+  },
+  "build-08": {
+   "class": "ref-bug",
+   "note": "no empty-done refusal: the first empty done claim is verified and repaired (§3.6)"
+  },
+  "build-09": {
+   "class": "ref-bug",
+   "note": "the restore note text matches §3.6 exactly, but no protected_restored journal event"
+  },
+  "build-10": {
+   "class": "R-gap",
+   "note": "build.ladder key / ladder not built"
+  },
+  "build-11": {
+   "class": "ref-bug",
+   "note": "a check that mutates the tree is not detected; lib/generated.txt is landed"
+  },
+  "build-12": {
+   "class": "ref-bug",
+   "note": "check timeout becomes environment/check_unavailable and stops the drain (APPENDIX gate heuristics)"
+  },
+  "build-13": {
+   "class": "ref-bug",
+   "note": "exit 127 becomes environment/check_unavailable instead of red feedback"
+  },
+  "build-14": {
+   "class": "ref-bug",
+   "note": "a check unavailable on the base blocks green (APPENDIX)"
+  },
+  "build-15": {
+   "class": "ref-bug",
+   "note": "base-red lint with the same identities is fed back as red, not excused"
+  },
+  "build-16": {
+   "class": "ref-bug",
+   "note": "base-red identities are not excused after the new one is fixed"
+  },
+  "build-17": {
+   "class": "ref-bug",
+   "note": "a check with no findings is never excused as base-red (APPENDIX)"
+  },
+  "build-18": {
+   "class": "ref-bug",
+   "note": "approval refuses a mutating baseline check with candidate/tree_mutated instead of recording a mutating baseline"
+  },
+  "build-19": {
+   "class": "ref-bug",
+   "note": "identity-based excusing (path, rule, symbol) not applied"
+  },
+  "build-20": {
+   "class": "ref-bug",
+   "note": "a fix exiting 1 is not a red fix/fmt finding"
+  },
+  "build-22": {
+   "class": "ref-bug",
+   "note": "builds on the moved tip but records no base_moved_at_start event"
+  },
+  "build-23": {
+   "class": "ref-bug",
+   "note": "items already green on a moved base stop the Build with environment/base_acceptance_failed (APPENDIX)"
+  },
+  "build-24": {
+   "class": "ref-bug",
+   "note": "lands correctly on the moved base, but the journal has no verification events"
+  },
+  "build-25": {
+   "class": "R-gap",
+   "note": "no integration repairs: a rebase conflict parks the Build (APPENDIX)"
+  },
+  "build-26": {
+   "class": "R-gap",
+   "note": "no integration repairs; the parked Build stops the drain with exit 70 (APPENDIX)"
+  },
+  "build-27": {
+   "class": "ref-bug",
+   "note": "a .lock is retried once, then environment/landing_failed (APPENDIX); no 1/2/4 s landing_retry"
+  },
+  "build-29": {
+   "class": "ref-bug",
+   "note": "no land: warning line or landing_warning event for a dirty checked-out base"
+  },
+  "build-31": {
+   "class": "R-gap",
+   "note": "build.ladder key / ladder not built"
+  },
+  "build-37": {
+   "class": "ref-bug",
+   "note": "status cannot read a §2.8 run.json (controller/:invalid_run; reference run.json is schema 1)"
+  },
+  "build-39": {
+   "class": "ref-bug",
+   "note": "setup failure ends the Build as failed (not stopped), and setup runs before the plan (B4 before B5)"
+  },
+  "build-40": {
+   "class": "ref-bug",
+   "note": "runner unavailable on base gives failed environment/base_acceptance_failed instead of stopped environment/tool_missing"
+  },
+  "build-41": {
+   "class": "ref-bug",
+   "note": "claim refusal prints 'failed ...' instead of the stopped line"
+  },
+  "build-42": {
+   "class": "ref-bug",
+   "note": "no skipped line: prints environment/approval_branch_mismatch and exits 3 (APPENDIX)"
+  },
+  "build-44": {
+   "class": "R-gap",
+   "note": "build.ladder key / ladder not built"
+  },
+  "cli-09": {
+   "class": "ref-bug",
+   "note": "Boolean flags accept =value (APPENDIX: '--json=true' accepted); then the missing project.yaml is a controller term, exit 70"
+  },
+  "cli-13": {
+   "class": "ref-bug",
+   "note": "Slug is validated only after project resolution, so a usage error becomes controller/... exit 70 (APPENDIX: invalid slug handling)"
+  },
+  "cli-21": {
+   "class": "ref-bug",
+   "note": "Invalid slug gives exit 70 or not_found instead of the usage error (APPENDIX)"
+  },
+  "cli-25": {
+   "class": "ref-bug",
+   "note": "status cannot read §2.8 run.json (schema 1: no started_ms/owner_pid/approval_sha256): controller/:invalid_run"
+  },
+  "cli-26": {
+   "class": "ref-bug",
+   "note": "status cannot read §2.8 run.json: controller/:invalid_run"
+  },
+  "cli-28": {
+   "class": "ref-bug",
+   "note": "status cannot read §2.8 run.json: controller/:invalid_run"
+  },
+  "cli-29": {
+   "class": "ref-bug",
+   "note": "No SIGINT handling: no interrupted{reason: sigint} event (APPENDIX)"
+  },
+  "cli-30": {
+   "class": "ref-bug",
+   "note": "A 401 is classed environment/login and the Build failed, not stopped provider/login with exit 4 (APPENDIX: no stopped drain line)"
+  },
+  "custody-01": {
+   "class": "ref-bug",
+   "note": "check timeout at approval gives environment/check_unavailable, exit 3, and the command takes ~12 s"
+  },
+  "custody-02": {
+   "class": "ref-bug",
+   "note": "same as custody-01 for a TERM-trapping check"
+  },
+  "custody-04": {
+   "class": "ref-bug",
+   "note": "rung workspaces are not at <state root>/<run_id>-<rung> (§2.7, §5.4), so the shell pid file is never found"
+  },
+  "custody-05": {
+   "class": "ref-bug",
+   "note": "SIGINT exits 130 but records no interrupted{reason: sigint} event (APPENDIX: no SIGINT handling)"
+  },
+  "custody-07": {
+   "class": "ref-bug",
+   "note": "the Build lands and the warning/event exist (patched seam), but the report has no sandbox field (§2.10)"
+  },
+  "custody-08": {
+   "class": "ref-bug",
+   "note": "the shell tool passes the 300 KiB command in argv (APPENDIX: sh -c <cmd>)"
+  },
+  "exunit-01": {
+   "class": "ref-bug",
+   "note": "ledger rows keep the `test ` prefix (`test greets Almir`); journal has no spec verification event"
+  },
+  "exunit-02": {
+   "class": "ref-bug",
+   "note": "missing runner on the base gives `failed … environment/base_acceptance_failed` not `stopped … environment/tool_missing`; no plan request before the rung"
+  },
+  "exunit-03": {
+   "class": "ref-bug",
+   "note": "journal events differ from §2.8 (no verification/result); repair feedback names neither acceptance_compile_failed nor `acceptance A1:`"
+  },
+  "exunit-04": {
+   "class": "ref-bug",
+   "note": "approval.json baseline findings use the schema-1 shape (id/kind/tool) instead of path/rule/symbol/message"
+  },
+  "exunit-05": {
+   "class": "R-gap",
+   "note": "formatting matches the spec, but the pass ends on the first write and ledger/audit are not built; stderr progress is `shaper attempt=… ` not `shaper pass=<n> role=<role> <event>` (§3.2.6)"
+  },
+  "format-02": {
+   "class": "ref-bug",
+   "note": "banned_phrase is a lint error in the reference, not a style card warning"
+  },
+  "format-03": {
+   "class": "ref-bug",
+   "note": "hedge is a lint error in the reference, not a style card warning"
+  },
+  "format-04": {
+   "class": "ref-bug",
+   "note": "Tier rules are lint errors in the reference, not style card warnings"
+  },
+  "format-05": {
+   "class": "ref-bug",
+   "note": "YAML errors printed as Elixir terms with exit 70; some messages carry extra detail"
+  },
+  "format-07": {
+   "class": "ref-bug",
+   "note": "Progress lines read 'shaper attempt=…' rather than 'shaper pass=<n> role=<role> <event>'"
+  },
+  "format-08": {
+   "class": "ref-bug",
+   "note": "Base-red rows are not parsed into GNU findings; empty 'Warnings' header"
+  },
+  "format-09": {
+   "class": "ref-bug",
+   "note": "Most §1.5 error lines are Elixir terms with exit 70 (APPENDIX)"
+  },
+  "format-10": {
+   "class": "ref-bug",
+   "note": "Feedback 'gate:' summary line differs from §3.7.3"
+  },
+  "ladder-01": {
+   "class": "R-gap",
+   "note": "R1 lands, but the journal has no rung_started and finished lacks rung/verdict (journal shape, APPENDIX Formats)"
+  },
+  "ladder-02": {
+   "class": "R-gap",
+   "note": "R-gap: no ladder/auditor/selector (APPENDIX 'Not built yet'); R1 failure ends the Build"
+  },
+  "ladder-03": {
+   "class": "R-gap",
+   "note": "Difficulty entry rule not built: R1 Luna runs instead of R2 Sol (unmatched request)"
+  },
+  "ladder-04": {
+   "class": "R-gap",
+   "note": "R-gap: build.ladder/land/budget_ms keys rejected (no ladder recipe, APPENDIX Build)"
+  },
+  "ladder-05": {
+   "class": "R-gap",
+   "note": "No build auditor or advisory landing; 'unchanged' ends the Build (APPENDIX Build)"
+  },
+  "ladder-06": {
+   "class": "R-gap",
+   "note": "R-gap: build.ladder/land/budget_ms keys rejected (no ladder recipe, APPENDIX Build)"
+  },
+  "ladder-07": {
+   "class": "R-gap",
+   "note": "R-gap: build.ladder/land/budget_ms keys rejected (no ladder recipe, APPENDIX Build)"
+  },
+  "ladder-08": {
+   "class": "R-gap",
+   "note": "No build auditor or advisory landing; 'unchanged' ends the Build"
+  },
+  "ladder-09": {
+   "class": "R-gap",
+   "note": "R-gap: build.ladder/land/budget_ms keys rejected (no ladder recipe, APPENDIX Build)"
+  },
+  "ladder-10": {
+   "class": "R-gap",
+   "note": "R-gap: build.ladder/land/budget_ms keys rejected (no ladder recipe, APPENDIX Build)"
+  },
+  "ladder-11": {
+   "class": "R-gap",
+   "note": "R-gap: no ladder/auditor/selector (APPENDIX 'Not built yet'); R1 failure ends the Build"
+  },
+  "ladder-12": {
+   "class": "R-gap",
+   "note": "R-gap: no ladder/auditor/selector (APPENDIX 'Not built yet'); R1 failure ends the Build"
+  },
+  "ladder-13": {
+   "class": "R-gap",
+   "note": "No selection or best-candidate emission (APPENDIX 'Not built yet')"
+  },
+  "ladder-14": {
+   "class": "R-gap",
+   "note": "No selector (APPENDIX 'Not built yet')"
+  },
+  "ladder-15": {
+   "class": "R-gap",
+   "note": "R-gap: build.ladder/land/budget_ms keys rejected (no ladder recipe, APPENDIX Build)"
+  },
+  "ladder-16": {
+   "class": "R-gap",
+   "note": "No selector (APPENDIX 'Not built yet')"
+  },
+  "ladder-17": {
+   "class": "R-gap",
+   "note": "R-gap: build.ladder/land/budget_ms keys rejected (no ladder recipe, APPENDIX Build)"
+  },
+  "ladder-18": {
+   "class": "R-gap",
+   "note": "build.budget_ms rejected; no Build budget"
+  },
+  "ladder-19": {
+   "class": "R-gap",
+   "note": "Moved-base conflict parks immediately (no integration repairs, no landing allowance); drain stops with exit 70 (APPENDIX)"
+  },
+  "ladder-20": {
+   "class": "R-gap",
+   "note": "'unchanged' ends the Build instead of moving to R2 (APPENDIX Build)"
+  },
+  "ladder-21": {
+   "class": "R-gap",
+   "note": "turn cap ends the Build instead of moving to R2 (APPENDIX Build)"
+  },
+  "ladder-22": {
+   "class": "R-gap",
+   "note": "Lands after retrying, but the journal has no rung_started/provider_retry in the spec shape (delays jittered, no rung field)"
+  },
+  "ladder-23": {
+   "class": "R-gap",
+   "note": "R-gap: no ladder/auditor/selector (APPENDIX 'Not built yet'); R1 failure ends the Build"
+  },
+  "ladder-24": {
+   "class": "R-gap",
+   "note": "R-gap: no ladder/auditor/selector (APPENDIX 'Not built yet'); R1 failure ends the Build"
+  },
+  "ladder-25": {
+   "class": "R-gap",
+   "note": "R-gap: build.ladder/land/budget_ms keys rejected (no ladder recipe, APPENDIX Build)"
+  },
+  "ladder-26": {
+   "class": "R-gap",
+   "note": "R-gap: no ladder/auditor/selector (APPENDIX 'Not built yet'); R1 failure ends the Build"
+  },
+  "ladder-27": {
+   "class": "R-gap",
+   "note": "R-gap: no ladder/auditor/selector (APPENDIX 'Not built yet'); R1 failure ends the Build"
+  },
+  "ladder-28": {
+   "class": "R-gap",
+   "note": "R-gap: no ladder/auditor/selector (APPENDIX 'Not built yet'); R1 failure ends the Build"
+  },
+  "ladder-29": {
+   "class": "ref-bug",
+   "note": "Repair feedback lacks the 'acceptance A2: fail…' line of §3.7.3, so the scripted repair turn is unmatched"
+  },
+  "ladder-30": {
+   "class": "R-gap",
+   "note": "First red verification ends the Build (done_gate_red); no R2 or earlier-attempts summary"
+  },
+  "ladder-31": {
+   "class": "R-gap",
+   "note": "R-gap: no ladder/auditor/selector (APPENDIX 'Not built yet'); R1 failure ends the Build"
+  },
+  "ladder-32": {
+   "class": "R-gap",
+   "note": "shaping.proof: witness not built (project key rejected)"
+  },
+  "ladder-33": {
+   "class": "R-gap",
+   "note": "shaping.proof: witness not built (project key rejected)"
+  },
+  "ladder-34": {
+   "class": "R-gap",
+   "note": "R-gap: build.ladder/land/budget_ms keys rejected (no ladder recipe, APPENDIX Build)"
+  },
+  "ladder-35": {
+   "class": "R-gap",
+   "note": "No usage-limit wait (APPENDIX Build: no wait on usage limits); also no R2"
+  },
+  "ladder-36": {
+   "class": "R-gap",
+   "note": "No outage handling: overload fails the Build ('failed … provider/overload') instead of stopped after the 30-minute window"
+  },
+  "provider-01": {
+   "class": "ref-bug",
+   "note": "Planner (tool-less role) sends \"tools\": [] instead of omitting the key (§4.2)"
+  },
+  "provider-03": {
+   "class": "R-gap",
+   "note": "R-gap: build.ladder/land/budget_ms keys rejected (no ladder recipe, APPENDIX Build)"
+  },
+  "provider-08": {
+   "class": "ref-bug",
+   "note": "Retries a missing completed, but provider_retry delay_ms is jittered (not 2000) and there is no rung_started"
+  },
+  "provider-09": {
+   "class": "ref-bug",
+   "note": "provider_retry delay_ms is jittered, not the 2000 ms backoff (§4.5)"
+  },
+  "provider-11": {
+   "class": "R-gap",
+   "note": "No usage-limit wait: 429 fails the Build (APPENDIX Build)"
+  },
+  "provider-12": {
+   "class": "ref-bug",
+   "note": "Backoff delays are jittered (≈1779, 2246, 5384 ms), not 2000/4000/8000"
+  },
+  "provider-13": {
+   "class": "R-gap",
+   "note": "No model switch after 3 overloads (APPENDIX Build)"
+  },
+  "provider-14": {
+   "class": "R-gap",
+   "note": "Timeout retry recorded without the spec backoff (APPENDIX: single 200 ms retry on timeout)"
+  },
+  "provider-15": {
+   "class": "R-gap",
+   "note": "Timeout retry recorded without the spec backoff (APPENDIX: single 200 ms retry on timeout)"
+  },
+  "provider-16": {
+   "class": "R-gap",
+   "note": "Timeout retry recorded without the spec backoff; trickling streams are not cut at the total cap (APPENDIX)"
+  },
+  "provider-17": {
+   "class": "R-gap",
+   "note": "Transport retry without the spec backoff (APPENDIX: single 200 ms retry)"
+  },
+  "provider-18": {
+   "class": "R-gap",
+   "note": "No usage-limit wait: an SSE rate_limit event fails the Build"
+  },
+  "provider-19": {
+   "class": "ref-bug",
+   "note": "Prints a bare 'provider/login: …' line with no 'stopped … it stays queued' line or queue summary"
+  },
+  "provider-20": {
+   "class": "ref-bug",
+   "note": "A usage with cached_tokens > input_tokens is rejected as malformed instead of clamped (§4.3)"
+  },
+  "provider-24": {
+   "class": "ref-bug",
+   "note": "Tool results match rows 1–9, but the pass ends on the first write (APPENDIX: generated_file_missing cause); invalid-argument text lacks '(invalid_arguments)'"
+  },
+  "provider-26": {
+   "class": "ref-bug",
+   "note": "Path escape refused correctly, but the shaping pass ends on the first write instead of the no-tool-call response (APPENDIX)"
+  },
+  "shape-01": {
+   "class": "R-gap",
+   "note": "no requirement-ledger/shaping-audit requests (ledger.json absent); also no Feasibility line, usage lines lack the role, and stderr progress is `shaper attempt=… ` not `shaper pass=<n> role=<role> <event>` (§3.2.6)"
+  },
+  "shape-02": {
+   "class": "R-gap",
+   "note": "--json lacks feasibility; usage has no role and only shaper calls (ledger/audit not built)"
+  },
+  "shape-03": {
+   "class": "ref-bug",
+   "note": "CRLF in a stdin Request is normalised to LF in intent.md; the spec keeps Request bytes exactly"
+  },
+  "shape-04": {
+   "class": "ref-bug",
+   "note": "non-UTF-8 Request bytes are re-encoded (0xff becomes U+00FF) instead of kept byte for byte"
+  },
+  "shape-05": {
+   "class": "ref-bug",
+   "note": "prints `task input unavailable stdin: :empty` instead of `intent/request_unavailable: stdin: empty`"
+  },
+  "shape-06": {
+   "class": "ref-bug",
+   "note": "first message omits `run-acceptance.sh` (acceptance.run program) from the effective gate paths; stderr progress is `shaper attempt=… ` not `shaper pass=<n> role=<role> <event>` (§3.2.6)"
+  },
+  "shape-07": {
+   "class": "R-gap",
+   "note": "a pass ends on the first successful write (APPENDIX), so separate-turn writes cost a repair round"
+  },
+  "shape-08": {
+   "class": "R-gap",
+   "note": "no finish guard; a pass ends on the first write"
+  },
+  "shape-09": {
+   "class": "R-gap",
+   "note": "pass ends on the first write, ledger/audit not built (the out-of-scope ERROR text itself matches)"
+  },
+  "shape-10": {
+   "class": "R-gap",
+   "note": "pass ends on the first write, so the round count is 3 not 2; stderr progress is `shaper attempt=… ` not `shaper pass=<n> role=<role> <event>` (§3.2.6)"
+  },
+  "shape-11": {
+   "class": "R-gap",
+   "note": "style findings are not repaired outside the cap; no lint_* leftover warnings"
+  },
+  "shape-12": {
+   "class": "R-gap",
+   "note": "no fallback_shaper conversation for passes 4-6"
+  },
+  "shape-13": {
+   "class": "R-gap",
+   "note": "no fallback conversation and no 6-pass limit line"
+  },
+  "shape-14": {
+   "class": "R-gap",
+   "note": "reclassification works, but the ledger and shaping audit are not built"
+  },
+  "shape-15": {
+   "class": "R-gap",
+   "note": "pass ends on the first write, so all_items_keep repair takes 3 rounds"
+  },
+  "shape-16": {
+   "class": "R-gap",
+   "note": "red row: pass ends on the first write (3 rounds); 127 row: exit 3 but no done turn and different wording"
+  },
+  "shape-17": {
+   "class": "R-gap",
+   "note": "pass ends on the first write, so the undeclared-gate repair takes 3 rounds"
+  },
+  "shape-18": {
+   "class": "ref-bug",
+   "note": "a missing `format` executable produces no stderr warning"
+  },
+  "shape-19": {
+   "class": "R-gap",
+   "note": "requirement ledger and coverage check not built"
+  },
+  "shape-20": {
+   "class": "R-gap",
+   "note": "shaping test audit not built"
+  },
+  "shape-21": {
+   "class": "R-gap",
+   "note": "shaping test audit not built; pass ends on the first write"
+  },
+  "shape-22": {
+   "class": "R-gap",
+   "note": "Concerns: parsing and feasibility_concern warnings not built"
+  },
+  "shape-23": {
+   "class": "R-gap",
+   "note": "model/effort resolution is correct, but the pass ends on the first write; stderr progress is `shaper attempt=… ` not `shaper pass=<n> role=<role> <event>` (§3.2.6)"
+  },
+  "shape-24": {
+   "class": "R-gap",
+   "note": "the retry succeeds, but the pass ends on the first write; stderr progress is `shaper attempt=… ` not `shaper pass=<n> role=<role> <event>` (§3.2.6)"
+  },
+  "shape-26": {
+   "class": "R-gap",
+   "note": "witness mode (`shaping: {proof: witness}`) and `build.ladder` are not built"
+  },
+  "state-01": {
+   "class": "ref-bug",
+   "note": "Right line numbers, but printed as an Elixir term with exit 70 instead of environment/project_config_invalid exit 3 (APPENDIX)"
+  },
+  "state-02": {
+   "class": "ref-bug",
+   "note": "All issues found, but printed as an Elixir term, exit 70"
+  },
+  "state-03": {
+   "class": "R-gap",
+   "note": "shaping:, build.ladder, build.budget_ms, build.fallback, build.land are not accepted (single-recipe ladder schema not built)"
+  },
+  "state-04": {
+   "class": "ref-bug",
+   "note": "Right lines and messages, but printed as an Elixir term, exit 70 instead of intent/parse exit 1"
+  },
+  "state-05": {
+   "class": "ref-bug",
+   "note": "Lint lines print 'at line :' with no number; no_change_item row is an R-gap"
+  },
+  "state-06": {
+   "class": "ref-bug",
+   "note": "title_too_long and long_code_block are treated as errors (exit 1), not style warnings"
+  },
+  "state-09": {
+   "class": "ref-bug",
+   "note": "approval.json is schema 1 (no approval_sha256, old baseline, no witness); trailer hash covers intent.md only (APPENDIX)"
+  },
+  "state-10": {
+   "class": "ref-bug",
+   "note": "Tampered approval prints controller/:approval_trailer_mismatch with no stopped line / exit code mapping"
+  },
+  "state-11": {
+   "class": "ref-bug",
+   "note": "Journal events have no ts; started lacks recipe ladder/max_rungs/land/budget_ms (APPENDIX)"
+  },
+  "state-12": {
+   "class": "ref-bug",
+   "note": "Report uses the old schema (acceptance_items/acceptance_results); no verdict, rungs, best_candidate, audit, budget"
+  },
+  "state-16": {
+   "class": "ref-bug",
+   "note": "env KOGEN_* and duplicate check names accepted; scalar domain crashes the loader (APPENDIX)"
+  },
+  "state-17": {
+   "class": "ref-bug",
+   "note": "status cannot read §2.8 run.json: controller/:invalid_run"
+  },
+  "state-19": {
+   "class": "ref-bug",
+   "note": "status cannot read §2.8 run.json: controller/:invalid_run"
+  },
+  "state-20": {
+   "class": "ref-bug",
+   "note": "status cannot read §2.8 run.json (no stopped status): controller/:invalid_run"
+  },
+  "state-21": {
+   "class": "ref-bug",
+   "note": "status cannot read §2.8 run.json: controller/:invalid_run"
+  },
+  "state-23": {
+   "class": "ref-bug",
+   "note": "Landed means any reachable trailer, so a reused slug stays landed (APPENDIX)"
+  },
+  "state-25": {
+   "class": "ref-bug",
+   "note": "shape-warnings.json in the §2.4.5 shape is rejected (controller/:shape_warnings_invalid)"
+  },
+  "state-26": {
+   "class": "R-gap",
+   "note": "build.ladder is rejected; the setup cache key and setup_reused journal differ (APPENDIX)"
+  },
+  "state-28": {
+   "class": "R-gap",
+   "note": "No approval-baseline cache (approval-cache/<hex>.json)"
+  },
+  "state-29": {
+   "class": "ref-bug",
+   "note": "A lost approval CAS is not retried: controller/:exists"
+  },
+  "state-30": {
+   "class": "ref-bug",
+   "note": "status cannot read §2.8 run.json: controller/:invalid_run"
+  }
+ }
+}

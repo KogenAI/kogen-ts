@@ -1,0 +1,41 @@
+{
+ "id": "approval-13",
+ "profile": "approval",
+ "fixture": "kt",
+ "title": "Setup failure gives exit 3",
+ "spec": [
+  "§3.3",
+  "§1.5"
+ ],
+ "fixture_files": {
+  "checks/setup.sh": "#!/bin/sh\necho 'setup broke: no build dir'\nexit 7\n"
+ },
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 3,
+    "stderr": "",
+    "stdout_regex": [
+     "\\Aenvironment/setup_failed: Setup setup failed \\(status=7, timed_out=false\\)\\.\n",
+     "(?m)^  .*setup broke: no build dir$"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "refs": {
+     "refs/kogen/intents/greet": false
+    }
+   }
+  }
+ ]
+}

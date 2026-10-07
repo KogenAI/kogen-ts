@@ -1,0 +1,189 @@
+{
+  "id": "v1.2-32-provider-21-login-flow",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for provider-21: ChatGPT login with Grok provider row",
+  "spec": [
+    "§1.7.6",
+    "§2.7",
+    "§4.6",
+    "§4.10"
+  ],
+  "script": [],
+  "steps": [
+    {
+      "run": [
+        "kogen",
+        "provider",
+        "list"
+      ],
+      "expect": {
+        "exit": 0,
+        "stderr": "",
+        "stdout": "chatgpt: not signed in\ngrok: not signed in\n"
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "provider",
+        "login",
+        "chatgpt"
+      ],
+      "timeout": 90,
+      "expect": {
+        "exit": 0,
+        "stderr": "",
+        "stdout_lines": [
+          "Continue with ChatGPT",
+          "~{fake_url}/api/accounts/authorize\\?\\S+",
+          "You're using your ChatGPT plan",
+          "chatgpt:default signed in (test@kogen.invalid)"
+        ]
+      }
+    },
+    {
+      "assert": {
+        "fake_oauth": {
+          "$contains": [
+            {
+              "kind": "authorize",
+              "params": {
+                "client_id": "dynamic_agent_client",
+                "agent_name_hint": "Kogen",
+                "response_type": "code",
+                "redirect_uri": "http://127.0.0.1:1455/auth/callback",
+                "scope": "openid profile email offline_access resource.invoke chatgpt.tokens.use.direct",
+                "resource": "https://api.openai.com/v1",
+                "code_challenge_method": "S256",
+                "code_challenge": "~[A-Za-z0-9_-]{43}",
+                "state": "$nonempty",
+                "nonce": "$nonempty",
+                "ext_agent_host_id": "~urn:uuid:[0-9a-fA-F-]{36}"
+              }
+            },
+            {
+              "kind": "token:authorization_code",
+              "params": {
+                "code_verifier": "~[A-Za-z0-9._~-]{43,128}"
+              }
+            }
+          ]
+        },
+        "files": {
+          "{home}/.kogen/host.json": {
+            "json": {
+              "ext_agent_host_id": "~urn:uuid:[0-9a-fA-F-]{36}"
+            }
+          },
+          "{home}/.kogen/profiles.json": {
+            "json": {
+              "chatgpt": {
+                "default": {
+                  "subject": "user-kogen-test",
+                  "email": "test@kogen.invalid",
+                  "signed_in": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "provider",
+        "list"
+      ],
+      "expect": {
+        "exit": 0,
+        "stderr": "",
+        "stdout_lines": [
+          "~chatgpt:default( \\(default\\))? signed in( test@kogen\\.invalid)?( Using ChatGPT plan)?( expires=[0-9]+)?"
+        ]
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "provider",
+        "use",
+        "chatgpt",
+        "--as",
+        "default"
+      ],
+      "expect": {
+        "exit": 0,
+        "stderr": "",
+        "stdout": "chatgpt:default is the default account\n"
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "provider",
+        "use",
+        "chatgpt",
+        "--as",
+        "default",
+        "--project",
+        "{checkout}"
+      ],
+      "expect": {
+        "exit": 0,
+        "stderr": "",
+        "stdout": "chatgpt:default is the account for {checkout}\n"
+      }
+    },
+    {
+      "assert": {
+        "files": {
+          "{home}/.kogen/accounts.yaml": {
+            "text": "# Kogen accounts on this machine, written by kogen provider use.\nchatgpt:\n  default: default\n  projects:\n    - path: \"{checkout}\"\n      account: default\nselection:\n  default: chatgpt\n  projects:\n    - path: \"{checkout}\"\n      provider: chatgpt\n"
+          }
+        }
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "provider",
+        "logout",
+        "chatgpt"
+      ],
+      "expect": {
+        "exit": 0,
+        "stderr": "",
+        "stdout": "chatgpt:default signed out\n"
+      }
+    },
+    {
+      "assert": {
+        "fake_oauth_count": {
+          "revoke": 1
+        }
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "provider",
+        "list"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_lines": [
+          "~chatgpt:default( \\(default\\))? signed out.*"
+        ]
+      }
+    }
+  ],
+  "notes": "When the profile store is empty, list prints both provider rows; saved ChatGPT login and logout lines remain as specified (§1.7.6, §2.7, §4.6, §4.10).",
+  "needs": [
+    "login"
+  ],
+  "serial": true,
+  "auth": "owned"
+}

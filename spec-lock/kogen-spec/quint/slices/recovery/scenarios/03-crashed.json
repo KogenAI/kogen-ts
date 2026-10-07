@@ -1,0 +1,9 @@
+{
+  "name": "03-crashed",
+  "about": "Any other dead run fails as crashed, including a pid that is alive with a different start time. That case is alive false.",
+  "steps": [
+    {"do": ["Put", {"id": "r1", "status": "running", "alive": false, "onBase": false, "lastEvent": "other", "incoming": true, "queued": false, "claim": true, "reason": ""}]},
+    {"do": ["Recover"], "expect": {"line": "crashed", "claim": "", "runs": {"r1": {"status": "failed", "reason": "crashed", "queued": false, "incoming": false}}}},
+    {"do": ["Recover"], "expect": {"line": "unchanged", "runs": {"r1": {"status": "failed", "reason": "crashed"}}}}
+  ]
+}

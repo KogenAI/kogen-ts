@@ -1,0 +1,9 @@
+38-public-build-skeleton-and-planner gate: I1
+42-queue-public-handlers-detach-and-signals gate: I1
+43-serial-ladder-and-repeated-attempts gate: I2
+44-parallel-hard-rungs-and-budgets gate: I2
+45-observational-audits-and-deterministic-selector gate: I2
+47-shape-conversation-loop-and-accounting gate: I2
+48-shape-validation-ledger-and-audits gate: I2
+50-optional-witness-proof-and-reuse gate: I2
+62-compiled-artifacts-and-operator-docs gate: I6

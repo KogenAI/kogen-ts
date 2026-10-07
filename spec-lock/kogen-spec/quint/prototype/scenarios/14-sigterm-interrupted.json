@@ -1,0 +1,12 @@
+{
+  "name": "14-sigterm-interrupted",
+  "about": "SIGTERM marks the run interrupted at once; it needs a re-approval to build again.",
+  "steps": [
+    {"do": ["Approve", {"slug": "alpha", "time": 1}]},
+    {"do": ["Start", "r1"]},
+    {"do": ["Interrupt"], "expect": {"status": {"alpha": "interrupted"}, "claim": "r1"}},
+    {"do": ["Start", "r2"], "expect": {"last": "nothing_to_build", "claim": "", "runs": {"r1": {"status": "failed", "reason": "interrupted"}}, "status": {"alpha": "interrupted"}}},
+    {"do": ["Approve", {"slug": "alpha", "time": 2}], "expect": {"status": {"alpha": "approved"}}},
+    {"do": ["Start", "r3"], "expect": {"runs": {"r3": {"slug": "alpha", "status": "running"}}}}
+  ]
+}

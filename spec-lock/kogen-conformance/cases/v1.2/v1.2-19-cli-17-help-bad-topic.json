@@ -1,0 +1,60 @@
+{
+  "id": "v1.2-19-cli-17-help-bad-topic",
+  "profile": "v1.2",
+  "fixture": "none",
+  "title": "v1.2 replacement for cli-17: Help with a bad topic",
+  "spec": [
+    "§1.3",
+    "§1.4"
+  ],
+  "rows": [
+    {
+      "label": "help frob",
+      "argv": [
+        "help",
+        "frob"
+      ],
+      "words": "frob",
+      "first": "frob"
+    },
+    {
+      "label": "help intent frob",
+      "argv": [
+        "help",
+        "intent",
+        "frob"
+      ],
+      "words": "intent frob",
+      "first": "intent"
+    },
+    {
+      "label": "help status extra",
+      "argv": [
+        "help",
+        "status",
+        "extra"
+      ],
+      "words": "status extra",
+      "first": "status"
+    }
+  ],
+  "steps": [
+    {
+      "run": [
+        "kogen",
+        "{*row.argv}"
+      ],
+      "expect": {
+        "exit": 2,
+        "stdout": [
+          "kogen help: unexpected argument '{row.first}'\n\n",
+          {
+            "data": "v1.2/help/kogen.txt"
+          }
+        ],
+        "stderr": ""
+      }
+    }
+  ],
+  "notes": "Any token after help is an unexpected argument; the top page follows the v1.2 corpus (§1.3–1.4)."
+}

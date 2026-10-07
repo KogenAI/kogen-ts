@@ -1,0 +1,344 @@
+{
+  "id": "v1.2-41-build-06",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for build-06: The repair cap of 6 holds",
+  "spec": [
+    "§3.5",
+    "§3.6",
+    "§4.7"
+  ],
+  "script": [
+    {
+      "id": "plan",
+      "expect": {
+        "role": "planner",
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "make",
+      "expect": {
+        "role": "builder",
+        "turn": 1,
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'TODO 1\\n' > lib/t1.txt && printf 'TODO 2\\n' > lib/t2.txt && printf 'TODO 3\\n' > lib/t3.txt && printf 'TODO 4\\n' > lib/t4.txt && printf 'TODO 5\\n' > lib/t5.txt && printf 'TODO 6\\n' > lib/t6.txt && printf 'TODO 7\\n' > lib/t7.txt && printf 'Hello, Almir!\\n' > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "d0",
+      "expect": {
+        "role": "builder",
+        "turn": 2,
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "fix1",
+      "expect": {
+        "role": "builder",
+        "turn": 3,
+        "input_contains": "Greet Almir by name",
+        "last_user_contains": "Kogen's controller reported this failure."
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "rm lib/t1.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "d1",
+      "expect": {
+        "role": "builder",
+        "turn": 4,
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "fix2",
+      "expect": {
+        "role": "builder",
+        "turn": 5,
+        "input_contains": "Greet Almir by name",
+        "last_user_contains": "Kogen's controller reported this failure."
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "rm lib/t2.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "d2",
+      "expect": {
+        "role": "builder",
+        "turn": 6,
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "fix3",
+      "expect": {
+        "role": "builder",
+        "turn": 7,
+        "input_contains": "Greet Almir by name",
+        "last_user_contains": "Kogen's controller reported this failure."
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "rm lib/t3.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "d3",
+      "expect": {
+        "role": "builder",
+        "turn": 8,
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "fix4",
+      "expect": {
+        "role": "builder",
+        "turn": 9,
+        "input_contains": "Greet Almir by name",
+        "last_user_contains": "Kogen's controller reported this failure."
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "rm lib/t4.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "d4",
+      "expect": {
+        "role": "builder",
+        "turn": 10,
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "fix5",
+      "expect": {
+        "role": "builder",
+        "turn": 11,
+        "input_contains": "Greet Almir by name",
+        "last_user_contains": "Kogen's controller reported this failure."
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "rm lib/t5.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "d5",
+      "expect": {
+        "role": "builder",
+        "turn": 12,
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "fix6",
+      "expect": {
+        "role": "builder",
+        "turn": 13,
+        "input_contains": "Greet Almir by name",
+        "last_user_contains": "Kogen's controller reported this failure."
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "rm lib/t6.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "d6",
+      "expect": {
+        "role": "builder",
+        "turn": 14,
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    }
+  ],
+  "project": {
+    "build": {
+      "ladder": {
+        "max_rungs": 1
+      }
+    }
+  },
+  "notes": "Seven identities decreasing by one per repair: six repairs are granted, the seventh red verification ends the rung repair_cap. Acceptance passes, so no auditor request. v1.2 replacement for build-06. Text-only builder replies are progress; completion requires finish alone with {} (§3.6). Shell-recipe builders expose shell, finish, and tool_output (§4.7).",
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 1,
+        "stderr": "",
+        "stdout_lines": [
+          "building greet",
+          "~failed greet: \\S+; best candidate (green|green-with-advisory-tests|unverified|none) at refs/kogen/parked/{run_id:greet} \\(Build {id8:greet}\\)",
+          "queue: done; 1 Build(s), 0 landed, 1 not"
+        ]
+      }
+    },
+    {
+      "assert": {
+        "events": {
+          "slug": "greet",
+          "count": {
+            "repair": 6,
+            "verification": 7
+          },
+          "subsequence": [
+            {
+              "event": "verification",
+              "result": "red",
+              "count": 7
+            },
+            {
+              "event": "verification",
+              "result": "red",
+              "count": 1
+            },
+            {
+              "event": "rung_finished",
+              "rung": "R1",
+              "reason": "repair_cap",
+              "verdict": "unverified"
+            },
+            "selection",
+            {
+              "event": "finished",
+              "status": "failed"
+            }
+          ],
+          "absent": [
+            "audit"
+          ]
+        },
+        "refs": {
+          "refs/kogen/parked/{run_id:greet}": true
+        },
+        "fake_request_count": {
+          "auditor": 0,
+          "test_auditor": 0
+        }
+      }
+    }
+  ]
+}

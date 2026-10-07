@@ -1,0 +1,95 @@
+{
+ "id": "build-43",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Commit identity is the git config identity; hooks never run",
+ "spec": [
+  "§2.5.4",
+  "§5.4",
+  "§6.3"
+ ],
+ "script": [
+  {
+   "include": "r1_happy"
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "write": {
+    "path": "{case}/hooks/pre-commit",
+    "text": "#!/bin/sh\necho \"$0\" >> \"{case}/hooks-ran\"\nexit 1\n",
+    "mode": "755"
+   }
+  },
+  {
+   "write": {
+    "path": "{case}/hooks/commit-msg",
+    "text": "#!/bin/sh\necho \"$0\" >> \"{case}/hooks-ran\"\nexit 1\n",
+    "mode": "755"
+   }
+  },
+  {
+   "write": {
+    "path": "{case}/hooks/pre-push",
+    "text": "#!/bin/sh\necho \"$0\" >> \"{case}/hooks-ran\"\nexit 1\n",
+    "mode": "755"
+   }
+  },
+  {
+   "write": {
+    "path": "{case}/hooks/post-commit",
+    "text": "#!/bin/sh\necho \"$0\" >> \"{case}/hooks-ran\"\nexit 1\n",
+    "mode": "755"
+   }
+  },
+  {
+   "write": {
+    "path": "{case}/gitconfig",
+    "append": true,
+    "text": "[core]\n\thooksPath = {case}/hooks\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build {id8:greet}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "files": {
+     "{case}/hooks-ran": false
+    },
+    "git": [
+     {
+      "args": [
+       "log",
+       "-1",
+       "--format=%an <%ae>|%cn <%ce>",
+       "main"
+      ],
+      "stdout": "Kogen Test <test@kogen.invalid>|Kogen Test <test@kogen.invalid>\n"
+     }
+    ]
+   }
+  }
+ ],
+ "notes": "Hooks are installed through the global core.hooksPath that every Kogen git call sees (GIT_CONFIG_GLOBAL)."
+}

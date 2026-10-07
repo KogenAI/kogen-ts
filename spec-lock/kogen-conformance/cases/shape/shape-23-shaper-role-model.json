@@ -1,0 +1,199 @@
+{
+ "id": "shape-23",
+ "profile": "shape",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Model and effort come from the shaper role, defaulting to gpt-6.1-sol/high",
+ "spec": [
+  "§2.3",
+  "§3.2.1"
+ ],
+ "rows": [
+  {
+   "label": "shaper role",
+   "project": {
+    "build": {
+     "roles": {
+      "shaper": {
+       "model": "shaper-model",
+       "effort": "low"
+      },
+      "builder": {
+       "model": "builder-model",
+       "effort": "medium"
+      }
+     }
+    }
+   },
+   "script": [
+    {
+     "id": "write",
+     "expect": {
+      "role": "shaper",
+      "turn": 1,
+      "tools": [
+       "read",
+       "search",
+       "write"
+      ],
+      "model": "shaper-model",
+      "effort": "low"
+     },
+     "reply": {
+      "calls": [
+       {
+        "name": "write",
+        "arguments": {
+         "path": ".kogen/intents/greet/intent.md",
+         "content": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: replace the single line in lib/greet.txt with the new greeting text.\n"
+        }
+       },
+       {
+        "name": "write",
+        "arguments": {
+         "path": ".kogen/acceptance/greet.t.sh",
+         "content": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "done",
+     "expect": {
+      "role": "shaper",
+      "turn": 2,
+      "model": "shaper-model",
+      "effort": "low"
+     },
+     "reply": {
+      "text": "Both files are written."
+     }
+    },
+    {
+     "id": "ledger",
+     "expect": {
+      "role": "requirement_auditor",
+      "tools": []
+     },
+     "reply": {
+      "text": "{\"rows\": [{\"constraint\": \"The greeting in lib/greet.txt says Hello, Almir!\", \"maps_to\": \"A1\"}]}"
+     }
+    },
+    {
+     "id": "audit",
+     "expect": {
+      "role": "test_auditor",
+      "tools": []
+     },
+     "reply": {
+      "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test checks the requested line.\"}]}"
+     }
+    }
+   ]
+  },
+  {
+   "label": "default sol high",
+   "project": {
+    "build": {
+     "roles": {
+      "builder": {
+       "model": "builder-model",
+       "effort": "medium"
+      }
+     }
+    }
+   },
+   "script": [
+    {
+     "id": "write",
+     "expect": {
+      "role": "shaper",
+      "turn": 1,
+      "tools": [
+       "read",
+       "search",
+       "write"
+      ],
+      "model": "gpt-6.1-sol",
+      "effort": "high"
+     },
+     "reply": {
+      "calls": [
+       {
+        "name": "write",
+        "arguments": {
+         "path": ".kogen/intents/greet/intent.md",
+         "content": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: replace the single line in lib/greet.txt with the new greeting text.\n"
+        }
+       },
+       {
+        "name": "write",
+        "arguments": {
+         "path": ".kogen/acceptance/greet.t.sh",
+         "content": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "done",
+     "expect": {
+      "role": "shaper",
+      "turn": 2,
+      "model": "gpt-6.1-sol",
+      "effort": "high"
+     },
+     "reply": {
+      "text": "Both files are written."
+     }
+    },
+    {
+     "id": "ledger",
+     "expect": {
+      "role": "requirement_auditor",
+      "tools": []
+     },
+     "reply": {
+      "text": "{\"rows\": [{\"constraint\": \"The greeting in lib/greet.txt says Hello, Almir!\", \"maps_to\": \"A1\"}]}"
+     }
+    },
+    {
+     "id": "audit",
+     "expect": {
+      "role": "test_auditor",
+      "tools": []
+     },
+     "reply": {
+      "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test checks the requested line.\"}]}"
+     }
+    }
+   ]
+  }
+ ],
+ "project": "{row.project}",
+ "script": "{row.script}",
+ "steps": [
+  {
+   "write": {
+    "path": "{case}/request.md",
+    "text": "Make the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "shape",
+    "greet",
+    "{case}/request.md"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_regex": "(?m)^Validated after 1 round\\(s\\)\\.$"
+   }
+  }
+ ],
+ "notes": "v1.1: with no shaper role the shaper is gpt-6.1-sol/high (Almir 5 Oct: Sol, never Luna, shapes; build/LOG.md; T69), not the builder."
+}

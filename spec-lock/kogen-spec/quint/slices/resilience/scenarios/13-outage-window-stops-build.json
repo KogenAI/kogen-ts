@@ -1,0 +1,105 @@
+{
+ "name": "13-outage-window-stops-build",
+ "about": "With no success for longer than 30 min of attempts the Build ends as stopped provider/<class> (class of the last error), exit 4.",
+ "steps": [
+  {
+   "do": [
+    "Stage",
+    {
+     "name": "build",
+     "mode": "build",
+     "model": "luna",
+     "fallback": "sol",
+     "owned": true
+    }
+   ]
+  },
+  {
+   "do": [
+    "Request"
+   ]
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "transport",
+     "retry_after_ms": -1,
+     "elapsed_ms": 500000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "retry",
+     "delay_ms": 2000,
+     "reason": "transport",
+     "model": "luna"
+    }
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "transport",
+     "retry_after_ms": -1,
+     "elapsed_ms": 500000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "retry",
+     "delay_ms": 4000,
+     "reason": "transport",
+     "model": "luna"
+    }
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "transport",
+     "retry_after_ms": -1,
+     "elapsed_ms": 500000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "retry",
+     "delay_ms": 8000,
+     "reason": "transport",
+     "model": "luna"
+    }
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "transport",
+     "retry_after_ms": -1,
+     "elapsed_ms": 500000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "stop",
+     "delay_ms": 0,
+     "reason": "provider/transport"
+    },
+    "phase": "stopped",
+    "exit": 4,
+    "budget_ms": 2000000
+   }
+  }
+ ]
+}

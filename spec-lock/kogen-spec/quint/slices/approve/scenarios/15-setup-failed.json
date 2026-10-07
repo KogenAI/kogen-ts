@@ -1,0 +1,8 @@
+{
+ "name": "15-setup-failed",
+ "about": "Setup failure is an environment error: exit 3, nothing cached or written.",
+ "steps": [
+  {"do": ["Approve", {"slug": "alpha", "given": "", "prefixOk": true, "stableBeforeCas": true, "newSha8": "aaaa1111", "sha": "aaaa1111bbbb2222", "sha8": "aaaa1111", "by": "", "byBad": false, "ident": "Ann <ann@x.io>", "parseErr": false, "lintErr": false, "lintWarn": false, "missing": false, "setup": "failed", "cacheKey": "k1", "baseline": "green", "acceptance": "green", "witnessMode": false, "feas": "not checked", "commit": "c1", "baseSha": "b0"}], "expect": {"last": "environment/setup_failed", "exit": 3, "ran": false, "checkRuns": 0, "cache": "", "approvals": {}}},
+  {"do": ["Approve", {"slug": "alpha", "given": "aaaa1111", "prefixOk": true, "stableBeforeCas": true, "newSha8": "aaaa1111", "sha": "aaaa1111bbbb2222", "sha8": "aaaa1111", "by": "", "byBad": false, "ident": "Ann <ann@x.io>", "parseErr": false, "lintErr": false, "lintWarn": false, "missing": false, "setup": "failed", "cacheKey": "k1", "baseline": "green", "acceptance": "green", "witnessMode": false, "feas": "not checked", "commit": "c1", "baseSha": "b0"}], "expect": {"last": "environment/setup_failed", "exit": 3, "approvals": {}}}
+ ]
+}

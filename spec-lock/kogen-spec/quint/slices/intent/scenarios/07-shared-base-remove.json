@@ -1,0 +1,12 @@
+{
+  "name": "07-shared-base-remove",
+  "about": "Landing one Intent advances the shared base with every tracked source already in the checkout, so another now-landed Intent can be removed without --force.",
+  "steps": [
+    {"do": ["Shape", {"slug": "alpha", "result": "valid"}], "expect": {"life": {"alpha": "shaped"}}},
+    {"do": ["Shape", {"slug": "bravo", "result": "valid"}], "expect": {"life": {"alpha": "shaped", "bravo": "shaped"}}},
+    {"do": ["Approve", {"slug": "bravo", "mode": "commit", "hash": "abcd1234", "prefixOk": true, "race": "none"}], "expect": {"life": {"alpha": "shaped", "bravo": "approved"}}},
+    {"do": ["Adopt", {"slug": "bravo", "status": "building"}]},
+    {"do": ["Adopt", {"slug": "bravo", "status": "landed"}], "expect": {"life": {"alpha": "shaped", "bravo": "landed"}}},
+    {"do": ["Remove", {"slug": "alpha", "force": false}], "expect": {"last": "ok", "did": "removed", "life": {"bravo": "landed"}}}
+  ]
+}

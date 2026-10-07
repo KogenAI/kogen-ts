@@ -1,0 +1,37 @@
+{
+ "id": "state-30",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "Status on 50 Intents and 200 runs takes under 1 s (reported; fails only above 5 s)",
+ "spec": [
+  "§1.7.5"
+ ],
+ "steps": [
+  {
+   "sh": "set -e\ni=0\nwhile [ $i -lt 50 ]; do\n  s=$(printf 'perf-%02d' $i)\n  mkdir -p .kogen/intents/$s .kogen/acceptance\n  sed \"s/Greet Almir by name/Perf $s/\" \"{templates}/intents/greet/intent.md\" > .kogen/intents/$s/intent.md\n  cp \"{templates}/intents/greet/test.t.sh\" .kogen/acceptance/$s.t.sh\n  i=$((i + 1))\ndone\ngit add -A .kogen && git commit -q -m \"50 Intents\"\nroot=\"{state_root}/runs\"\ni=0\nwhile [ $i -lt 200 ]; do\n  id=$(printf '%032x' $((i + 4096)))\n  s=$(printf 'perf-%02d' $((i % 50)))\n  mkdir -p \"$root/$id\"\n  printf '{\"schema\":2,\"run_id\":\"%s\",\"slug\":\"%s\",\"approval_sha256\":\"%064d\",\"approval_commit\":\"%040d\",\"target_branch\":\"main\",\"status\":\"failed\",\"landing\":null,\"owner_pid\":1,\"owner_started_ms\":1,\"started_ms\":%d}\\n' $id $s 0 0 $((1700000000000 + i)) > \"$root/$id/run.json\"\n  printf '{\"event\":\"started\",\"ts\":%d}\\n{\"event\":\"finished\",\"ts\":%d,\"status\":\"failed\",\"reason\":\"repair_cap\",\"rung\":\"R1\",\"verdict\":\"unverified\",\"advisory_items\":[]}\\n' $((1700000000000 + i)) $((1700000000001 + i)) > \"$root/$id/events.jsonl\"\n  i=$((i + 1))\ndone\n"
+  },
+  {
+   "run": [
+    "kogen",
+    "status"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "max_wall_ms": 5000,
+    "stdout_regex": "\\AQueue: stopped\nDrafts:\n"
+   },
+   "capture": {}
+  },
+  {
+   "run": [
+    "kogen",
+    "status"
+   ],
+   "expect": {
+    "exit": 0,
+    "max_wall_ms": 5000
+   }
+  }
+ ]
+}

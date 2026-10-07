@@ -1,0 +1,67 @@
+{
+ "id": "approval-10",
+ "profile": "approval",
+ "fixture": "kt",
+ "title": "A red acceptance check gives exit 1",
+ "spec": [
+  "§3.3",
+  "§1.5"
+ ],
+ "project": {
+  "acceptance_checks": [
+   {
+    "name": "syntax",
+    "argv": [
+     "sh",
+     "-n",
+     "{path}"
+    ],
+    "timeout_ms": 60000
+   }
+  ]
+ },
+ "steps": [
+  {
+   "intent": {
+    "slug": "greet",
+    "test_text": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; \n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 1,
+    "stderr": "",
+    "stdout_regex": "\\Acheck/acceptance_check_failed: acceptance check syntax failed\n(  .*\n){0,20}\\Z"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet",
+    "{hash8:greet}"
+   ],
+   "expect": {
+    "exit": 1,
+    "stdout_regex": "\\Acheck/acceptance_check_failed: "
+   }
+  },
+  {
+   "assert": {
+    "refs": {
+     "refs/kogen/intents/greet": false
+    },
+    "files": {
+     "test/acceptance/greet.t.sh": false
+    }
+   }
+  }
+ ]
+}

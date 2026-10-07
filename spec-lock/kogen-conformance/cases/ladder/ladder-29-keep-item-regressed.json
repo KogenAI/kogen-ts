@@ -1,0 +1,139 @@
+{
+ "id": "ladder-29",
+ "profile": "ladder",
+ "fixture": "kt",
+ "fake": true,
+ "title": "A keep item regressed in R1 is fed back like any failure",
+ "spec": [
+  "§3.5",
+  "§3.7.3"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "tools": []
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+   }
+  },
+  {
+   "id": "r1.edit",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "turn": 1
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'Hello, Almir!\\nand more\\n' > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r1.done",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "turn": 2
+   },
+   "reply": {
+    "text": "Done."
+   }
+  },
+  {
+   "id": "r1.fix",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "turn": 3,
+    "last_user_contains": "acceptance A2: fail"
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r1.done2",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "turn": 4
+   },
+   "reply": {
+    "text": "Done."
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": {
+    "slug": "greet",
+    "template": "keep2"
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "contains": [
+      {
+       "event": "verification",
+       "rung": "R1",
+       "result": "red",
+       "acceptance": [
+        {
+         "id": "A1",
+         "status": "pass",
+         "demoted": false
+        },
+        {
+         "id": "A2",
+         "status": "~fail(ed)?",
+         "demoted": false
+        }
+       ]
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "notes": "The keep2 template has A1 (test) and A2 (test keep: lib/greet.txt has one line)."
+}

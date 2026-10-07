@@ -1,0 +1,152 @@
+{
+  "id": "v1.2-75-ladder-07",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for ladder-07: A recognized over_strict verdict demotes without a citation",
+  "spec": [
+    "§3.8.2",
+    "§3.6",
+    "§4.7",
+    "§2.8"
+  ],
+  "script": [
+    {
+      "id": "plan",
+      "expect": {
+        "role": "planner"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "r1.edit",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 1,
+        "tools": [
+          "shell",
+          "finish",
+          "tool_output"
+        ]
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r1.done",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 2,
+        "last_item_type": "function_call_output"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "audit",
+      "expect": {
+        "role": "auditor"
+      },
+      "reply": {
+        "text": "{\"items\": [{\"id\": \"A2\", \"verdict\": \"over_strict\", \"reason\": \"The Request asks for one exclamation mark.\"}]}"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": {
+        "slug": "greet",
+        "intent_text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n- A2: lib/greet.txt contains the line Hello, Almir!!\n\n## Verify\n- A1: test\n- A2: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+        "test_text": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\nt_A2() { grep -qx 'Hello, Almir!!' lib/greet.txt; }\n",
+        "commit": true
+      }
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 0,
+        "stderr": "",
+        "stdout_lines": [
+          "building greet",
+          "~\\~landed greet [0-9a-f]{8} \\(advisory: A2\\) \\(Build [0-9a-f]{8}\\)",
+          "queue: done; 1 Build(s), 1 landed, 0 not"
+        ]
+      }
+    },
+    {
+      "assert": {
+        "events": {
+          "slug": "greet",
+          "last": {
+            "event": "finished",
+            "status": "landed",
+            "verdict": "green-with-advisory-tests",
+            "advisory_items": [
+              "A2"
+            ]
+          },
+          "subsequence": [
+            {
+              "event": "audit",
+              "items": [
+                {
+                  "id": "A2",
+                  "verdict": "over_strict",
+                  "reason": "$any"
+                }
+              ]
+            },
+            {
+              "event": "rung_finished",
+              "rung": "R1",
+              "reason": "green",
+              "verdict": "green-with-advisory-tests"
+            }
+          ],
+          "absent": [
+            "repair"
+          ],
+          "count": {
+            "audit": 1,
+            "repair": 0
+          }
+        }
+      }
+    }
+  ],
+  "project": {
+    "build": {
+      "ladder": {
+        "max_rungs": 1
+      }
+    }
+  },
+  "notes": "The v1.2 auditor uses valid, over_strict, or contradicts and has no citation field; over_strict demotes A2 (§3.8.2). The auditor runs before repair, so no repair call follows the demotion. Builder completion uses finish alone with {} and shell-recipe tools (§§3.6, 4.7)."
+}

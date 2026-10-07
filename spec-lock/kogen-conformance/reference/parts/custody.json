@@ -1,0 +1,26 @@
+{
+ "custody-01": {
+  "class": "ref-bug",
+  "note": "check timeout at approval gives environment/check_unavailable, exit 3, and the command takes ~12 s"
+ },
+ "custody-02": {
+  "class": "ref-bug",
+  "note": "same as custody-01 for a TERM-trapping check"
+ },
+ "custody-04": {
+  "class": "ref-bug",
+  "note": "rung workspaces are not at <state root>/<run_id>-<rung> (\u00a72.7, \u00a75.4), so the shell pid file is never found"
+ },
+ "custody-05": {
+  "class": "ref-bug",
+  "note": "SIGINT exits 130 but records no interrupted{reason: sigint} event (APPENDIX: no SIGINT handling)"
+ },
+ "custody-07": {
+  "class": "ref-bug",
+  "note": "the Build lands and the warning/event exist (patched seam), but the report has no sandbox field (\u00a72.10)"
+ },
+ "custody-08": {
+  "class": "ref-bug",
+  "note": "the shell tool passes the 300 KiB command in argv (APPENDIX: sh -c <cmd>)"
+ }
+}

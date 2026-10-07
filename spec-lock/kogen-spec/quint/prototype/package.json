@@ -1,0 +1,5 @@
+{
+  "name": "exec-spec-proto",
+  "private": true,
+  "dependencies": { "@informalsystems/quint": "^0.33.0" }
+}

@@ -1,0 +1,128 @@
+{
+  "id": "v1.2-44-build-09",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for build-09: A shell edit to the test is restored with a note",
+  "spec": [
+    "§3.6",
+    "§3.9.4",
+    "§4.7"
+  ],
+  "script": [
+    {
+      "id": "plan",
+      "expect": {
+        "role": "planner",
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "tamper",
+      "expect": {
+        "role": "builder",
+        "turn": 1,
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 't_A1() { true; }\\n' > test/acceptance/greet.t.sh"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "edit",
+      "expect": {
+        "role": "builder",
+        "turn": 2,
+        "input_contains": [
+          "Greet Almir by name",
+          "You changed test/acceptance/greet.t.sh; acceptance tests and the Intent are read-only and have been restored. Make the implementation satisfy them."
+        ]
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "done",
+      "expect": {
+        "role": "builder",
+        "turn": 3,
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 0,
+        "stderr": "",
+        "stdout_lines": [
+          "building greet",
+          "~\\~landed greet [0-9a-f]{8} \\(Build {id8:greet}\\)",
+          "queue: done; 1 Build(s), 1 landed, 0 not"
+        ]
+      }
+    },
+    {
+      "assert": {
+        "events": {
+          "slug": "greet",
+          "contains": [
+            {
+              "event": "protected_restored",
+              "rung": "R1",
+              "path": "test/acceptance/greet.t.sh"
+            }
+          ]
+        },
+        "git": [
+          {
+            "args": [
+              "cat-file",
+              "-p",
+              "main:test/acceptance/greet.t.sh"
+            ],
+            "stdout": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+          }
+        ]
+      }
+    }
+  ],
+  "notes": "v1.2 replacement for build-09. Text-only builder replies are progress; completion requires finish alone with {} (§3.6). Shell-recipe builders expose shell, finish, and tool_output (§4.7)."
+}

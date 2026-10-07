@@ -1,0 +1,36 @@
+{
+ "id": "build-01",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Empty queue",
+ "spec": [
+  "§1.7.4",
+  "§3.11"
+ ],
+ "steps": [
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout": "queue: nothing to build\n"
+   }
+  },
+  {
+   "assert": {
+    "fake_request_count": 0,
+    "glob_count": {
+     "{state_root}/runs/*": 0
+    },
+    "refs": {
+     "refs/kogen/claim": false
+    }
+   }
+  }
+ ]
+}

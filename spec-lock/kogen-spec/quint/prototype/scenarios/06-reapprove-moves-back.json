@@ -1,0 +1,9 @@
+{
+  "name": "06-reapprove-moves-back",
+  "about": "Re-approving a queued Intent gives it the new approval time.",
+  "steps": [
+    {"do": ["Approve", {"slug": "alpha", "time": 1}]},
+    {"do": ["Approve", {"slug": "bravo", "time": 2}]},
+    {"do": ["Approve", {"slug": "alpha", "time": 3}], "expect": {"queue": ["bravo", "alpha"]}}
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "05-upstream-cut-continues",
+  "about": "A cut after items is a malformed continuation. A cut with no items is transport and resends. A stall after items continues.",
+  "steps": [
+    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+     "expect": {"phase": "open"}},
+    {"do": ["Result", {"kind": "cut", "items": true}],
+     "expect": {"decision": "retry", "delay": 2000, "attempt": 2, "reason": "provider/malformed", "continued": true}},
+    {"do": ["Result", {"kind": "cut", "items": false}],
+     "expect": {"decision": "retry", "delay": 4000, "attempt": 3, "reason": "provider/transport", "continued": false}},
+    {"do": ["Result", {"kind": "stall", "items": true}],
+     "expect": {"decision": "retry", "delay": 8000, "attempt": 4, "reason": "provider/stall", "continued": true}}
+  ]
+}

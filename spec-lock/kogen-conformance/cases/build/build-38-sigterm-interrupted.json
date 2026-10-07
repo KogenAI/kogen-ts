@@ -1,0 +1,106 @@
+{
+ "id": "build-38",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "SIGTERM shows as interrupted",
+ "spec": [
+  "§1.8",
+  "§3.10",
+  "§2.11"
+ ],
+ "allow_remaining": true,
+ "script": [
+  {
+   "id": "stall",
+   "expect": {
+    "role": "planner"
+   },
+   "repeat": "always",
+   "first_byte_ms": 900000,
+   "reply": {
+    "text": "Difficulty: easy\n"
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "signal": {
+    "sig": "TERM",
+    "when": {
+     "fake_requests": 1,
+     "timeout_s": 60
+    }
+   },
+   "expect": {
+    "exit": 143,
+    "stdout": "building greet\n",
+    "stderr": ""
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "contains": [
+      {
+       "event": "interrupted",
+       "reason": "sigterm"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "greet"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_starts_lines": [
+     "~greet: interrupted(, interrupted)?"
+    ]
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "Queue: stopped",
+     "Interrupted:",
+     "  greet  interrupted (Build {id8:greet})"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "last": {
+      "event": "finished",
+      "status": "failed",
+      "reason": "interrupted"
+     }
+    }
+   }
+  }
+ ]
+}

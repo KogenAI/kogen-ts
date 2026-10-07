@@ -1,0 +1,58 @@
+{
+ "id": "approval-12",
+ "profile": "approval",
+ "fixture": "kt",
+ "title": "Setup runs before the checks",
+ "spec": [
+  "§3.3"
+ ],
+ "fixture_files": {
+  "checks/unit.sh": "#!/bin/sh\n# kt unit variant: requires the setup output.\n[ -f build/ready ] || { echo 'build/ready:1:1: error: [kt/setup] ready: setup did not run first'; exit 1; }\nexit 0\n"
+ },
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 5,
+    "stderr": "",
+    "stdout_not_contains": "Warning: configured checks are already red"
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "assert": {
+    "git": [
+     {
+      "args": [
+       "cat-file",
+       "-p",
+       "refs/kogen/intents/greet:.kogen/intents/greet/approval.json"
+      ],
+      "json": {
+       "check_baseline": [
+        {
+         "name": "lint",
+         "status": "green"
+        },
+        {
+         "name": "unit",
+         "status": "green"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

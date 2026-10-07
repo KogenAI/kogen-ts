@@ -1,0 +1,13 @@
+{
+  "name": "11-crash-after-incoming",
+  "about": "Crash with refs/kogen/incoming pushed but base not moved: recovery deletes the incoming ref.",
+  "steps": [
+    {"do": ["Approve", {"slug": "alpha", "time": 1}]},
+    {"do": ["Start", "r1"]},
+    {"do": ["Gate", true]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Crash"], "expect": {"incoming": ["r1"]}},
+    {"do": ["Recover"], "expect": {"incoming": [], "runs": {"r1": {"status": "failed", "reason": "interrupted"}}, "base": ["root"]}}
+  ]
+}

@@ -1,0 +1,105 @@
+{
+ "id": "build-18",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "A check that mutates the tree on base too: excused, its writes are reverted, the Build lands",
+ "spec": [
+  "§3.7.1",
+  "§3.7.2"
+ ],
+ "script": [
+  {
+   "include": "r1_happy"
+  }
+ ],
+ "project": {
+  "checks": [
+   {
+    "name": "lint",
+    "argv": [
+     "sh",
+     "checks/lint.sh"
+    ],
+    "timeout_ms": 60000
+   },
+   {
+    "name": "unit",
+    "argv": [
+     "sh",
+     "checks/unit.sh"
+    ],
+    "timeout_ms": 60000
+   },
+   {
+    "name": "touchy",
+    "argv": [
+     "sh",
+     "checks/touchy.sh"
+    ],
+    "timeout_ms": 60000
+   }
+  ]
+ },
+ "fixture_files": {
+  "checks/touchy.sh": "#!/bin/sh\nprintf 'stamp\\n' > lib/stamp.txt\nexit 0\n"
+ },
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build {id8:greet}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "contains": [
+      {
+       "event": "verification",
+       "result": "green",
+       "checks": {
+        "$contains": [
+         {
+          "name": "touchy",
+          "status": "mutating",
+          "excused": true
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "git": [
+     {
+      "args": [
+       "ls-tree",
+       "-r",
+       "--name-only",
+       "main",
+       "lib"
+      ],
+      "stdout": "lib/greet.txt\n"
+     }
+    ]
+   }
+  }
+ ]
+}

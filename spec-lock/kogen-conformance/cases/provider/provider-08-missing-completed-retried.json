@@ -1,0 +1,123 @@
+{
+ "id": "provider-08",
+ "profile": "provider",
+ "fixture": "kt",
+ "fake": true,
+ "title": "A missing completed is malformed and retried",
+ "spec": [
+  "§4.3",
+  "§4.5"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "tools": [],
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+   }
+  },
+  {
+   "id": "nocomp",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "turn": 1
+   },
+   "omit_completed": true,
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r1.edit",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "turn": 1,
+    "tools": [
+     "shell"
+    ]
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r1.done",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "turn": 2,
+    "last_item_type": "function_call_output"
+   },
+   "reply": {
+    "text": "Done."
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "contains": [
+      {
+       "event": "provider_retry",
+       "stage": "$str",
+       "reason": "~(provider/)?(malformed)",
+       "delay_ms": {
+        "$ge": 1000,
+        "$le": 2000
+       }
+      }
+     ],
+     "count": {
+      "rung_started": 1
+     }
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,91 @@
+{
+ "id": "build-39",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Setup failing twice: stopped, exit 3, the Intent stays queued",
+ "spec": [
+  "§3.4 B5",
+  "§3.0"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+   }
+  }
+ ],
+ "allow_remaining": false,
+ "fixture_files": {
+  "checks/setup.sh": "#!/bin/sh\n# kt setup variant: fails outside the user's checkout (.setup-ok is untracked there).\n[ -f .setup-ok ] || { echo 'setup: .setup-ok is missing'; exit 9; }\nmkdir -p build && : > build/ready\n",
+  ".gitignore": "/build/\n/.setup-ok\n"
+ },
+ "project": {
+  "setup_outputs": []
+ },
+ "steps": [
+  {
+   "write": {
+    "path": ".setup-ok",
+    "text": ""
+   }
+  },
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 3,
+    "stderr": "",
+    "stdout_lines": [
+     "building greet",
+     "stopped greet: environment/setup_failed; it stays queued (Build {id8:greet})",
+     "~queue: stopped because greet hit an environment error; 1 Build\\(s\\), 0 landed, 1 not"
+    ]
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "greet"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout": "greet: queued, 1 of 1\n"
+   }
+  },
+  {
+   "assert": {
+    "run_json": {
+     "slug": "greet",
+     "match": {
+      "status": "stopped"
+     }
+    },
+    "events": {
+     "slug": "greet",
+     "last": {
+      "event": "finished",
+      "status": "stopped",
+      "reason": "environment/setup_failed"
+     }
+    }
+   }
+  }
+ ],
+ "notes": "The planner request comes before the first rung's setup (B4 before B5). 'hit a environment error' follows the §1.7.4 template literally; 'an' is accepted."
+}

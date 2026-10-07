@@ -1,0 +1,127 @@
+{
+  "id": "v1.2-131-state-12",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "title": "v1.2 replacement for state-12: status report schema",
+  "spec": [
+    "§2.10",
+    "§3.6",
+    "§4.2",
+    "§4.7"
+  ],
+  "fake": true,
+  "script": [
+    {
+      "include": "r1_happy_v12",
+      "prefix": "r1_happy"
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 0
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "status",
+        "greet",
+        "--json"
+      ],
+      "expect": {
+        "exit": 0,
+        "stderr": "",
+        "stdout_json": {
+          "slug": "greet",
+          "status": "landed",
+          "build_id": "$hex32",
+          "journal": "$str",
+          "verdict": "green",
+          "land_policy": "green-or-advisory",
+          "advisory_items": [],
+          "approval": "$any",
+          "approved_by": "Kogen Test <test@kogen.invalid>",
+          "base": "$any",
+          "candidate": "$any",
+          "landed_sha": "$sha",
+          "credential": {
+            "source": "$str",
+            "label": "$str"
+          },
+          "rungs": [
+            {
+              "rung": "R1",
+              "model": "gpt-6-luna",
+              "effort": "max",
+              "reason": "green",
+              "verdict": "green",
+              "diff_lines": "$int",
+              "candidate_ref": "$any",
+              "wall_ms": "$int",
+              "tokens": "$any"
+            }
+          ],
+          "best_candidate": {
+            "$any_of": [
+              null,
+              {
+                "rung": "R1",
+                "ref": "$any",
+                "diff_path": "$any",
+                "verdict": "green"
+              }
+            ]
+          },
+          "audit": [],
+          "acceptance": [
+            {
+              "id": "A1",
+              "status": "pass",
+              "demoted": false
+            }
+          ],
+          "checks": [
+            {
+              "name": "lint",
+              "status": "green",
+              "excused": false
+            },
+            {
+              "name": "unit",
+              "status": "green",
+              "excused": false
+            }
+          ],
+          "model_stages": "$list",
+          "findings": "$list",
+          "failures": [],
+          "sandbox": {
+            "$any_of": [
+              "confined",
+              "unconfined",
+              "off"
+            ]
+          },
+          "budget": {
+            "budget_ms": 3600000,
+            "used_ms": "$int",
+            "paused_ms": "$int"
+          }
+        }
+      }
+    }
+  ],
+  "notes": "The shared v1.1 script expected an empty tool schema list for the planner and treated builder text as completion. v1.2 uses the shared schemas and finish alone with {} (§3.6, §4.2, §4.7)."
+}

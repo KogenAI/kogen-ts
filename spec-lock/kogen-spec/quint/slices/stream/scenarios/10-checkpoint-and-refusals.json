@@ -1,0 +1,28 @@
+{
+  "name": "10-checkpoint-and-refusals",
+  "about": "A smaller valid checkpoint is accepted. An invalid or oversized one stops the Build with continuation_failed. Refusals change nothing else.",
+  "steps": [
+    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+     "expect": {"phase": "open", "continuations": 0}},
+    {"do": ["Checkpoint", {"kind": "valid"}],
+     "expect": {"decision": "checkpoint", "checkpoint": "accepted", "continuations": 1, "phase": "idle", "exit": 0, "reason": "", "queued": true}},
+    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+     "expect": {"phase": "open", "checkpoint": "", "continuations": 1, "exit": 0}},
+    {"do": ["Checkpoint", {"kind": "invalid"}],
+     "expect": {"decision": "stop", "checkpoint": "failed", "reason": "continuation_failed", "exit": 1, "phase": "stopped", "queued": true, "failed": false, "continuations": 1}},
+    {"do": ["Result", {"kind": "ok", "items": false}],
+     "expect": {"last": "not_open", "phase": "stopped", "exit": 1, "reason": "continuation_failed"}},
+    {"do": ["Open", {"role": "nope", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 1, "mode": "build"}],
+     "expect": {"last": "bad_open", "phase": "stopped", "exit": 1}},
+    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+     "expect": {"phase": "open", "exit": 0, "attempt": 1}},
+    {"do": ["Result", {"kind": "nope", "items": false}],
+     "expect": {"last": "bad_result", "phase": "open", "attempt": 1, "decision": ""}},
+    {"do": ["Checkpoint", {"kind": "oversized"}],
+     "expect": {"decision": "stop", "checkpoint": "failed", "reason": "continuation_failed", "exit": 1, "queued": true, "failed": false}},
+    {"do": ["SetWaited", {"ms": 1}],
+     "expect": {"last": "bad_wait", "exit": 1, "reason": "continuation_failed"}},
+    {"do": ["Init"],
+     "expect": {"last": "ok", "phase": "idle", "queued": false, "continuations": 0, "exit": 0, "waited": 0, "failed": false}}
+  ]
+}

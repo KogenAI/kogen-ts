@@ -1,0 +1,141 @@
+{
+  "id": "v1.2-56-build-22",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for build-22: Base moved before start: builds on the tip",
+  "spec": [
+    "§3.4 B2",
+    "§3.6",
+    "§4.7"
+  ],
+  "script": [
+    {
+      "id": "r1_happy.plan",
+      "expect": {
+        "role": "planner",
+        "turn": 1,
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "r1_happy.edit",
+      "expect": {
+        "role": "builder",
+        "turn": 1,
+        "tools": [
+          "shell",
+          "finish",
+          "tool_output"
+        ],
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r1_happy.done",
+      "expect": {
+        "role": "builder",
+        "turn": 2,
+        "last_output_contains": "exit 0",
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "origin_commit": {
+        "files": {
+          "README.md": "moved before the Build\n"
+        },
+        "message": "Move the base"
+      }
+    },
+    {
+      "git": [
+        "rev-parse",
+        "main"
+      ],
+      "in": "origin",
+      "capture": {
+        "tip": "^([0-9a-f]+)"
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 0,
+        "stderr": "",
+        "stdout_lines": [
+          "building greet",
+          "~\\~landed greet [0-9a-f]{8} \\(Build {id8:greet}\\)",
+          "queue: done; 1 Build(s), 1 landed, 0 not"
+        ]
+      }
+    },
+    {
+      "assert": {
+        "events": {
+          "slug": "greet",
+          "contains": [
+            {
+              "event": "base_moved_at_start",
+              "tip": "{var:tip}",
+              "approved": "$sha"
+            }
+          ]
+        },
+        "git": [
+          {
+            "args": [
+              "log",
+              "-1",
+              "--format=%P",
+              "main"
+            ],
+            "stdout": "{var:tip}\n"
+          },
+          {
+            "args": [
+              "cat-file",
+              "-p",
+              "main:README.md"
+            ],
+            "stdout": "moved before the Build\n"
+          }
+        ]
+      }
+    }
+  ],
+  "notes": "v1.2 replacement for build-22. Text-only builder replies are progress; completion requires finish alone with {} (§3.6). Shell-recipe builders expose shell, finish, and tool_output (§4.7)."
+}

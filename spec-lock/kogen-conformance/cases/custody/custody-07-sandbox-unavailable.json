@@ -1,0 +1,79 @@
+{
+ "id": "custody-07",
+ "profile": "custody",
+ "fixture": "kt",
+ "title": "KOGEN_SANDBOX=unavailable gives the warning, the event and the report field, and the Build still lands",
+ "spec": [
+  "§5.3",
+  "§5.5.7"
+ ],
+ "fake": true,
+ "sandbox_unavailable": true,
+ "script": [
+  {
+   "include": "r1_happy"
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build {id8:greet}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ],
+    "stderr_regex": "\\Akogen: warning: sandbox unavailable: [^\\n]+; building unconfined\n\\Z"
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "subsequence": [
+      {
+       "event": "started",
+       "sandbox": "unconfined"
+      },
+      {
+       "event": "sandbox_unavailable",
+       "reason": "$nonempty"
+      },
+      {
+       "event": "finished",
+       "status": "landed"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "greet",
+    "--json"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_json": {
+     "slug": "greet",
+     "status": "landed",
+     "sandbox": "unconfined"
+    },
+    "stderr_any": true
+   }
+  }
+ ]
+}

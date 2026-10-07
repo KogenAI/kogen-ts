@@ -1,0 +1,9 @@
+{
+  "name": "01-shape-then-approve",
+  "about": "A valid shape writes no approval. The card exits 5. A matching hash CASes the ref.",
+  "steps": [
+    {"do": ["Shape", {"slug": "alpha", "result": "valid"}], "expect": {"last": "ok", "exit": 0, "did": "shaped", "life": {"alpha": "shaped"}, "refs": {}}},
+    {"do": ["Approve", {"slug": "alpha", "mode": "card", "hash": "abcd1234", "prefixOk": true, "race": "none"}], "expect": {"last": "needs_decision", "exit": 5, "did": "card", "shown": "abcd1234", "refs": {}}},
+    {"do": ["Approve", {"slug": "alpha", "mode": "commit", "hash": "abcd1234", "prefixOk": true, "race": "none"}], "expect": {"last": "ok", "did": "approved", "casTries": 1, "life": {"alpha": "approved"}, "refs": {"alpha": {"n": 1, "hash": "abcd1234"}}}}
+  ]
+}

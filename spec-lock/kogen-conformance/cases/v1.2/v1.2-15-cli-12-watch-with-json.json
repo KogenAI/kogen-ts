@@ -1,0 +1,49 @@
+{
+  "id": "v1.2-15-cli-12-watch-with-json",
+  "profile": "v1.2",
+  "fixture": "none",
+  "title": "v1.2 replacement for cli-12: --watch together with --json",
+  "spec": [
+    "§1.3",
+    "§1.4",
+    "§1.7.5"
+  ],
+  "rows": [
+    {
+      "label": "overview",
+      "argv": [
+        "status",
+        "--watch",
+        "--json"
+      ]
+    },
+    {
+      "label": "slug",
+      "argv": [
+        "status",
+        "greet",
+        "--json",
+        "--watch"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "run": [
+        "kogen",
+        "{*row.argv}"
+      ],
+      "expect": {
+        "exit": 2,
+        "stdout": [
+          "kogen status: --watch and --json can't be combined\n\n",
+          {
+            "data": "v1.2/help/kogen-status.txt"
+          }
+        ],
+        "stderr": ""
+      }
+    }
+  ],
+  "notes": "The watch/json combination remains a usage error and prints the v1.2 status page (§1.3–1.4, §1.7.5)."
+}

@@ -1,0 +1,137 @@
+{
+ "id": "shape-11",
+ "profile": "shape",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Style findings are repaired without counting; leftovers become lint_* warnings",
+ "spec": [
+  "§3.2.3",
+  "§2.2"
+ ],
+ "script": [
+  {
+   "id": "write",
+   "expect": {
+    "role": "shaper",
+    "turn": 1
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/intents/greet/intent.md",
+       "content": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt in order to name Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: replace the single line in lib/greet.txt with the new greeting text.\n"
+      }
+     },
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/acceptance/greet.t.sh",
+       "content": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "done",
+   "expect": {
+    "role": "shaper",
+    "turn": 2
+   },
+   "reply": {
+    "text": "Both files are written."
+   }
+  },
+  {
+   "id": "style1",
+   "expect": {
+    "role": "shaper",
+    "turn": 3
+   },
+   "reply": {
+    "text": "I keep the wording."
+   }
+  },
+  {
+   "id": "style2",
+   "expect": {
+    "role": "shaper",
+    "turn": 4
+   },
+   "reply": {
+    "text": "I still keep the wording."
+   }
+  },
+  {
+   "id": "ledger",
+   "expect": {
+    "role": "requirement_auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"rows\": [{\"constraint\": \"The greeting in lib/greet.txt says Hello, Almir!\", \"maps_to\": \"A1\"}]}"
+   }
+  },
+  {
+   "id": "audit",
+   "expect": {
+    "role": "test_auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test checks the requested line.\"}]}"
+   }
+  }
+ ],
+ "steps": [
+  {
+   "write": {
+    "path": "{case}/request.md",
+    "text": "Make the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "shape",
+    "greet",
+    "{case}/request.md"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_regex": [
+     "(?m)^Validated after 1 round\\(s\\)\\.$",
+     "(?m)^Warnings\n(  - .*\n)*  - lint_banned_phrase: - — Brief contains banned phrase \"in order to\"$"
+    ],
+    "stderr_regex": "(?s)(?m)^shaper pass=1 role=shaper style_repair$.*^shaper pass=1 role=shaper style_repair$"
+   }
+  },
+  {
+   "assert": {
+    "fake_request_count": {
+     "shaper": 4
+    },
+    "files": {
+     ".kogen/intents/greet/shape-warnings.json": {
+      "json": {
+       "approval_sha256": "{hash64:greet}",
+       "warnings": {
+        "$contains": [
+         {
+          "code": "lint_banned_phrase",
+          "item_ids": [],
+          "message": "Brief contains banned phrase \"in order to\""
+         }
+        ]
+       }
+      }
+     }
+    }
+   }
+  }
+ ],
+ "notes": "The style-repair message text is not specified; the case only relies on the turn count (2 style repairs per conversation) and the leftover warning."
+}

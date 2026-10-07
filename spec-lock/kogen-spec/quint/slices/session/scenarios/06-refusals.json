@@ -1,0 +1,17 @@
+{
+  "name": "06-refusals",
+  "about": "A turn before a bind, an unknown stage, and a bad epoch are refused and leave the store unchanged.",
+  "steps": [
+    {"do": ["Turn"], "expect": {"last": "not_bound", "version": "", "keyChanged": false}},
+    {"do": ["Bind", {"stage": "session", "attempt": "", "rung": ""}],
+     "expect": {"last": "bad_bind", "version": ""}},
+    {"do": ["Bind", {"stage": "develop", "attempt": "", "rung": ""}],
+     "expect": {"last": "ok", "stage": "develop"}},
+    {"do": ["Epoch", {"name": "nope"}],
+     "expect": {"last": "bad_epoch", "epoch": "initial", "epochClass": "initial"}},
+    {"do": ["Model", {"name": "grok"}],
+     "expect": {"last": "bad_model", "model": ""}},
+    {"do": ["Init"], "expect": {"last": "ok", "version": "", "lite": "", "previous": false, "keyChanged": false}},
+    {"do": ["Lite"], "expect": {"last": "not_bound", "version": "", "lite": ""}}
+  ]
+}

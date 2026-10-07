@@ -1,0 +1,15 @@
+name: hello
+checks:
+  - name: compile
+    argv: [mix, compile, --warnings-as-errors]
+    timeout_ms: 300000
+  - name: format
+    argv: [mix, format, --check-formatted]
+    timeout_ms: 120000
+setup:
+  - name: compile
+    argv: [mix, compile]
+    timeout_ms: 300000
+setup_outputs: [_build]
+domains:
+  app: [lib]

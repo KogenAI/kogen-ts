@@ -1,0 +1,48 @@
+{
+ "id": "approval-18",
+ "profile": "approval",
+ "fixture": "kt",
+ "title": "Approving starts nothing",
+ "spec": [
+  "§1.7.2",
+  "§3.11"
+ ],
+ "fake": true,
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "sleep": 1
+  },
+  {
+   "assert": {
+    "fake_request_count": 0,
+    "refs": {
+     "refs/kogen/claim": false
+    },
+    "glob_count": {
+     "{state_root}/runs/*": 0,
+     "{state_root}/queue.pid": 0
+    }
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "Queue: stopped, 1 waiting; start it with kogen queue start",
+     "Queued:",
+     "~  greet(  +\\S.*)?"
+    ]
+   }
+  }
+ ]
+}

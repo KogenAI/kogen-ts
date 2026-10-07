@@ -1,0 +1,157 @@
+{
+ "id": "build-19",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Two kt tests in one file: a new failing test is not excused (the identity includes the symbol)",
+ "spec": [
+  "§2.4.4",
+  "§3.7.2"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+   }
+  },
+  {
+   "id": "edit",
+   "expect": {
+    "role": "builder",
+    "turn": 1,
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt && : > lib/beta-breaker"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "d1",
+   "expect": {
+    "role": "builder",
+    "turn": 2,
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Done."
+   }
+  },
+  {
+   "id": "fix",
+   "expect": {
+    "role": "builder",
+    "turn": 3,
+    "input_contains": "Greet Almir by name",
+    "last_user_contains": "Kogen's controller reported this failure."
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "rm lib/beta-breaker"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "d2",
+   "expect": {
+    "role": "builder",
+    "turn": 4,
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Done."
+   }
+  }
+ ],
+ "fixture_files": {
+  "test/unit/greet.t.sh": "t_alpha() { false; }\nt_beta() { [ ! -f lib/beta-breaker ]; }\n"
+ },
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build {id8:greet}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "fake_requests": [
+     {
+      "select": {
+       "step": "fix"
+      },
+      "input_regex": "(?m)^test/unit/greet\\.t\\.sh:1:1: error: \\[kt/test\\] beta: failed$"
+     }
+    ],
+    "events": {
+     "slug": "greet",
+     "subsequence": [
+      {
+       "event": "verification",
+       "result": "red",
+       "checks": {
+        "$contains": [
+         {
+          "name": "unit",
+          "status": "red",
+          "excused": false
+         }
+        ]
+       }
+      },
+      "repair",
+      {
+       "event": "verification",
+       "result": "green",
+       "checks": {
+        "$contains": [
+         {
+          "name": "unit",
+          "status": "red",
+          "excused": true
+         }
+        ]
+       }
+      },
+      {
+       "event": "finished",
+       "status": "landed"
+      }
+     ]
+    }
+   }
+  }
+ ]
+}

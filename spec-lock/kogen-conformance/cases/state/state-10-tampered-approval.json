@@ -1,0 +1,46 @@
+{
+ "id": "state-10",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "A tampered approval gives controller/approval_invalid and stops the drain",
+ "spec": [
+  "§3.4 B0",
+  "§2.5.1"
+ ],
+ "fake": true,
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "sh": "git clone -q \"$ORIGIN\" \"$CASE_DIR/tamper\" && cd \"$CASE_DIR/tamper\" && git fetch -q origin refs/kogen/intents/greet && git checkout -q FETCH_HEAD && sed 's/\"by\":\"[^\"]*\"/\"by\":\"Mallory <m@example.invalid>\"/' .kogen/intents/greet/approval.json > a.tmp && mv a.tmp .kogen/intents/greet/approval.json && git commit -q -a -m \"$(git log -1 --format=%B)\" && git push -q -f origin HEAD:refs/kogen/intents/greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 70,
+    "stderr": "",
+    "stdout_regex": [
+     "(?m)^building greet$",
+     "(?m)^stopped greet: controller/approval_invalid; it stays queued$",
+     "(?m)^queue: stopped because greet hit a controller error; 1 Build\\(s\\), 0 landed, 1 not$"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "fake_request_count": 0,
+    "refs": {
+     "refs/kogen/claim": false
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,35 @@
+{
+ "id": "build-35",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "A stale lock is taken over",
+ "spec": [
+  "§3.11"
+ ],
+ "steps": [
+  {
+   "sh": "mkdir -p \"{state_root}\" && sh -c 'echo $$' > \"{state_root}/queue.pid\""
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout": "queue: nothing to build\n"
+   }
+  },
+  {
+   "assert": {
+    "files": {
+     "{state_root}/queue.pid": false
+    }
+   }
+  }
+ ],
+ "notes": "The lock file holds the pid of a shell that has already exited."
+}

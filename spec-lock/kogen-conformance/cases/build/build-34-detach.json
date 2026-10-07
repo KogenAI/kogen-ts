@@ -1,0 +1,86 @@
+{
+ "id": "build-34",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "--detach",
+ "spec": [
+  "§1.7.4"
+ ],
+ "script": [
+  {
+   "include": "r1_happy"
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start",
+    "--detach"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_lines": [
+     "~queue: started in the background \\(pid [0-9]+\\)",
+     "log: {state_root}/queue.log"
+    ]
+   },
+   "capture": {
+    "dpid": "pid ([0-9]+)"
+   }
+  },
+  {
+   "eventually": {
+    "timeout_s": 90,
+    "assert": {
+     "files": {
+      "{state_root}/queue.log": {
+       "contains": "queue: done; 1 Build(s), 1 landed, 0 not\n"
+      }
+     }
+    }
+   }
+  },
+  {
+   "assert": {
+    "files": {
+     "{state_root}/queue.log": {
+      "regex": "(?m)^building greet$"
+     }
+    }
+   }
+  },
+  {
+   "eventually": {
+    "timeout_s": 15,
+    "assert": {
+     "files": {
+      "{state_root}/queue.pid": false
+     }
+    }
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "greet"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_starts_lines": [
+     "~greet: landed [0-9a-f]{8}"
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,129 @@
+{
+ "id": "provider-01",
+ "profile": "provider",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Injected-mode request: headers and exact body keys",
+ "spec": [
+  "§4.2",
+  "§4.6"
+ ],
+ "script": [
+  {
+   "include": "r1_happy"
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "fake_requests": [
+     {
+      "select": {
+       "step": "r1_happy.edit"
+      },
+      "match": {
+       "headers": {
+        "authorization": "~Bearer [A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+",
+        "content-type": "~application/json.*",
+        "accept": "text/event-stream",
+        "user-agent": "~kogen/\\S+",
+        "chatgpt-account-id": "acct_kogen_test",
+        "openai-beta": "responses=experimental",
+        "originator": "kogen"
+       },
+       "body": {
+        "$exact": true,
+        "model": "gpt-6-luna",
+        "instructions": "~(?s).*You are Kogen's builder\\..*",
+        "input": "$list",
+        "reasoning": {
+         "$exact": true,
+         "effort": "max"
+        },
+        "store": false,
+        "stream": true,
+        "prompt_cache_key": "$hex64",
+        "tools": [
+         {
+          "type": "function",
+          "name": "shell",
+          "description": "$nonempty",
+          "parameters": {
+           "type": "object",
+           "properties": {
+            "$has_keys": [
+             "cmd"
+            ]
+           },
+           "required": [
+            "cmd"
+           ],
+           "additionalProperties": false
+          },
+          "strict": false
+         }
+        ],
+        "include": [
+         "reasoning.encrypted_content"
+        ]
+       }
+      }
+     },
+     {
+      "select": {
+       "step": "r1_happy.plan"
+      },
+      "match": {
+       "headers": {
+        "chatgpt-account-id": "acct_kogen_test",
+        "openai-beta": "responses=experimental",
+        "originator": "kogen",
+        "accept": "text/event-stream"
+       },
+       "body": {
+        "model": "gpt-6.1-sol",
+        "reasoning": {
+         "$exact": true,
+         "effort": "high"
+        },
+        "store": false,
+        "stream": true,
+        "prompt_cache_key": "$hex64",
+        "tools": "$absent",
+        "instructions": "$nonempty",
+        "input": "$list",
+        "previous_response_id": "$absent",
+        "tool_choice": "$absent",
+        "parallel_tool_calls": "$absent",
+        "max_output_tokens": "$absent",
+        "temperature": "$absent"
+       }
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "notes": "Whether tool-less roles in injected mode still send `include` is not stated; the planner body is checked without `$exact`."
+}

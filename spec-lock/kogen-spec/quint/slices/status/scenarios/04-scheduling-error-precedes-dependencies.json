@@ -1,0 +1,7 @@
+{
+  "name": "04-scheduling-error-precedes-dependencies",
+  "about": "Malformed scheduling metadata blocks before dependency evaluation.",
+  "steps": [
+    {"do":["Row",{"slug":"alpha","status":"approved","priority":0,"at":1,"blocks":"BAD","sched":"invalid scheduling metadata: frontmatter `priority` must be an integer","started":0,"index":0}],"expect":{"alpha":"blocked","whyA":"invalid scheduling metadata: frontmatter `priority` must be an integer","queue":[],"sections":["Blocked"]}}
+  ]
+}

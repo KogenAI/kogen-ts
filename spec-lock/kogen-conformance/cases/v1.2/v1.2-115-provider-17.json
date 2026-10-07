@@ -1,0 +1,120 @@
+{
+  "id": "v1.2-115-provider-17",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for provider-17: Stream dropped mid-way",
+  "spec": [
+    "§4.3",
+    "§4.4",
+    "§3.6",
+    "§4.7",
+    "§4.9.4"
+  ],
+  "script": [
+    {
+      "id": "drop",
+      "expect": {
+        "role": "planner"
+      },
+      "drop_after_events": 1,
+      "reply": {
+        "text": "Difficulty: easy\n"
+      }
+    },
+    {
+      "id": "r1_happy.plan",
+      "expect": {
+        "role": "planner",
+        "turn": 2,
+        "input_contains": "Greet Almir by name",
+        "last_user_contains": "The response stream was interrupted. Continue the same turn from the received progress above. Preserve its findings and constraints; do not restart the task or repeat completed work. Proposed tool calls above were not executed; reissue any still needed."
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "r1_happy.edit",
+      "expect": {
+        "role": "builder",
+        "turn": 1,
+        "tools": [
+          "shell",
+          "finish",
+          "tool_output"
+        ],
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r1_happy.done",
+      "expect": {
+        "role": "builder",
+        "turn": 2,
+        "last_output_contains": "exit 0",
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_lines": [
+          "building greet",
+          "~\\~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+          "queue: done; 1 Build(s), 1 landed, 0 not"
+        ]
+      }
+    },
+    {
+      "assert": {
+        "events": {
+          "slug": "greet",
+          "contains": [
+            {
+              "event": "provider_retry",
+              "stage": "$str",
+              "reason": "~(provider/)?transport",
+              "delay_ms": {
+                "$ge": 1000,
+                "$le": 2000
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "notes": "Settled (v1.1): a stream cut before response.completed after the connection closes is a transport failure (reference behaviour). v1.2 replacement for provider-17. Text-only builder replies are progress; completion requires finish alone with {} (§3.6). Shell-recipe builders expose shell, finish, and tool_output (§4.7). The dropped stream carried partial planner text, so §4.9.4 requires continuation of that progress; this replacement expects the next planner request to carry the continuation instruction."
+}

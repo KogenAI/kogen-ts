@@ -1,0 +1,46 @@
+{
+ "id": "cli-14",
+ "profile": "cli",
+ "fixture": "none",
+ "title": "Options placed before the command",
+ "spec": [
+  "§1.3.2"
+ ],
+ "rows": [
+  {
+   "label": "--project x status",
+   "argv": [
+    "--project",
+    "x",
+    "status"
+   ],
+   "tok": "--project"
+  },
+  {
+   "label": "--json status",
+   "argv": [
+    "--json",
+    "status"
+   ],
+   "tok": "--json"
+  }
+ ],
+ "steps": [
+  {
+   "run": [
+    "kogen",
+    "{*row.argv}"
+   ],
+   "expect": {
+    "exit": 2,
+    "stdout": [
+     "kogen: unknown command '{row.tok}'\n\n",
+     {
+      "data": "help/kogen.txt"
+     }
+    ],
+    "stderr": ""
+   }
+  }
+ ]
+}

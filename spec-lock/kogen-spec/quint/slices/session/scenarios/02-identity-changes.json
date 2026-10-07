@@ -1,0 +1,16 @@
+{
+  "name": "02-identity-changes",
+  "about": "A different rung, fresh attempt, stage, or epoch is a different key. Repeating the same rung is not.",
+  "steps": [
+    {"do": ["Bind", {"stage": "develop", "attempt": "", "rung": ""}],
+     "expect": {"keyChanged": false, "rung": "builder"}},
+    {"do": ["Rung", {"name": "2"}], "expect": {"rung": "2", "keyChanged": true, "attempt": "builder", "epoch": "initial"}},
+    {"do": ["Rung", {"name": "2"}], "expect": {"rung": "2", "keyChanged": false}},
+    {"do": ["Attempt", {"name": "fresh-1"}], "expect": {"attempt": "fresh-1", "keyChanged": true, "rung": "2"}},
+    {"do": ["Stage", {"name": "plan"}], "expect": {"stage": "plan", "keyChanged": true}},
+    {"do": ["Epoch", {"name": "mutation-advice"}],
+     "expect": {"epoch": "mutation-advice", "epochClass": "mutation-advice", "keyChanged": true}},
+    {"do": ["Epoch", {"name": "summarizer"}],
+     "expect": {"epoch": "checkpoint-1", "epochClass": "checkpoint", "keyChanged": true}}
+  ]
+}

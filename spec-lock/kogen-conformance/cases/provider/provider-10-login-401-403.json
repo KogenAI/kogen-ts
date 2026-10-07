@@ -1,0 +1,107 @@
+{
+ "id": "provider-10",
+ "profile": "provider",
+ "fixture": "kt",
+ "fake": true,
+ "title": "401 and 403: one refresh, then stopped provider/login, exit 4",
+ "spec": [
+  "§4.4",
+  "§4.5"
+ ],
+ "script": [
+  {
+   "id": "denied",
+   "expect": {
+    "role": "planner"
+   },
+   "repeat": "always",
+   "reply": {
+    "http": {
+     "status": "{row.status}",
+     "body": {
+      "error": {
+       "message": "denied"
+      }
+     }
+    }
+   }
+  }
+ ],
+ "steps": [
+  {
+   "run": [
+    "kogen",
+    "provider",
+    "login",
+    "chatgpt"
+   ],
+   "timeout": 90,
+   "expect": {
+    "exit": 0
+   }
+  },
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 4,
+    "stderr": "",
+    "stdout_lines": [
+     "building greet",
+     "~stopped greet: provider/login; it stays queued \\(Build [0-9a-f]{8}\\)",
+     "~queue: stopped because greet hit a provider error; [0-9]+ Build\\(s\\), 0 landed, [0-9]+ not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "fake_oauth_count": {
+     "token:refresh_token": 1
+    },
+    "events": {
+     "slug": "greet",
+     "last": {
+      "event": "finished",
+      "status": "stopped",
+      "reason": "provider/login"
+     }
+    }
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "greet"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout": "greet: queued, 1 of 1\n"
+   }
+  }
+ ],
+ "rows": [
+  {
+   "label": "401",
+   "status": 401
+  },
+  {
+   "label": "403",
+   "status": 403
+  }
+ ],
+ "needs": [
+  "login"
+ ],
+ "serial": true,
+ "auth": "owned"
+}

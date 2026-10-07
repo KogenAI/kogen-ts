@@ -1,0 +1,58 @@
+{
+  "id": "v1.2-34-format-11-account-selection",
+  "profile": "v1.2",
+  "title": "v1.2 replacement for format-11: accounts.yaml includes provider selection",
+  "spec": [
+    "§2.7",
+    "§4.10"
+  ],
+  "fixture": "kt",
+  "fake": true,
+  "auth": "owned",
+  "needs": [
+    "login"
+  ],
+  "serial": true,
+  "steps": [
+    {
+      "run": [
+        "kogen",
+        "provider",
+        "login",
+        "chatgpt"
+      ],
+      "timeout": 120,
+      "expect": {
+        "exit": 0,
+        "stdout_contains": "chatgpt:default signed in"
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "provider",
+        "use",
+        "chatgpt",
+        "--as",
+        "default",
+        "--project",
+        "{checkout}"
+      ],
+      "expect": {
+        "exit": 0,
+        "stderr": "",
+        "stdout": "chatgpt:default is the account for {checkout}\n"
+      }
+    },
+    {
+      "assert": {
+        "files": {
+          "{home}/.kogen/accounts.yaml": {
+            "text": "# Kogen accounts on this machine, written by kogen provider use.\nchatgpt:\n  projects:\n    - path: \"{checkout}\"\n      account: default\nselection:\n  projects:\n    - path: \"{checkout}\"\n      provider: chatgpt\n"
+          }
+        }
+      }
+    }
+  ],
+  "notes": "provider use writes the ChatGPT account map and the project provider selection map atomically; the expected bytes follow §2.7 and provider resolution follows §4.10."
+}

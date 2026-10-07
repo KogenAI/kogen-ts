@@ -1,0 +1,39 @@
+{
+ "id": "approval-03",
+ "profile": "approval",
+ "fixture": "kt",
+ "title": "A mismatch is reported before any check runs (setup marker absent)",
+ "spec": [
+  "§1.7.2",
+  "§3.3"
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet",
+    "abcdef00"
+   ],
+   "expect": {
+    "exit": 1,
+    "stderr": "",
+    "stdout": "intent/hash_mismatch: greet is now {hash8:greet}, not abcdef00; review it again with kogen intent approve greet\n"
+   }
+  },
+  {
+   "assert": {
+    "files": {
+     "build/ready": false
+    },
+    "refs": {
+     "refs/kogen/intents/greet": false
+    }
+   }
+  }
+ ]
+}

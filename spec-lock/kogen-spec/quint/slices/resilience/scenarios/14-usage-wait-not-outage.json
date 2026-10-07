@@ -1,0 +1,83 @@
+{
+ "name": "14-usage-wait-not-outage",
+ "about": "A one-hour usage_limit wait does not trip the 30 min outage window (usage_limit has its own 6 h total).",
+ "steps": [
+  {
+   "do": [
+    "Stage",
+    {
+     "name": "build",
+     "mode": "build",
+     "model": "luna",
+     "fallback": "sol",
+     "owned": true
+    }
+   ]
+  },
+  {
+   "do": [
+    "Request"
+   ]
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": 3600000,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 3600000,
+     "reason": "usage_limit",
+     "model": "luna"
+    }
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "transport",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "retry",
+     "delay_ms": 2000,
+     "reason": "transport",
+     "model": "luna"
+    }
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "overload",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "retry",
+     "delay_ms": 4000,
+     "reason": "overload",
+     "model": "luna"
+    }
+   }
+  }
+ ]
+}

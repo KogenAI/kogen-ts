@@ -1,0 +1,108 @@
+{
+  "id": "v1.2-30-provider-16-total-cap",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for provider-16: 800 s stream completes under the total cap",
+  "spec": [
+    "§4.4",
+    "§4.5",
+    "§3.6",
+    "§4.7"
+  ],
+  "script": [
+    {
+      "id": "slow",
+      "expect": {
+        "role": "planner"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      },
+      "pad_events": 10,
+      "chunk_gap_ms": 80000
+    },
+    {
+      "id": "r1_happy.edit",
+      "expect": {
+        "role": "builder",
+        "turn": 1,
+        "tools": [
+          "shell",
+          "finish",
+          "tool_output"
+        ],
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r1_happy.done",
+      "expect": {
+        "role": "builder",
+        "turn": 2,
+        "last_output_contains": "exit 0",
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_lines": [
+          "building greet",
+          "~\\~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+          "queue: done; 1 Build(s), 1 landed, 0 not"
+        ]
+      }
+    },
+    {
+      "assert": {
+        "events": {
+          "slug": "greet",
+          "absent": [
+            "provider_retry",
+            "provider_switch"
+          ],
+          "count": {
+            "rung_started": 1
+          }
+        },
+        "fake_request_count": {
+          "planner": 1,
+          "builder": 2
+        }
+      }
+    }
+  ],
+  "notes": "A valid planner response arrives after 800 s of streamed events, below the v1.2 1,200 s per-attempt limit; 80 s gaps stay below the 90 s idle deadline (§4.4–4.5). The v1.1 600 s timeout expectation is superseded. Builder completion uses finish alone with {}; text-only replies are progress (§3.6), and shell recipes expose shell, finish, and tool_output (§4.7)."
+}

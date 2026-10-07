@@ -1,0 +1,86 @@
+{
+ "state-01": {
+  "class": "ref-bug",
+  "note": "Right line numbers, but printed as an Elixir term with exit 70 instead of environment/project_config_invalid exit 3 (APPENDIX)"
+ },
+ "state-02": {
+  "class": "ref-bug",
+  "note": "All issues found, but printed as an Elixir term, exit 70"
+ },
+ "state-03": {
+  "class": "R-gap",
+  "note": "shaping:, build.ladder, build.budget_ms, build.fallback, build.land are not accepted (single-recipe ladder schema not built)"
+ },
+ "state-04": {
+  "class": "ref-bug",
+  "note": "Right lines and messages, but printed as an Elixir term, exit 70 instead of intent/parse exit 1"
+ },
+ "state-05": {
+  "class": "ref-bug",
+  "note": "Lint lines print 'at line :' with no number; no_change_item row is an R-gap"
+ },
+ "state-06": {
+  "class": "ref-bug",
+  "note": "title_too_long and long_code_block are treated as errors (exit 1), not style warnings"
+ },
+ "state-09": {
+  "class": "ref-bug",
+  "note": "approval.json is schema 1 (no approval_sha256, old baseline, no witness); trailer hash covers intent.md only (APPENDIX)"
+ },
+ "state-10": {
+  "class": "ref-bug",
+  "note": "Tampered approval prints controller/:approval_trailer_mismatch with no stopped line / exit code mapping"
+ },
+ "state-11": {
+  "class": "ref-bug",
+  "note": "Journal events have no ts; started lacks recipe ladder/max_rungs/land/budget_ms (APPENDIX)"
+ },
+ "state-12": {
+  "class": "ref-bug",
+  "note": "Report uses the old schema (acceptance_items/acceptance_results); no verdict, rungs, best_candidate, audit, budget"
+ },
+ "state-16": {
+  "class": "ref-bug",
+  "note": "env KOGEN_* and duplicate check names accepted; scalar domain crashes the loader (APPENDIX)"
+ },
+ "state-17": {
+  "class": "ref-bug",
+  "note": "status cannot read §2.8 run.json: controller/:invalid_run"
+ },
+ "state-19": {
+  "class": "ref-bug",
+  "note": "status cannot read §2.8 run.json: controller/:invalid_run"
+ },
+ "state-20": {
+  "class": "ref-bug",
+  "note": "status cannot read §2.8 run.json (no stopped status): controller/:invalid_run"
+ },
+ "state-21": {
+  "class": "ref-bug",
+  "note": "status cannot read §2.8 run.json: controller/:invalid_run"
+ },
+ "state-23": {
+  "class": "ref-bug",
+  "note": "Landed means any reachable trailer, so a reused slug stays landed (APPENDIX)"
+ },
+ "state-25": {
+  "class": "ref-bug",
+  "note": "shape-warnings.json in the §2.4.5 shape is rejected (controller/:shape_warnings_invalid)"
+ },
+ "state-26": {
+  "class": "R-gap",
+  "note": "build.ladder is rejected; the setup cache key and setup_reused journal differ (APPENDIX)"
+ },
+ "state-28": {
+  "class": "R-gap",
+  "note": "No approval-baseline cache (approval-cache/<hex>.json)"
+ },
+ "state-29": {
+  "class": "ref-bug",
+  "note": "A lost approval CAS is not retried: controller/:exists"
+ },
+ "state-30": {
+  "class": "ref-bug",
+  "note": "status cannot read §2.8 run.json: controller/:invalid_run"
+ }
+}

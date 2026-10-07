@@ -1,0 +1,145 @@
+{
+  "id": "v1.2-113-provider-12",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for provider-12: Backoff sequence: delay_ms is jittered within 1–2 s, 2–4 s, 4–8 s",
+  "spec": [
+    "§4.5",
+    "data/constants.json",
+    "§3.6",
+    "§4.7",
+    "§4.9.4"
+  ],
+  "script": [
+    {
+      "id": "flaky",
+      "expect": {
+        "role": "planner"
+      },
+      "repeat": 3,
+      "omit_completed": true,
+      "reply": {
+        "text": "Difficulty: easy"
+      }
+    },
+    {
+      "id": "r1_happy.plan",
+      "expect": {
+        "role": "planner",
+        "turn": 4,
+        "input_contains": "Greet Almir by name",
+        "last_user_contains": "The response stream was interrupted. Continue the same turn from the received progress above. Preserve its findings and constraints; do not restart the task or repeat completed work. Proposed tool calls above were not executed; reissue any still needed."
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "r1_happy.edit",
+      "expect": {
+        "role": "builder",
+        "turn": 1,
+        "tools": [
+          "shell",
+          "finish",
+          "tool_output"
+        ],
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r1_happy.done",
+      "expect": {
+        "role": "builder",
+        "turn": 2,
+        "last_output_contains": "exit 0",
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_lines": [
+          "building greet",
+          "~\\~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+          "queue: done; 1 Build(s), 1 landed, 0 not"
+        ]
+      }
+    },
+    {
+      "assert": {
+        "events": {
+          "slug": "greet",
+          "subsequence": [
+            {
+              "event": "provider_retry",
+              "stage": "$str",
+              "reason": "~(provider/)?(malformed)",
+              "delay_ms": {
+                "$ge": 1000,
+                "$le": 2000
+              }
+            },
+            {
+              "event": "provider_retry",
+              "stage": "$str",
+              "reason": "~(provider/)?(malformed)",
+              "delay_ms": {
+                "$ge": 2000,
+                "$le": 4000
+              }
+            },
+            {
+              "event": "provider_retry",
+              "stage": "$str",
+              "reason": "~(provider/)?(malformed)",
+              "delay_ms": {
+                "$ge": 4000,
+                "$le": 8000
+              }
+            }
+          ],
+          "count": {
+            "provider_retry": 3
+          },
+          "absent": [
+            "provider_switch"
+          ]
+        }
+      }
+    }
+  ],
+  "notes": "v1.1: backoff is jittered between half and the full ceiling (§4.5, follows Kogen T66). Malformed responses do not count towards the model switch. v1.2 replacement for provider-12. Text-only builder replies are progress; completion requires finish alone with {} (§3.6). Shell-recipe builders expose shell, finish, and tool_output (§4.7). Each partial malformed planner response contains progress, so §4.9.4 requires a continuation input; the fourth planner request must retain the continuation instruction."
+}

@@ -1,0 +1,465 @@
+{
+ "name": "15-shaping-eighth-attempt-ok",
+ "about": "Shaping uses the same retry rules with no budget clock (budget stays 0, no provider_wait, no outage window even after 3.5 million ms of failures) and allows 8 attempts per request; the 8th may succeed.",
+ "steps": [
+  {
+   "do": [
+    "Stage",
+    {
+     "name": "shape",
+     "mode": "shaping",
+     "model": "luna",
+     "fallback": "sol",
+     "owned": true
+    }
+   ]
+  },
+  {
+   "do": [
+    "Request"
+   ]
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "transport",
+     "retry_after_ms": -1,
+     "elapsed_ms": 500000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "retry",
+     "delay_ms": 2000,
+     "reason": "transport",
+     "model": "luna"
+    },
+    "journal": [
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 1,
+      "reason": "transport",
+      "ms": 2000,
+      "from_model": "",
+      "to_model": ""
+     }
+    ],
+    "budget_ms": 0,
+    "attempts": 1
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "transport",
+     "retry_after_ms": -1,
+     "elapsed_ms": 500000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "retry",
+     "delay_ms": 4000,
+     "reason": "transport",
+     "model": "luna"
+    },
+    "journal": [
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 1,
+      "reason": "transport",
+      "ms": 2000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 2,
+      "reason": "transport",
+      "ms": 4000,
+      "from_model": "",
+      "to_model": ""
+     }
+    ],
+    "budget_ms": 0,
+    "attempts": 2
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "transport",
+     "retry_after_ms": -1,
+     "elapsed_ms": 500000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "retry",
+     "delay_ms": 8000,
+     "reason": "transport",
+     "model": "luna"
+    },
+    "journal": [
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 1,
+      "reason": "transport",
+      "ms": 2000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 2,
+      "reason": "transport",
+      "ms": 4000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 3,
+      "reason": "transport",
+      "ms": 8000,
+      "from_model": "",
+      "to_model": ""
+     }
+    ],
+    "budget_ms": 0,
+    "attempts": 3
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "transport",
+     "retry_after_ms": -1,
+     "elapsed_ms": 500000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "retry",
+     "delay_ms": 16000,
+     "reason": "transport",
+     "model": "luna"
+    },
+    "journal": [
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 1,
+      "reason": "transport",
+      "ms": 2000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 2,
+      "reason": "transport",
+      "ms": 4000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 3,
+      "reason": "transport",
+      "ms": 8000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 4,
+      "reason": "transport",
+      "ms": 16000,
+      "from_model": "",
+      "to_model": ""
+     }
+    ],
+    "budget_ms": 0,
+    "attempts": 4
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "transport",
+     "retry_after_ms": -1,
+     "elapsed_ms": 500000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "retry",
+     "delay_ms": 32000,
+     "reason": "transport",
+     "model": "luna"
+    },
+    "journal": [
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 1,
+      "reason": "transport",
+      "ms": 2000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 2,
+      "reason": "transport",
+      "ms": 4000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 3,
+      "reason": "transport",
+      "ms": 8000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 4,
+      "reason": "transport",
+      "ms": 16000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 5,
+      "reason": "transport",
+      "ms": 32000,
+      "from_model": "",
+      "to_model": ""
+     }
+    ],
+    "budget_ms": 0,
+    "attempts": 5
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "transport",
+     "retry_after_ms": -1,
+     "elapsed_ms": 500000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "retry",
+     "delay_ms": 60000,
+     "reason": "transport",
+     "model": "luna"
+    },
+    "journal": [
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 1,
+      "reason": "transport",
+      "ms": 2000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 2,
+      "reason": "transport",
+      "ms": 4000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 3,
+      "reason": "transport",
+      "ms": 8000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 4,
+      "reason": "transport",
+      "ms": 16000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 5,
+      "reason": "transport",
+      "ms": 32000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 6,
+      "reason": "transport",
+      "ms": 60000,
+      "from_model": "",
+      "to_model": ""
+     }
+    ],
+    "budget_ms": 0,
+    "attempts": 6
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "transport",
+     "retry_after_ms": -1,
+     "elapsed_ms": 500000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "retry",
+     "delay_ms": 60000,
+     "reason": "transport",
+     "model": "luna"
+    },
+    "journal": [
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 1,
+      "reason": "transport",
+      "ms": 2000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 2,
+      "reason": "transport",
+      "ms": 4000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 3,
+      "reason": "transport",
+      "ms": 8000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 4,
+      "reason": "transport",
+      "ms": 16000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 5,
+      "reason": "transport",
+      "ms": 32000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 6,
+      "reason": "transport",
+      "ms": 60000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_retry",
+      "stage": "shape",
+      "rung": 7,
+      "reason": "transport",
+      "ms": 60000,
+      "from_model": "",
+      "to_model": ""
+     }
+    ],
+    "budget_ms": 0,
+    "attempts": 7
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "ok",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "success",
+     "delay_ms": 0,
+     "reason": ""
+    },
+    "attempts": 8,
+    "budget_ms": 0,
+    "phase": "idle"
+   }
+  }
+ ]
+}

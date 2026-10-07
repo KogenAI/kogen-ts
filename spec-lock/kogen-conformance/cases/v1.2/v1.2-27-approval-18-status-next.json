@@ -1,0 +1,51 @@
+{
+  "id": "v1.2-27-approval-18-status-next",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "title": "v1.2 replacement for approval-18: Approval does not start the queue",
+  "spec": [
+    "§1.7.2",
+    "§1.7.5",
+    "§3.11"
+  ],
+  "fake": true,
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "sleep": 1
+    },
+    {
+      "assert": {
+        "fake_request_count": 0,
+        "refs": {
+          "refs/kogen/claim": false
+        },
+        "glob_count": {
+          "{state_root}/runs/*": 0,
+          "{state_root}/queue.pid": 0
+        }
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "status"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_lines": [
+          "Queue: stopped, 1 waiting; start it with kogen queue start",
+          "Next: greet (priority 0; no dependencies; ties by approval time and slug)",
+          "Queued:",
+          "~  greet(  +\\S.*)?"
+        ]
+      }
+    }
+  ],
+  "notes": "Approval leaves the queue stopped; status still shows the next ready Intent and priority (§1.7.5, §2.11, §3.11)."
+}

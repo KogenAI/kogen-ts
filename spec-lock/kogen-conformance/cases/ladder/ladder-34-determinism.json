@@ -1,0 +1,72 @@
+{
+ "id": "ladder-34",
+ "profile": "ladder",
+ "fixture": "kt",
+ "fake": true,
+ "title": "The same script twice gives an identical event sequence",
+ "spec": [
+  "§C.3 Determinism"
+ ],
+ "script": [
+  {
+   "include": "r1_fail_unchanged",
+   "prefix": "a"
+  },
+  {
+   "include": "r1_fail_unchanged",
+   "prefix": "b"
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 1
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 1
+   }
+  },
+  {
+   "assert": {
+    "runs_count": {
+     "greet": 2
+    },
+    "events": {
+     "slug": "greet",
+     "sequence_equal": [
+      0,
+      1
+     ]
+    }
+   }
+  }
+ ],
+ "project": {
+  "build": {
+   "ladder": {
+    "max_rungs": 1
+   }
+  }
+ }
+}

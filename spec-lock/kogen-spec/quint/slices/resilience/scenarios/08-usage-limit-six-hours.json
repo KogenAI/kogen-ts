@@ -1,0 +1,93 @@
+{
+ "name": "08-usage-limit-six-hours",
+ "about": "Once the usage limit has lasted 6 h in total the Build stops with provider/usage_limit and the drain exits 4.",
+ "steps": [
+  {
+   "do": [
+    "Stage",
+    {
+     "name": "build",
+     "mode": "build",
+     "model": "luna",
+     "fallback": "sol",
+     "owned": true
+    }
+   ]
+  },
+  {
+   "do": [
+    "Request"
+   ]
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": 10800000,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 10800000,
+     "reason": "usage_limit",
+     "model": "luna"
+    }
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": 10800000,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 10800000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 21600000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": 10800000,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "stop",
+     "delay_ms": 0,
+     "reason": "provider/usage_limit"
+    },
+    "phase": "stopped",
+    "exit": 4
+   }
+  },
+  {
+   "do": [
+    "Request"
+   ],
+   "expect": {
+    "last": "stopped"
+   }
+  }
+ ]
+}

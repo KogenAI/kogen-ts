@@ -1,0 +1,18 @@
+{
+  "name": "03-reapprove-retries",
+  "about": "Re-approval of a failed Intent queues it again (\u00a72.11 retry mechanism) and it lands.",
+  "steps": [
+    {"do": ["Approve", {"slug": "alpha", "time": 1}]},
+    {"do": ["Start", "r1"]},
+    {"do": ["Gate", false]},
+    {"do": ["Approve", {"slug": "alpha", "time": 2}], "expect": {"status": {"alpha": "approved"}, "queue": ["alpha"]}},
+    {"do": ["Start", "r2"]},
+    {"do": ["Gate", true]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Recover"], "expect": {"status": {"alpha": "landed"}, "base": ["root", "r2"]}}
+  ]
+}

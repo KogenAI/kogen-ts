@@ -1,0 +1,9 @@
+[tools]
+bun = "1.4.2"
+git = "2.54.0"
+node = "24.21.0"
+"npm:@informalsystems/quint" = "0.33.0"
+python = "3.14.7"
+
+[plugins]
+git = "https://gitlab.com/jcaigitlab/asdf-git.git#0bfd42e8029dfeef369fb0693981c95d454bb10e"

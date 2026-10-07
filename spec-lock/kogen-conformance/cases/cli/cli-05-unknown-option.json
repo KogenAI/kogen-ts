@@ -1,0 +1,97 @@
+{
+ "id": "cli-05",
+ "profile": "cli",
+ "fixture": "none",
+ "title": "Unknown option",
+ "spec": [
+  "§1.3.3.4"
+ ],
+ "rows": [
+  {
+   "label": "status --bogus",
+   "argv": [
+    "status",
+    "--bogus"
+   ],
+   "path": "status",
+   "opt": "--bogus",
+   "page": "kogen-status"
+  },
+  {
+   "label": "queue start --all",
+   "argv": [
+    "queue",
+    "start",
+    "--all"
+   ],
+   "path": "queue start",
+   "opt": "--all",
+   "page": "kogen-queue-start"
+  },
+  {
+   "label": "intent approve --no-json",
+   "argv": [
+    "intent",
+    "approve",
+    "greet",
+    "--no-json"
+   ],
+   "path": "intent approve",
+   "opt": "--no-json",
+   "page": "kogen-intent-approve"
+  },
+  {
+   "label": "version --json",
+   "argv": [
+    "version",
+    "--json"
+   ],
+   "path": "version",
+   "opt": "--json",
+   "page": "kogen-version"
+  },
+  {
+   "label": "provider list --project",
+   "argv": [
+    "provider",
+    "list",
+    "--project",
+    "."
+   ],
+   "path": "provider list",
+   "opt": "--project",
+   "page": "kogen-provider-list"
+  },
+  {
+   "label": "intent remove --by",
+   "argv": [
+    "intent",
+    "remove",
+    "greet",
+    "--by",
+    "x"
+   ],
+   "path": "intent remove",
+   "opt": "--by",
+   "page": "kogen-intent-remove"
+  }
+ ],
+ "steps": [
+  {
+   "run": [
+    "kogen",
+    "{*row.argv}"
+   ],
+   "expect": {
+    "exit": 2,
+    "stdout": [
+     "kogen {row.path}: unknown option '{row.opt}'\n\n",
+     {
+      "data": "help/{row.page}.txt"
+     }
+    ],
+    "stderr": ""
+   }
+  }
+ ]
+}

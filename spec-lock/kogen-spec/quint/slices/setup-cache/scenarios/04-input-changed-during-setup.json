@@ -1,0 +1,9 @@
+{
+  "name": "04-input-changed-during-setup",
+  "about": "A declared input changed by setup cannot publish under the earlier key.",
+  "steps": [
+    {"do": ["Run", {"base":"a","variant":"","tracked":true,"input":"one","enabled":true,"stable":false,"ok":true,"payload":"unstable"}], "expect": {"entryCount":0,"reused":false,"setupRuns":1,"last":"miss"}},
+    {"do": ["Run", {"base":"a","variant":"","tracked":true,"input":"one","enabled":true,"stable":true,"ok":true,"payload":"stable"}], "expect": {"entryCount":1,"reused":false,"setupRuns":2}},
+    {"do": ["Run", {"base":"b","variant":"","tracked":true,"input":"one","enabled":true,"stable":true,"ok":true,"payload":"ignored"}], "expect": {"entryCount":1,"reused":true,"work":"stable"}}
+  ]
+}

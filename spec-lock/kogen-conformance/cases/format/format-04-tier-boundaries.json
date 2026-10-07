@@ -1,0 +1,271 @@
+{
+ "id": "format-04",
+ "profile": "format",
+ "title": "Tier boundaries",
+ "spec": [
+  "§2.2",
+  "data/lint.json tiers"
+ ],
+ "fixture": "kt",
+ "notes": "Each tier limit N is checked at N (no warning) and N+1 (card warning). Item rows of over-limit Intents may carry ids; the warning line is matched without them only when ids are '-'.",
+ "rows": [
+  {
+   "label": "small paragraphs=1",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting so that it names Almir, paragraph 1.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_brief_paragraphs: - — small Intents allow at most 1 Brief paragraphs",
+   "check": {
+    "stdout_not_contains": "lint_brief_paragraphs:",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "small paragraphs=2",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting so that it names Almir, paragraph 1.\n\nChange the greeting so that it names Almir, paragraph 2.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_brief_paragraphs: - — small Intents allow at most 1 Brief paragraphs",
+   "check": {
+    "stdout_contains": "  - lint_brief_paragraphs: - — small Intents allow at most 1 Brief paragraphs",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "small brief_words=90",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nalpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda. omicron sigma tau upsilon phi chi psi omega alpha beta. gamma delta epsilon zeta eta theta iota kappa lambda omicron. sigma tau upsilon phi chi psi omega alpha beta gamma. delta epsilon zeta eta theta iota kappa lambda omicron sigma. tau upsilon phi chi psi omega alpha beta gamma delta. epsilon zeta eta theta iota kappa lambda omicron sigma tau.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_brief_too_long: - — small Intents allow at most 90 Brief words",
+   "check": {
+    "stdout_not_contains": "lint_brief_too_long:",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "small brief_words=91",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nalpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda. omicron sigma tau upsilon phi chi psi omega alpha beta. gamma delta epsilon zeta eta theta iota kappa lambda omicron. sigma tau upsilon phi chi psi omega alpha beta gamma. delta epsilon zeta eta theta iota kappa lambda omicron sigma. tau upsilon phi chi psi omega alpha beta gamma delta. epsilon zeta eta theta iota kappa lambda omicron sigma tau. upsilon.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_brief_too_long: - — small Intents allow at most 90 Brief words",
+   "check": {
+    "stdout_contains": "  - lint_brief_too_long: - — small Intents allow at most 90 Brief words",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "small items=3",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir! (check 1)\n- A2: lib/greet.txt contains the line Hello, Almir! (check 2)\n- A3: lib/greet.txt contains the line Hello, Almir! (check 3)\n\n## Verify\n- A1: test\n- A2: test\n- A3: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_too_many_items: - — small Intents allow at most 3 Acceptance items",
+   "check": {
+    "stdout_not_contains": "lint_too_many_items:",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "small items=4",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir! (check 1)\n- A2: lib/greet.txt contains the line Hello, Almir! (check 2)\n- A3: lib/greet.txt contains the line Hello, Almir! (check 3)\n- A4: lib/greet.txt contains the line Hello, Almir! (check 4)\n\n## Verify\n- A1: test\n- A2: test\n- A3: test\n- A4: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_too_many_items: - — small Intents allow at most 3 Acceptance items",
+   "check": {
+    "stdout_contains": "  - lint_too_many_items: - — small Intents allow at most 3 Acceptance items",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "small notes_words=250",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: alpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda. omicron sigma tau upsilon phi chi psi omega alpha beta. gamma delta epsilon zeta eta theta iota kappa lambda omicron. sigma tau upsilon phi chi psi omega alpha beta gamma. delta epsilon zeta eta theta iota kappa lambda omicron sigma. tau upsilon phi chi psi omega alpha beta gamma delta. epsilon zeta eta theta iota kappa lambda omicron sigma tau. upsilon phi chi psi omega alpha beta gamma delta epsilon. zeta eta theta iota kappa lambda omicron sigma tau upsilon. phi chi psi omega alpha beta gamma delta epsilon zeta. eta theta iota kappa lambda omicron sigma tau upsilon phi. chi psi omega alpha beta gamma delta epsilon zeta eta. theta iota kappa lambda omicron sigma tau upsilon phi chi. psi omega alpha beta gamma delta epsilon zeta eta theta. iota kappa lambda omicron sigma tau upsilon phi chi psi. omega alpha beta gamma delta epsilon zeta eta theta iota. kappa lambda omicron sigma tau upsilon phi chi psi omega. alpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda. omicron sigma tau upsilon phi chi psi omega alpha beta. gamma delta epsilon zeta eta theta iota kappa lambda omicron. sigma tau upsilon phi chi psi omega alpha beta.\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_notes_too_long: - — small Intents allow at most 250 Notes words",
+   "check": {
+    "stdout_not_contains": "lint_notes_too_long:",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "small notes_words=251",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: alpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda. omicron sigma tau upsilon phi chi psi omega alpha beta. gamma delta epsilon zeta eta theta iota kappa lambda omicron. sigma tau upsilon phi chi psi omega alpha beta gamma. delta epsilon zeta eta theta iota kappa lambda omicron sigma. tau upsilon phi chi psi omega alpha beta gamma delta. epsilon zeta eta theta iota kappa lambda omicron sigma tau. upsilon phi chi psi omega alpha beta gamma delta epsilon. zeta eta theta iota kappa lambda omicron sigma tau upsilon. phi chi psi omega alpha beta gamma delta epsilon zeta. eta theta iota kappa lambda omicron sigma tau upsilon phi. chi psi omega alpha beta gamma delta epsilon zeta eta. theta iota kappa lambda omicron sigma tau upsilon phi chi. psi omega alpha beta gamma delta epsilon zeta eta theta. iota kappa lambda omicron sigma tau upsilon phi chi psi. omega alpha beta gamma delta epsilon zeta eta theta iota. kappa lambda omicron sigma tau upsilon phi chi psi omega. alpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda. omicron sigma tau upsilon phi chi psi omega alpha beta. gamma delta epsilon zeta eta theta iota kappa lambda omicron. sigma tau upsilon phi chi psi omega alpha beta gamma.\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_notes_too_long: - — small Intents allow at most 250 Notes words",
+   "check": {
+    "stdout_contains": "  - lint_notes_too_long: - — small Intents allow at most 250 Notes words",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "medium paragraphs=2",
+   "text": "---\ntitle: Greet Almir by name\nsize: medium\ndomains: [app]\n---\nChange the greeting so that it names Almir, paragraph 1.\n\nChange the greeting so that it names Almir, paragraph 2.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_brief_paragraphs: - — medium Intents allow at most 2 Brief paragraphs",
+   "check": {
+    "stdout_not_contains": "lint_brief_paragraphs:",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "medium paragraphs=3",
+   "text": "---\ntitle: Greet Almir by name\nsize: medium\ndomains: [app]\n---\nChange the greeting so that it names Almir, paragraph 1.\n\nChange the greeting so that it names Almir, paragraph 2.\n\nChange the greeting so that it names Almir, paragraph 3.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_brief_paragraphs: - — medium Intents allow at most 2 Brief paragraphs",
+   "check": {
+    "stdout_contains": "  - lint_brief_paragraphs: - — medium Intents allow at most 2 Brief paragraphs",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "medium brief_words=200",
+   "text": "---\ntitle: Greet Almir by name\nsize: medium\ndomains: [app]\n---\nalpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda. omicron sigma tau upsilon phi chi psi omega alpha beta. gamma delta epsilon zeta eta theta iota kappa lambda omicron. sigma tau upsilon phi chi psi omega alpha beta gamma. delta epsilon zeta eta theta iota kappa lambda omicron sigma. tau upsilon phi chi psi omega alpha beta gamma delta. epsilon zeta eta theta iota kappa lambda omicron sigma tau. upsilon phi chi psi omega alpha beta gamma delta epsilon. zeta eta theta iota kappa lambda omicron sigma tau upsilon. phi chi psi omega alpha beta gamma delta epsilon zeta. eta theta iota kappa lambda omicron sigma tau upsilon phi. chi psi omega alpha beta gamma delta epsilon zeta eta. theta iota kappa lambda omicron sigma tau upsilon phi chi. psi omega alpha beta gamma delta epsilon zeta eta theta. iota kappa lambda omicron sigma tau upsilon phi chi psi. omega alpha beta gamma delta epsilon zeta eta theta iota. kappa lambda omicron sigma tau upsilon phi chi psi omega. alpha beta gamma delta epsilon zeta eta theta iota kappa.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_brief_too_long: - — medium Intents allow at most 200 Brief words",
+   "check": {
+    "stdout_not_contains": "lint_brief_too_long:",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "medium brief_words=201",
+   "text": "---\ntitle: Greet Almir by name\nsize: medium\ndomains: [app]\n---\nalpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda. omicron sigma tau upsilon phi chi psi omega alpha beta. gamma delta epsilon zeta eta theta iota kappa lambda omicron. sigma tau upsilon phi chi psi omega alpha beta gamma. delta epsilon zeta eta theta iota kappa lambda omicron sigma. tau upsilon phi chi psi omega alpha beta gamma delta. epsilon zeta eta theta iota kappa lambda omicron sigma tau. upsilon phi chi psi omega alpha beta gamma delta epsilon. zeta eta theta iota kappa lambda omicron sigma tau upsilon. phi chi psi omega alpha beta gamma delta epsilon zeta. eta theta iota kappa lambda omicron sigma tau upsilon phi. chi psi omega alpha beta gamma delta epsilon zeta eta. theta iota kappa lambda omicron sigma tau upsilon phi chi. psi omega alpha beta gamma delta epsilon zeta eta theta. iota kappa lambda omicron sigma tau upsilon phi chi psi. omega alpha beta gamma delta epsilon zeta eta theta iota. kappa lambda omicron sigma tau upsilon phi chi psi omega. alpha beta gamma delta epsilon zeta eta theta iota kappa. lambda.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_brief_too_long: - — medium Intents allow at most 200 Brief words",
+   "check": {
+    "stdout_contains": "  - lint_brief_too_long: - — medium Intents allow at most 200 Brief words",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "medium items=6",
+   "text": "---\ntitle: Greet Almir by name\nsize: medium\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir! (check 1)\n- A2: lib/greet.txt contains the line Hello, Almir! (check 2)\n- A3: lib/greet.txt contains the line Hello, Almir! (check 3)\n- A4: lib/greet.txt contains the line Hello, Almir! (check 4)\n- A5: lib/greet.txt contains the line Hello, Almir! (check 5)\n- A6: lib/greet.txt contains the line Hello, Almir! (check 6)\n\n## Verify\n- A1: test\n- A2: test\n- A3: test\n- A4: test\n- A5: test\n- A6: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_too_many_items: - — medium Intents allow at most 6 Acceptance items",
+   "check": {
+    "stdout_not_contains": "lint_too_many_items:",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "medium items=7",
+   "text": "---\ntitle: Greet Almir by name\nsize: medium\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir! (check 1)\n- A2: lib/greet.txt contains the line Hello, Almir! (check 2)\n- A3: lib/greet.txt contains the line Hello, Almir! (check 3)\n- A4: lib/greet.txt contains the line Hello, Almir! (check 4)\n- A5: lib/greet.txt contains the line Hello, Almir! (check 5)\n- A6: lib/greet.txt contains the line Hello, Almir! (check 6)\n- A7: lib/greet.txt contains the line Hello, Almir! (check 7)\n\n## Verify\n- A1: test\n- A2: test\n- A3: test\n- A4: test\n- A5: test\n- A6: test\n- A7: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_too_many_items: - — medium Intents allow at most 6 Acceptance items",
+   "check": {
+    "stdout_contains": "  - lint_too_many_items: - — medium Intents allow at most 6 Acceptance items",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "medium notes_words=400",
+   "text": "---\ntitle: Greet Almir by name\nsize: medium\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: alpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda. omicron sigma tau upsilon phi chi psi omega alpha beta. gamma delta epsilon zeta eta theta iota kappa lambda omicron. sigma tau upsilon phi chi psi omega alpha beta gamma. delta epsilon zeta eta theta iota kappa lambda omicron sigma. tau upsilon phi chi psi omega alpha beta gamma delta. epsilon zeta eta theta iota kappa lambda omicron sigma tau. upsilon phi chi psi omega alpha beta gamma delta epsilon. zeta eta theta iota kappa lambda omicron sigma tau upsilon. phi chi psi omega alpha beta gamma delta epsilon zeta. eta theta iota kappa lambda omicron sigma tau upsilon phi. chi psi omega alpha beta gamma delta epsilon zeta eta. theta iota kappa lambda omicron sigma tau upsilon phi chi. psi omega alpha beta gamma delta epsilon zeta eta theta. iota kappa lambda omicron sigma tau upsilon phi chi psi. omega alpha beta gamma delta epsilon zeta eta theta iota. kappa lambda omicron sigma tau upsilon phi chi psi omega. alpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda. omicron sigma tau upsilon phi chi psi omega alpha beta. gamma delta epsilon zeta eta theta iota kappa lambda omicron. sigma tau upsilon phi chi psi omega alpha beta gamma. delta epsilon zeta eta theta iota kappa lambda omicron sigma. tau upsilon phi chi psi omega alpha beta gamma delta. epsilon zeta eta theta iota kappa lambda omicron sigma tau. upsilon phi chi psi omega alpha beta gamma delta epsilon. zeta eta theta iota kappa lambda omicron sigma tau upsilon. phi chi psi omega alpha beta gamma delta epsilon zeta. eta theta iota kappa lambda omicron sigma tau upsilon phi. chi psi omega alpha beta gamma delta epsilon zeta eta. theta iota kappa lambda omicron sigma tau upsilon phi chi. psi omega alpha beta gamma delta epsilon zeta eta theta. iota kappa lambda omicron sigma tau upsilon phi chi psi. omega alpha beta gamma delta epsilon zeta eta theta iota. kappa lambda omicron sigma tau upsilon phi chi psi omega. alpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega.\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_notes_too_long: - — medium Intents allow at most 400 Notes words",
+   "check": {
+    "stdout_not_contains": "lint_notes_too_long:",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "medium notes_words=401",
+   "text": "---\ntitle: Greet Almir by name\nsize: medium\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: alpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda. omicron sigma tau upsilon phi chi psi omega alpha beta. gamma delta epsilon zeta eta theta iota kappa lambda omicron. sigma tau upsilon phi chi psi omega alpha beta gamma. delta epsilon zeta eta theta iota kappa lambda omicron sigma. tau upsilon phi chi psi omega alpha beta gamma delta. epsilon zeta eta theta iota kappa lambda omicron sigma tau. upsilon phi chi psi omega alpha beta gamma delta epsilon. zeta eta theta iota kappa lambda omicron sigma tau upsilon. phi chi psi omega alpha beta gamma delta epsilon zeta. eta theta iota kappa lambda omicron sigma tau upsilon phi. chi psi omega alpha beta gamma delta epsilon zeta eta. theta iota kappa lambda omicron sigma tau upsilon phi chi. psi omega alpha beta gamma delta epsilon zeta eta theta. iota kappa lambda omicron sigma tau upsilon phi chi psi. omega alpha beta gamma delta epsilon zeta eta theta iota. kappa lambda omicron sigma tau upsilon phi chi psi omega. alpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda. omicron sigma tau upsilon phi chi psi omega alpha beta. gamma delta epsilon zeta eta theta iota kappa lambda omicron. sigma tau upsilon phi chi psi omega alpha beta gamma. delta epsilon zeta eta theta iota kappa lambda omicron sigma. tau upsilon phi chi psi omega alpha beta gamma delta. epsilon zeta eta theta iota kappa lambda omicron sigma tau. upsilon phi chi psi omega alpha beta gamma delta epsilon. zeta eta theta iota kappa lambda omicron sigma tau upsilon. phi chi psi omega alpha beta gamma delta epsilon zeta. eta theta iota kappa lambda omicron sigma tau upsilon phi. chi psi omega alpha beta gamma delta epsilon zeta eta. theta iota kappa lambda omicron sigma tau upsilon phi chi. psi omega alpha beta gamma delta epsilon zeta eta theta. iota kappa lambda omicron sigma tau upsilon phi chi psi. omega alpha beta gamma delta epsilon zeta eta theta iota. kappa lambda omicron sigma tau upsilon phi chi psi omega. alpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha.\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_notes_too_long: - — medium Intents allow at most 400 Notes words",
+   "check": {
+    "stdout_contains": "  - lint_notes_too_long: - — medium Intents allow at most 400 Notes words",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "large paragraphs=3",
+   "text": "---\ntitle: Greet Almir by name\nsize: large\ndomains: [app]\n---\nChange the greeting so that it names Almir, paragraph 1.\n\nChange the greeting so that it names Almir, paragraph 2.\n\nChange the greeting so that it names Almir, paragraph 3.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_brief_paragraphs: - — large Intents allow at most 3 Brief paragraphs",
+   "check": {
+    "stdout_not_contains": "lint_brief_paragraphs:",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "large paragraphs=4",
+   "text": "---\ntitle: Greet Almir by name\nsize: large\ndomains: [app]\n---\nChange the greeting so that it names Almir, paragraph 1.\n\nChange the greeting so that it names Almir, paragraph 2.\n\nChange the greeting so that it names Almir, paragraph 3.\n\nChange the greeting so that it names Almir, paragraph 4.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_brief_paragraphs: - — large Intents allow at most 3 Brief paragraphs",
+   "check": {
+    "stdout_contains": "  - lint_brief_paragraphs: - — large Intents allow at most 3 Brief paragraphs",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "large brief_words=330",
+   "text": "---\ntitle: Greet Almir by name\nsize: large\ndomains: [app]\n---\nalpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda. omicron sigma tau upsilon phi chi psi omega alpha beta. gamma delta epsilon zeta eta theta iota kappa lambda omicron. sigma tau upsilon phi chi psi omega alpha beta gamma. delta epsilon zeta eta theta iota kappa lambda omicron sigma. tau upsilon phi chi psi omega alpha beta gamma delta. epsilon zeta eta theta iota kappa lambda omicron sigma tau. upsilon phi chi psi omega alpha beta gamma delta epsilon. zeta eta theta iota kappa lambda omicron sigma tau upsilon. phi chi psi omega alpha beta gamma delta epsilon zeta. eta theta iota kappa lambda omicron sigma tau upsilon phi. chi psi omega alpha beta gamma delta epsilon zeta eta. theta iota kappa lambda omicron sigma tau upsilon phi chi. psi omega alpha beta gamma delta epsilon zeta eta theta. iota kappa lambda omicron sigma tau upsilon phi chi psi. omega alpha beta gamma delta epsilon zeta eta theta iota. kappa lambda omicron sigma tau upsilon phi chi psi omega. alpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda. omicron sigma tau upsilon phi chi psi omega alpha beta. gamma delta epsilon zeta eta theta iota kappa lambda omicron. sigma tau upsilon phi chi psi omega alpha beta gamma. delta epsilon zeta eta theta iota kappa lambda omicron sigma. tau upsilon phi chi psi omega alpha beta gamma delta. epsilon zeta eta theta iota kappa lambda omicron sigma tau. upsilon phi chi psi omega alpha beta gamma delta epsilon. zeta eta theta iota kappa lambda omicron sigma tau upsilon. phi chi psi omega alpha beta gamma delta epsilon zeta. eta theta iota kappa lambda omicron sigma tau upsilon phi. chi psi omega alpha beta gamma delta epsilon zeta eta.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_brief_too_long: - — large Intents allow at most 330 Brief words",
+   "check": {
+    "stdout_not_contains": "lint_brief_too_long:",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "large brief_words=331",
+   "text": "---\ntitle: Greet Almir by name\nsize: large\ndomains: [app]\n---\nalpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda. omicron sigma tau upsilon phi chi psi omega alpha beta. gamma delta epsilon zeta eta theta iota kappa lambda omicron. sigma tau upsilon phi chi psi omega alpha beta gamma. delta epsilon zeta eta theta iota kappa lambda omicron sigma. tau upsilon phi chi psi omega alpha beta gamma delta. epsilon zeta eta theta iota kappa lambda omicron sigma tau. upsilon phi chi psi omega alpha beta gamma delta epsilon. zeta eta theta iota kappa lambda omicron sigma tau upsilon. phi chi psi omega alpha beta gamma delta epsilon zeta. eta theta iota kappa lambda omicron sigma tau upsilon phi. chi psi omega alpha beta gamma delta epsilon zeta eta. theta iota kappa lambda omicron sigma tau upsilon phi chi. psi omega alpha beta gamma delta epsilon zeta eta theta. iota kappa lambda omicron sigma tau upsilon phi chi psi. omega alpha beta gamma delta epsilon zeta eta theta iota. kappa lambda omicron sigma tau upsilon phi chi psi omega. alpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda. omicron sigma tau upsilon phi chi psi omega alpha beta. gamma delta epsilon zeta eta theta iota kappa lambda omicron. sigma tau upsilon phi chi psi omega alpha beta gamma. delta epsilon zeta eta theta iota kappa lambda omicron sigma. tau upsilon phi chi psi omega alpha beta gamma delta. epsilon zeta eta theta iota kappa lambda omicron sigma tau. upsilon phi chi psi omega alpha beta gamma delta epsilon. zeta eta theta iota kappa lambda omicron sigma tau upsilon. phi chi psi omega alpha beta gamma delta epsilon zeta. eta theta iota kappa lambda omicron sigma tau upsilon phi. chi psi omega alpha beta gamma delta epsilon zeta eta. theta.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_brief_too_long: - — large Intents allow at most 330 Brief words",
+   "check": {
+    "stdout_contains": "  - lint_brief_too_long: - — large Intents allow at most 330 Brief words",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "large items=10",
+   "text": "---\ntitle: Greet Almir by name\nsize: large\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir! (check 1)\n- A2: lib/greet.txt contains the line Hello, Almir! (check 2)\n- A3: lib/greet.txt contains the line Hello, Almir! (check 3)\n- A4: lib/greet.txt contains the line Hello, Almir! (check 4)\n- A5: lib/greet.txt contains the line Hello, Almir! (check 5)\n- A6: lib/greet.txt contains the line Hello, Almir! (check 6)\n- A7: lib/greet.txt contains the line Hello, Almir! (check 7)\n- A8: lib/greet.txt contains the line Hello, Almir! (check 8)\n- A9: lib/greet.txt contains the line Hello, Almir! (check 9)\n- A10: lib/greet.txt contains the line Hello, Almir! (check 10)\n\n## Verify\n- A1: test\n- A2: test\n- A3: test\n- A4: test\n- A5: test\n- A6: test\n- A7: test\n- A8: test\n- A9: test\n- A10: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_too_many_items: - — large Intents allow at most 10 Acceptance items",
+   "check": {
+    "stdout_not_contains": "lint_too_many_items:",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "large items=11",
+   "text": "---\ntitle: Greet Almir by name\nsize: large\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir! (check 1)\n- A2: lib/greet.txt contains the line Hello, Almir! (check 2)\n- A3: lib/greet.txt contains the line Hello, Almir! (check 3)\n- A4: lib/greet.txt contains the line Hello, Almir! (check 4)\n- A5: lib/greet.txt contains the line Hello, Almir! (check 5)\n- A6: lib/greet.txt contains the line Hello, Almir! (check 6)\n- A7: lib/greet.txt contains the line Hello, Almir! (check 7)\n- A8: lib/greet.txt contains the line Hello, Almir! (check 8)\n- A9: lib/greet.txt contains the line Hello, Almir! (check 9)\n- A10: lib/greet.txt contains the line Hello, Almir! (check 10)\n- A11: lib/greet.txt contains the line Hello, Almir! (check 11)\n\n## Verify\n- A1: test\n- A2: test\n- A3: test\n- A4: test\n- A5: test\n- A6: test\n- A7: test\n- A8: test\n- A9: test\n- A10: test\n- A11: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_too_many_items: - — large Intents allow at most 10 Acceptance items",
+   "check": {
+    "stdout_contains": "  - lint_too_many_items: - — large Intents allow at most 10 Acceptance items",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "large notes_words=600",
+   "text": "---\ntitle: Greet Almir by name\nsize: large\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: alpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda. omicron sigma tau upsilon phi chi psi omega alpha beta. gamma delta epsilon zeta eta theta iota kappa lambda omicron. sigma tau upsilon phi chi psi omega alpha beta gamma. delta epsilon zeta eta theta iota kappa lambda omicron sigma. tau upsilon phi chi psi omega alpha beta gamma delta. epsilon zeta eta theta iota kappa lambda omicron sigma tau. upsilon phi chi psi omega alpha beta gamma delta epsilon. zeta eta theta iota kappa lambda omicron sigma tau upsilon. phi chi psi omega alpha beta gamma delta epsilon zeta. eta theta iota kappa lambda omicron sigma tau upsilon phi. chi psi omega alpha beta gamma delta epsilon zeta eta. theta iota kappa lambda omicron sigma tau upsilon phi chi. psi omega alpha beta gamma delta epsilon zeta eta theta. iota kappa lambda omicron sigma tau upsilon phi chi psi. omega alpha beta gamma delta epsilon zeta eta theta iota. kappa lambda omicron sigma tau upsilon phi chi psi omega. alpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda. omicron sigma tau upsilon phi chi psi omega alpha beta. gamma delta epsilon zeta eta theta iota kappa lambda omicron. sigma tau upsilon phi chi psi omega alpha beta gamma. delta epsilon zeta eta theta iota kappa lambda omicron sigma. tau upsilon phi chi psi omega alpha beta gamma delta. epsilon zeta eta theta iota kappa lambda omicron sigma tau. upsilon phi chi psi omega alpha beta gamma delta epsilon. zeta eta theta iota kappa lambda omicron sigma tau upsilon. phi chi psi omega alpha beta gamma delta epsilon zeta. eta theta iota kappa lambda omicron sigma tau upsilon phi. chi psi omega alpha beta gamma delta epsilon zeta eta. theta iota kappa lambda omicron sigma tau upsilon phi chi. psi omega alpha beta gamma delta epsilon zeta eta theta. iota kappa lambda omicron sigma tau upsilon phi chi psi. omega alpha beta gamma delta epsilon zeta eta theta iota. kappa lambda omicron sigma tau upsilon phi chi psi omega. alpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda. omicron sigma tau upsilon phi chi psi omega alpha beta. gamma delta epsilon zeta eta theta iota kappa lambda omicron. sigma tau upsilon phi chi psi omega alpha beta gamma. delta epsilon zeta eta theta iota kappa lambda omicron sigma. tau upsilon phi chi psi omega alpha beta gamma delta. epsilon zeta eta theta iota kappa lambda omicron sigma tau. upsilon phi chi psi omega alpha beta gamma delta epsilon. zeta eta theta iota kappa lambda omicron sigma tau upsilon. phi chi psi omega alpha beta gamma delta epsilon zeta. eta theta iota kappa lambda omicron sigma tau upsilon phi. chi psi omega alpha beta gamma delta epsilon zeta eta. theta iota kappa lambda omicron sigma tau upsilon phi chi. psi omega alpha beta gamma delta epsilon zeta eta theta. iota kappa lambda omicron sigma tau upsilon phi chi psi. omega alpha beta gamma delta epsilon zeta eta theta iota. kappa lambda omicron sigma tau upsilon phi chi psi omega. alpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa.\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_notes_too_long: - — large Intents allow at most 600 Notes words",
+   "check": {
+    "stdout_not_contains": "lint_notes_too_long:",
+    "exit": 5,
+    "stderr": ""
+   }
+  },
+  {
+   "label": "large notes_words=601",
+   "text": "---\ntitle: Greet Almir by name\nsize: large\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: alpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda. omicron sigma tau upsilon phi chi psi omega alpha beta. gamma delta epsilon zeta eta theta iota kappa lambda omicron. sigma tau upsilon phi chi psi omega alpha beta gamma. delta epsilon zeta eta theta iota kappa lambda omicron sigma. tau upsilon phi chi psi omega alpha beta gamma delta. epsilon zeta eta theta iota kappa lambda omicron sigma tau. upsilon phi chi psi omega alpha beta gamma delta epsilon. zeta eta theta iota kappa lambda omicron sigma tau upsilon. phi chi psi omega alpha beta gamma delta epsilon zeta. eta theta iota kappa lambda omicron sigma tau upsilon phi. chi psi omega alpha beta gamma delta epsilon zeta eta. theta iota kappa lambda omicron sigma tau upsilon phi chi. psi omega alpha beta gamma delta epsilon zeta eta theta. iota kappa lambda omicron sigma tau upsilon phi chi psi. omega alpha beta gamma delta epsilon zeta eta theta iota. kappa lambda omicron sigma tau upsilon phi chi psi omega. alpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda. omicron sigma tau upsilon phi chi psi omega alpha beta. gamma delta epsilon zeta eta theta iota kappa lambda omicron. sigma tau upsilon phi chi psi omega alpha beta gamma. delta epsilon zeta eta theta iota kappa lambda omicron sigma. tau upsilon phi chi psi omega alpha beta gamma delta. epsilon zeta eta theta iota kappa lambda omicron sigma tau. upsilon phi chi psi omega alpha beta gamma delta epsilon. zeta eta theta iota kappa lambda omicron sigma tau upsilon. phi chi psi omega alpha beta gamma delta epsilon zeta. eta theta iota kappa lambda omicron sigma tau upsilon phi. chi psi omega alpha beta gamma delta epsilon zeta eta. theta iota kappa lambda omicron sigma tau upsilon phi chi. psi omega alpha beta gamma delta epsilon zeta eta theta. iota kappa lambda omicron sigma tau upsilon phi chi psi. omega alpha beta gamma delta epsilon zeta eta theta iota. kappa lambda omicron sigma tau upsilon phi chi psi omega. alpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda. omicron sigma tau upsilon phi chi psi omega alpha beta. gamma delta epsilon zeta eta theta iota kappa lambda omicron. sigma tau upsilon phi chi psi omega alpha beta gamma. delta epsilon zeta eta theta iota kappa lambda omicron sigma. tau upsilon phi chi psi omega alpha beta gamma delta. epsilon zeta eta theta iota kappa lambda omicron sigma tau. upsilon phi chi psi omega alpha beta gamma delta epsilon. zeta eta theta iota kappa lambda omicron sigma tau upsilon. phi chi psi omega alpha beta gamma delta epsilon zeta. eta theta iota kappa lambda omicron sigma tau upsilon phi. chi psi omega alpha beta gamma delta epsilon zeta eta. theta iota kappa lambda omicron sigma tau upsilon phi chi. psi omega alpha beta gamma delta epsilon zeta eta theta. iota kappa lambda omicron sigma tau upsilon phi chi psi. omega alpha beta gamma delta epsilon zeta eta theta iota. kappa lambda omicron sigma tau upsilon phi chi psi omega. alpha beta gamma delta epsilon zeta eta theta iota kappa. lambda omicron sigma tau upsilon phi chi psi omega alpha. beta gamma delta epsilon zeta eta theta iota kappa lambda.\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rule": "lint_notes_too_long: - — large Intents allow at most 600 Notes words",
+   "check": {
+    "stdout_contains": "  - lint_notes_too_long: - — large Intents allow at most 600 Notes words",
+    "exit": 5,
+    "stderr": ""
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": {
+    "slug": "tiers",
+    "intent_text": "{row.text}",
+    "test_text": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\nt_A2() { grep -qx 'Hello, Almir!' lib/greet.txt; }\nt_A3() { grep -qx 'Hello, Almir!' lib/greet.txt; }\nt_A4() { grep -qx 'Hello, Almir!' lib/greet.txt; }\nt_A5() { grep -qx 'Hello, Almir!' lib/greet.txt; }\nt_A6() { grep -qx 'Hello, Almir!' lib/greet.txt; }\nt_A7() { grep -qx 'Hello, Almir!' lib/greet.txt; }\nt_A8() { grep -qx 'Hello, Almir!' lib/greet.txt; }\nt_A9() { grep -qx 'Hello, Almir!' lib/greet.txt; }\nt_A10() { grep -qx 'Hello, Almir!' lib/greet.txt; }\nt_A11() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "tiers"
+   ],
+   "expect": "{row.check}"
+  }
+ ]
+}

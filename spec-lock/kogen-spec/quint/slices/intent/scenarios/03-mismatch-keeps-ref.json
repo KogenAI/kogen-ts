@@ -1,0 +1,9 @@
+{
+  "name": "03-mismatch-keeps-ref",
+  "about": "A hash mismatch refuses and leaves the previous approval commit in place.",
+  "steps": [
+    {"do": ["Shape", {"slug": "alpha", "result": "valid"}]},
+    {"do": ["Approve", {"slug": "alpha", "mode": "commit", "hash": "abcd1234", "prefixOk": true, "race": "none"}]},
+    {"do": ["Approve", {"slug": "alpha", "mode": "commit", "hash": "ffff0000", "prefixOk": false, "race": "none"}], "expect": {"last": "intent/hash_mismatch", "exit": 1, "refs": {"alpha": {"n": 1, "hash": "abcd1234"}}, "life": {"alpha": "approved"}}}
+  ]
+}

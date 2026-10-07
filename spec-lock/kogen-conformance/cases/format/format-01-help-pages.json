@@ -1,0 +1,31 @@
+{
+ "id": "format-01",
+ "profile": "format",
+ "title": "Help pages are byte-exact (16)",
+ "spec": [
+  "§1.4",
+  "data/help"
+ ],
+ "fixture": "none",
+ "rows_from": {
+  "generator": "help_pages"
+ },
+ "steps": [
+  {
+   "run": [
+    "kogen",
+    "help",
+    "{*row.words}"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout": [
+     {
+      "data": "help/{row.page}"
+     }
+    ],
+    "stderr": ""
+   }
+  }
+ ]
+}

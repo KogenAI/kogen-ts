@@ -1,0 +1,55 @@
+{
+ "id": "state-25",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "A stale shape-warnings.json is ignored",
+ "spec": [
+  "§2.4.5"
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "write": {
+    "path": ".kogen/intents/greet/shape-warnings.json",
+    "text": "{\"approval_sha256\": \"0000000000000000000000000000000000000000000000000000000000000000\", \"warnings\": [{\"code\": \"shape_reclassified\", \"item_ids\": [\"A1\"], \"message\": \"stale warning text\"}]}"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 5,
+    "stderr": "",
+    "stdout_not_contains": [
+     "stale warning text",
+     "Warnings"
+    ]
+   }
+  },
+  {
+   "write": {
+    "path": ".kogen/intents/greet/shape-warnings.json",
+    "text": "{\"approval_sha256\":\"{hash64:greet}\",\"warnings\":[{\"code\":\"shape_reclassified\",\"item_ids\":[\"A1\"],\"message\":\"A1 was reclassified as test\"}]}"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 5,
+    "stderr": "",
+    "stdout_contains": "Warnings\n  - shape_reclassified: A1 — A1 was reclassified as test\n"
+   }
+  }
+ ]
+}

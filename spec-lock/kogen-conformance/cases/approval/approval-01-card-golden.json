@@ -1,0 +1,61 @@
+{
+ "id": "approval-01",
+ "profile": "approval",
+ "fixture": "kt",
+ "title": "Card golden; exit 5; no ref and no run",
+ "spec": [
+  "§1.7.2"
+ ],
+ "steps": [
+  {
+   "intent": {
+    "slug": "greet",
+    "intent_text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir,\nand keep lib/greet.txt a single line.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n- A2: lib/greet.txt has exactly one line.\n\n## Verify\n- A1: test\n- A2: test keep\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+    "test_text": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\nt_A2() { [ \"$(wc -l < lib/greet.txt | tr -d ' ')\" = 1 ]; }\n",
+    "commit": true
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 5,
+    "stderr": "",
+    "stdout": {
+     "lines": [
+      "Intent: greet — Greet Almir by name",
+      "SHA-256: {hash64:greet}",
+      "Approver: Kogen Test <test@kogen.invalid>",
+      "Base: main at {base_sha}",
+      "Feasibility: not checked",
+      "",
+      "Brief",
+      "  Change the greeting in lib/greet.txt so that it names Almir,",
+      "  and keep lib/greet.txt a single line.",
+      "",
+      "Acceptance",
+      "  - [A1] lib/greet.txt contains the line Hello, Almir! (test)",
+      "  - [A2] lib/greet.txt has exactly one line. (test keep)",
+      "",
+      "Approve with:",
+      "  kogen intent approve greet {hash8:greet}"
+     ]
+    }
+   }
+  },
+  {
+   "assert": {
+    "refs": {
+     "refs/kogen/intents/greet": false
+    },
+    "glob_count": {
+     "{state_root}/runs/*": 0
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "05-repair-then-land",
+  "about": "A conflict repairs inside the landing allowance. Green re-gates and lands. Spending the allowance parks.",
+  "steps": [
+    {"do": ["Record"]},
+    {"do": ["Lock"]},
+    {"do": ["Again"]},
+    {"do": ["Lock"]},
+    {"do": ["Again"]},
+    {"do": ["Lock"]},
+    {"do": ["Again"]},
+    {"do": ["Lock"], "expect": {"phase": "moved"}},
+    {"do": ["Rebase", {"kind": "conflict"}], "expect": {"phase": "repairing", "status": "running", "claim": true}},
+    {"do": ["Repair", {"kind": "red"}], "expect": {"phase": "repairing", "repairs": 1, "status": "running"}},
+    {"do": ["Repair", {"kind": "green"}], "expect": {"phase": "recorded", "line": "repaired", "repairs": 2}},
+    {"do": ["Head", {"kind": "ok"}]},
+    {"do": ["Push"]},
+    {"do": ["Cas", {"won": true}]},
+    {"do": ["Drop", {"ok": true}], "expect": {"status": "landed"}},
+    {"do": ["Init"]},
+    {"do": ["Record"]},
+    {"do": ["Lock"]},
+    {"do": ["Again"]},
+    {"do": ["Lock"]},
+    {"do": ["Again"]},
+    {"do": ["Lock"]},
+    {"do": ["Again"]},
+    {"do": ["Lock"], "expect": {"phase": "moved"}},
+    {"do": ["Rebase", {"kind": "red"}], "expect": {"phase": "repairing"}},
+    {"do": ["Repair", {"kind": "spent"}], "expect": {"status": "parked", "claim": false, "exit": 1}}
+  ]
+}

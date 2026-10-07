@@ -1,0 +1,12 @@
+{
+  "name": "01-happy-land",
+  "about": "The Landing record is written, then the incoming ref, then the CAS, then the incoming ref is deleted.",
+  "steps": [
+    {"do": ["Record"], "expect": {"line": "landing_prepared", "recorded": true, "claim": true, "onBase": false, "status": "running"}},
+    {"do": ["Head", {"kind": "ok"}], "expect": {"line": "head_ok", "phase": "recorded"}},
+    {"do": ["Push"], "expect": {"line": "pushed", "incoming": true, "phase": "incoming"}},
+    {"do": ["Cas", {"won": true}], "expect": {"line": "cas", "onBase": true, "recorded": true, "phase": "based"}},
+    {"do": ["Worktree", {"dirty": false}], "expect": {"line": "worktree_clean", "warning": false}},
+    {"do": ["Drop", {"ok": true}], "expect": {"line": "landed", "status": "landed", "incoming": false, "claim": false, "exit": 0}}
+  ]
+}

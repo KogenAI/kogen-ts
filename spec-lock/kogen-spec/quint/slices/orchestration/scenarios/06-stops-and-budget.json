@@ -1,0 +1,26 @@
+{
+  "name": "06-stops-and-budget",
+  "about": "Setup is retried once. A missing runner, a provider error, and a spent budget all end at B10. Provider trouble does not fail the Intent. Budget keeps the snapshot and does not open another rung.",
+  "steps": [
+    {"do": ["Begin", {"valid": true, "branchOk": true, "claimFree": true, "witness": false, "hard": false, "maxR": 3}]},
+    {"do": ["Probe", {"confined": true}]},
+    {"do": ["Plan"]},
+    {"do": ["Setup", {"ok": false}], "expect": {"phase": "setup", "status": "running", "claim": true}},
+    {"do": ["Setup", {"ok": false}], "expect": {"status": "stopped", "reason": "environment/setup_failed", "exit": 3, "claim": false}},
+    {"do": ["Begin", {"valid": true, "branchOk": true, "claimFree": true, "witness": false, "hard": false, "maxR": 3}]},
+    {"do": ["Probe", {"confined": true}]},
+    {"do": ["Plan"]},
+    {"do": ["Setup", {"ok": true}]},
+    {"do": ["BaseAccept", {"runner": false}], "expect": {"reason": "environment/tool_missing", "exit": 3, "status": "stopped"}},
+    {"do": ["Begin", {"valid": true, "branchOk": true, "claimFree": true, "witness": false, "hard": false, "maxR": 3}]},
+    {"do": ["Probe", {"confined": true}]},
+    {"do": ["Stop", {"why": "provider"}], "expect": {"status": "stopped", "reason": "provider/overload", "exit": 4, "claim": false}},
+    {"do": ["Begin", {"valid": true, "branchOk": true, "claimFree": true, "witness": false, "hard": false, "maxR": 3}]},
+    {"do": ["Probe", {"confined": true}]},
+    {"do": ["Plan"]},
+    {"do": ["Setup", {"ok": true}]},
+    {"do": ["BaseAccept", {"runner": true}]},
+    {"do": ["Verify", {"red": false, "landable": false, "counted": true, "count": 0}], "expect": {"phase": "b6", "rung": 1}},
+    {"do": ["Budget"], "expect": {"status": "failed", "parkedRef": true, "rung": 1, "claim": false}}
+  ]
+}

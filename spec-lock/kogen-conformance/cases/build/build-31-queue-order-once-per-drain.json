@@ -1,0 +1,165 @@
+{
+ "id": "build-31",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Queue order; each Intent is built once per drain",
+ "spec": [
+  "§3.11"
+ ],
+ "project": {
+  "build": {
+   "ladder": {
+    "max_rungs": 1
+   }
+  }
+ },
+ "notes": "greet is re-approved by a side effect during its own Build; it is queued again but was already attempted in this drain.",
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "intent": "farewell"
+  },
+  {
+   "approve": "farewell"
+  },
+  {
+   "sleep": 1.1
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "fake": {
+    "script": [
+     {
+      "id": "far.plan",
+      "expect": {
+       "role": "planner",
+       "turn": 1,
+       "input_contains": "Add a farewell line"
+      },
+      "reply": {
+       "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/bye.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/bye.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/bye.txt.\n"
+      }
+     },
+     {
+      "id": "far.edit",
+      "expect": {
+       "role": "builder",
+       "turn": 1,
+       "input_contains": "Add a farewell line"
+      },
+      "reply": {
+       "calls": [
+        {
+         "name": "shell",
+         "arguments": {
+          "cmd": "printf 'Bye, Almir!\\n' > lib/bye.txt"
+         }
+        }
+       ]
+      }
+     },
+     {
+      "id": "far.done",
+      "expect": {
+       "role": "builder",
+       "turn": 2,
+       "input_contains": "Add a farewell line",
+       "last_output_contains": "exit 0"
+      },
+      "reply": {
+       "text": "Done."
+      }
+     },
+     {
+      "id": "g.plan",
+      "expect": {
+       "role": "planner",
+       "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+       "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      },
+      "side_effect_sh": "cd \"$CHECKOUT\" && \"{kogen}\" intent approve greet {hash8:greet} --by side-effect >/dev/null"
+     },
+     {
+      "id": "g.claim1",
+      "expect": {
+       "role": "builder",
+       "turn": 1,
+       "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+       "text": "Done."
+      }
+     },
+     {
+      "id": "g.claim2",
+      "expect": {
+       "role": "builder",
+       "turn": 2,
+       "input_contains": "Greet Almir by name",
+       "last_user_contains": "Kogen found no changed files"
+      },
+      "reply": {
+       "text": "Done."
+      }
+     },
+     {
+      "id": "g.claim3",
+      "expect": {
+       "role": "builder",
+       "turn": 3,
+       "input_contains": "Greet Almir by name",
+       "last_user_contains": "Kogen's controller reported this failure."
+      },
+      "reply": {
+       "text": "Done."
+      }
+     }
+    ]
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 1,
+    "stderr": "",
+    "stdout_lines": [
+     "building farewell",
+     "~landed farewell [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+     "building greet",
+     "~failed greet: \\S+; best candidate \\S+ at refs/kogen/parked/[0-9a-f]{32} \\(Build [0-9a-f]{8}\\)",
+     "queue: done; 2 Build(s), 1 landed, 1 not"
+    ]
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "greet"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout": "greet: queued, 1 of 1\n"
+   }
+  },
+  {
+   "assert": {
+    "runs_count": {
+     "greet": 1,
+     "farewell": 1
+    }
+   }
+  }
+ ]
+}

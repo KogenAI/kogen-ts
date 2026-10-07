@@ -1,0 +1,71 @@
+{
+ "id": "state-19",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "Status: re-approval re-queues a failed Intent",
+ "spec": [
+  "§2.11",
+  "§1.7.2"
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "synthetic_run": {
+    "slug": "greet",
+    "run_id": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+    "status": "failed",
+    "reason": "repair_cap",
+    "verdict": "unverified"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "greet"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_starts_lines": [
+     "greet: failed, repair_cap"
+    ]
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "greet"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_starts_lines": [
+     "greet: queued, 1 of 1"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "git": [
+     {
+      "args": [
+       "rev-list",
+       "--count",
+       "refs/kogen/intents/greet"
+      ],
+      "stdout": "2\n"
+     }
+    ]
+   }
+  }
+ ]
+}

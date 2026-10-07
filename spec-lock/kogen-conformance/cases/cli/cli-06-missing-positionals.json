@@ -1,0 +1,104 @@
+{
+ "id": "cli-06",
+ "profile": "cli",
+ "fixture": "none",
+ "title": "Missing positionals: <slug>, <file|->, <provider>",
+ "spec": [
+  "§1.3.3.5"
+ ],
+ "rows": [
+  {
+   "label": "approve <slug>",
+   "argv": [
+    "intent",
+    "approve"
+   ],
+   "path": "intent approve",
+   "name": "<slug>",
+   "page": "kogen-intent-approve"
+  },
+  {
+   "label": "remove <slug>",
+   "argv": [
+    "intent",
+    "remove",
+    "--force"
+   ],
+   "path": "intent remove",
+   "name": "<slug>",
+   "page": "kogen-intent-remove"
+  },
+  {
+   "label": "shape <slug>",
+   "argv": [
+    "intent",
+    "shape"
+   ],
+   "path": "intent shape",
+   "name": "<slug>",
+   "page": "kogen-intent-shape"
+  },
+  {
+   "label": "shape <file|->",
+   "argv": [
+    "intent",
+    "shape",
+    "greet",
+    "--json"
+   ],
+   "path": "intent shape",
+   "name": "<file|->",
+   "page": "kogen-intent-shape"
+  },
+  {
+   "label": "login <provider>",
+   "argv": [
+    "provider",
+    "login"
+   ],
+   "path": "provider login",
+   "name": "<provider>",
+   "page": "kogen-provider-login"
+  },
+  {
+   "label": "logout <provider>",
+   "argv": [
+    "provider",
+    "logout",
+    "--as",
+    "work"
+   ],
+   "path": "provider logout",
+   "name": "<provider>",
+   "page": "kogen-provider-logout"
+  },
+  {
+   "label": "use <provider>",
+   "argv": [
+    "provider",
+    "use"
+   ],
+   "path": "provider use",
+   "name": "<provider>",
+   "page": "kogen-provider-use"
+  }
+ ],
+ "steps": [
+  {
+   "run": [
+    "kogen",
+    "{*row.argv}"
+   ],
+   "expect": {
+    "exit": 2,
+    "stdout": [
+     "kogen {row.path}: missing {row.name}\n\n",
+     {
+      "data": "help/{row.page}.txt"
+     }
+    ],
+    "stderr": ""
+   }
+  }
+ ]
+}

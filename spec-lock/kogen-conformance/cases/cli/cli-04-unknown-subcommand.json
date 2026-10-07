@@ -1,0 +1,86 @@
+{
+ "id": "cli-04",
+ "profile": "cli",
+ "fixture": "none",
+ "title": "Unknown subcommand, also with --help",
+ "spec": [
+  "§1.3.3.2"
+ ],
+ "rows": [
+  {
+   "label": "intent frob",
+   "argv": [
+    "intent",
+    "frob"
+   ],
+   "group": "intent",
+   "sub": "frob"
+  },
+  {
+   "label": "intent frob --help",
+   "argv": [
+    "intent",
+    "frob",
+    "--help"
+   ],
+   "group": "intent",
+   "sub": "frob"
+  },
+  {
+   "label": "queue frob",
+   "argv": [
+    "queue",
+    "frob"
+   ],
+   "group": "queue",
+   "sub": "frob"
+  },
+  {
+   "label": "queue frob --help",
+   "argv": [
+    "queue",
+    "frob",
+    "--help"
+   ],
+   "group": "queue",
+   "sub": "frob"
+  },
+  {
+   "label": "provider frob",
+   "argv": [
+    "provider",
+    "frob"
+   ],
+   "group": "provider",
+   "sub": "frob"
+  },
+  {
+   "label": "provider frob --help",
+   "argv": [
+    "provider",
+    "frob",
+    "--help"
+   ],
+   "group": "provider",
+   "sub": "frob"
+  }
+ ],
+ "steps": [
+  {
+   "run": [
+    "kogen",
+    "{*row.argv}"
+   ],
+   "expect": {
+    "exit": 2,
+    "stdout": [
+     "kogen {row.group}: unknown command '{row.sub}'\n\n",
+     {
+      "data": "help/kogen-{row.group}.txt"
+     }
+    ],
+    "stderr": ""
+   }
+  }
+ ]
+}

@@ -1,0 +1,124 @@
+{
+ "id": "custody-10",
+ "profile": "custody",
+ "fixture": "kt",
+ "title": "Landed trees are right when the builder deletes, renames, sets chmod +x, adds a symlink, or commits by itself",
+ "spec": [
+  "§5.4",
+  "§5.5.10",
+  "§3.9.1"
+ ],
+ "fake": true,
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+   }
+  },
+  {
+   "id": "ops",
+   "expect": {
+    "role": "builder",
+    "turn": 1,
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "git rm -q lib/a.txt && git commit -q -m 'one' && git mv lib/b.txt lib/c.txt && git commit -q -m 'two' && chmod +x lib/run.sh && ln -s greet.txt lib/link.txt && printf 'Hello, Almir!\\n' > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "done",
+   "expect": {
+    "role": "builder",
+    "turn": 2,
+    "input_contains": "Greet Almir by name",
+    "last_output_contains": "exit 0"
+   },
+   "reply": {
+    "text": "Done."
+   }
+  }
+ ],
+ "fixture_files": {
+  "lib/a.txt": "a\n",
+  "lib/b.txt": "b\n",
+  "lib/run.sh": "echo run\n"
+ },
+ "notes": "Two builder commits plus uncommitted changes squash into one landing commit on the base tip.",
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "git": [
+    "rev-parse",
+    "main"
+   ],
+   "in": "origin",
+   "capture": {
+    "base0": "^([0-9a-f]+)"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build {id8:greet}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "git": [
+     {
+      "args": [
+       "ls-tree",
+       "main",
+       "lib/"
+      ],
+      "stdout_regex": "\\A100644 blob [0-9a-f]+\tlib/c\\.txt\n100644 blob [0-9a-f]+\tlib/greet\\.txt\n120000 blob [0-9a-f]+\tlib/link\\.txt\n100755 blob [0-9a-f]+\tlib/run\\.sh\n\\Z"
+     },
+     {
+      "args": [
+       "log",
+       "-1",
+       "--format=%P",
+       "main"
+      ],
+      "stdout": "{var:base0}\n"
+     },
+     {
+      "args": [
+       "rev-list",
+       "--count",
+       "{var:base0}..main"
+      ],
+      "stdout": "1\n"
+     }
+    ]
+   }
+  }
+ ]
+}

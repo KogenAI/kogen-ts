@@ -1,0 +1,4 @@
+#!/bin/sh
+# Runs the Kogen conformance suite (Python 3 standard library only).
+here=$(cd "$(dirname "$0")/.." && pwd)
+PYTHONPATH="$here${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m kogen_conformance "$@"

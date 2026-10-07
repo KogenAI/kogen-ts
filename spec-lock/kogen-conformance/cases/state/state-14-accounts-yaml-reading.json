@@ -1,0 +1,75 @@
+{
+ "id": "state-14",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "accounts.yaml: an empty chatgpt: map is accepted; rows are read",
+ "spec": [
+  "§2.7",
+  "§1.7.6"
+ ],
+ "notes": "Writing order and bytes are asserted in provider-21 and format-11, which need a login.",
+ "rows": [
+  {
+   "label": "empty map",
+   "doc": "# Kogen accounts on this machine, written by kogen provider use.\nchatgpt: {}\n"
+  },
+  {
+   "label": "rows",
+   "doc": "# Kogen accounts on this machine, written by kogen provider use.\nchatgpt:\n  default: work\n  projects:\n    - path: \"{checkout}\"\n      account: work\n"
+  }
+ ],
+ "steps": [
+  {
+   "write": {
+    "path": "{home}/.kogen/accounts.yaml",
+    "text": "{row.doc}"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "provider",
+    "list"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout": "chatgpt: not signed in\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": ""
+   }
+  },
+  {
+   "write": {
+    "path": "{home}/.kogen/accounts.yaml",
+    "text": "chatgpt:\n\tdefault: x\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "provider",
+    "use",
+    "chatgpt",
+    "--as",
+    "work"
+   ],
+   "expect": {
+    "exit": [
+     3,
+     4
+    ],
+    "stderr": "",
+    "stdout_regex": "\\A(environment/invalid_accounts_file: {home}/\\.kogen/accounts\\.yaml is not valid; fix or delete it|provider/login: chatgpt:work has no saved login; run kogen provider login chatgpt --as work)\n\\Z"
+   }
+  }
+ ]
+}

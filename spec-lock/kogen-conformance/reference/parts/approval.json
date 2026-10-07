@@ -1,0 +1,50 @@
+{
+ "approval-01": {
+  "class": "ref-bug",
+  "note": "Card lacks the Feasibility line, prints (test_keep) and an extra blank line"
+ },
+ "approval-02": {
+  "class": "ref-bug",
+  "note": "Kogen-Approved-Hash trailer is the intent.md hash, not the approval hash (APPENDIX)"
+ },
+ "approval-03": {
+  "class": "ref-bug",
+  "note": "The hash is compared after setup/checks ran (APPENDIX)"
+ },
+ "approval-08": {
+  "class": "ref-bug",
+  "note": "Base-red rows are not parsed into GNU findings ([rule/failed] <whole line>); an empty 'Warnings' header is printed"
+ },
+ "approval-09": {
+  "class": "ref-bug",
+  "note": "A missing check executable is recorded red, not unavailable; baseline rows lack exit_status"
+ },
+ "approval-10": {
+  "class": "ref-bug",
+  "note": "Acceptance-check output lines are not indented two spaces"
+ },
+ "approval-13": {
+  "class": "ref-bug",
+  "note": "Setup failure wording differs ('setup command setup failed (exit status 7)')"
+ },
+ "approval-15": {
+  "class": "R-gap",
+  "note": "acceptance.run script is not a gate file (command adapter only exists in the proposal patch)"
+ },
+ "approval-17": {
+  "class": "ref-bug",
+  "note": "shape-warnings.json in the §2.4.5 shape is rejected (controller/:shape_warnings_invalid)"
+ },
+ "approval-19": {
+  "class": "ref-bug",
+  "note": "Path conflict printed as an Elixir term, exit 70"
+ },
+ "approval-21": {
+  "class": "R-gap",
+  "note": "no_change_item lint rule not built"
+ },
+ "approval-23": {
+  "class": "ref-bug",
+  "note": "remove cannot read §2.8 run.json: controller/:invalid_run"
+ }
+}

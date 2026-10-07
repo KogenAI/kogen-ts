@@ -1,0 +1,10 @@
+{
+  "name": "01-excuse-and-green",
+  "about": "A check that is red on the base and still red, with no new identities, is excused and does not block green.",
+  "steps": [
+    {"do": ["Baseline", {"name": "c1", "status": "red"}]},
+    {"do": ["Now", {"name": "c1", "status": "red", "hasIds": true, "subset": true, "sameExit": true}], "expect": {"excused": {"c1": true}}},
+    {"do": ["Rows", {"id": "A1", "kind": "change", "report": "ok", "runnerDown": false, "exit0": true, "mutated": false, "failed": 0, "rows": 1}], "expect": {"ledger": "pass"}},
+    {"do": ["Score", {"policy": "green-or-advisory"}], "expect": {"verdict": "green", "landable": true}}
+  ]
+}

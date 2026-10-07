@@ -1,0 +1,98 @@
+{
+ "id": "build-03",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Journal order for the happy path",
+ "spec": [
+  "§3.4"
+ ],
+ "script": [
+  {
+   "include": "r1_happy"
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build {id8:greet}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "subsequence": [
+      "started",
+      {
+       "event": "plan",
+       "difficulty": "easy"
+      },
+      {
+       "event": "rung_started",
+       "rung": "R1"
+      },
+      {
+       "event": "base_acceptance",
+       "items": [
+        {
+         "id": "A1",
+         "kind": "test",
+         "base_status": "failed"
+        }
+       ]
+      },
+      "model_stage",
+      {
+       "event": "verification",
+       "rung": "R1",
+       "result": "green"
+      },
+      {
+       "event": "rung_finished",
+       "rung": "R1",
+       "reason": "green"
+      },
+      "commit_result",
+      "landing_prepared",
+      {
+       "event": "finished",
+       "status": "landed",
+       "verdict": "green"
+      }
+     ],
+     "absent": [
+      "audit",
+      "selection",
+      "repair",
+      "provider_retry",
+      "base_moved_at_start"
+     ],
+     "first": {
+      "event": "started"
+     },
+     "last": {
+      "event": "finished"
+     }
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,102 @@
+{
+ "id": "approval-22",
+ "profile": "approval",
+ "fixture": "kt",
+ "title": "remove on a draft: commit, and only the Intent's paths change",
+ "spec": [
+  "§1.7.3"
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "write": {
+    "path": "lib/other.txt",
+    "text": "staged elsewhere\n"
+   }
+  },
+  {
+   "git": [
+    "add",
+    "lib/other.txt"
+   ]
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "remove",
+    "greet"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_lines": [
+     "removed: greet",
+     "~commit: [0-9a-f]{40}([0-9a-f]{24})?"
+    ]
+   },
+   "capture": {
+    "commit": "commit: ([0-9a-f]+)"
+   }
+  },
+  {
+   "assert": {
+    "files": {
+     ".kogen/intents/greet": false,
+     ".kogen/acceptance/greet.t.sh": false,
+     "lib/other.txt": true
+    },
+    "git": [
+     {
+      "in": "checkout",
+      "args": [
+       "rev-parse",
+       "HEAD"
+      ],
+      "stdout": "{var:commit}\n"
+     },
+     {
+      "in": "checkout",
+      "args": [
+       "log",
+       "-1",
+       "--format=%s"
+      ],
+      "stdout": "Remove Intent greet\n"
+     },
+     {
+      "in": "checkout",
+      "args": [
+       "show",
+       "--name-only",
+       "--format=",
+       "HEAD"
+      ],
+      "stdout": ".kogen/acceptance/greet.t.sh\n.kogen/intents/greet/intent.md\n"
+     },
+     {
+      "in": "checkout",
+      "args": [
+       "diff",
+       "--cached",
+       "--name-only"
+      ],
+      "stdout": "lib/other.txt\n"
+     }
+    ]
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout": "Queue: stopped\nNo Intents.\n"
+   }
+  }
+ ]
+}

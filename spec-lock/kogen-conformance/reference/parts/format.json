@@ -1,0 +1,34 @@
+{
+ "format-02": {
+  "class": "ref-bug",
+  "note": "banned_phrase is a lint error in the reference, not a style card warning"
+ },
+ "format-03": {
+  "class": "ref-bug",
+  "note": "hedge is a lint error in the reference, not a style card warning"
+ },
+ "format-04": {
+  "class": "ref-bug",
+  "note": "Tier rules are lint errors in the reference, not style card warnings"
+ },
+ "format-05": {
+  "class": "ref-bug",
+  "note": "YAML errors printed as Elixir terms with exit 70; some messages carry extra detail"
+ },
+ "format-07": {
+  "class": "ref-bug",
+  "note": "Progress lines read 'shaper attempt=…' rather than 'shaper pass=<n> role=<role> <event>'"
+ },
+ "format-08": {
+  "class": "ref-bug",
+  "note": "Base-red rows are not parsed into GNU findings; empty 'Warnings' header"
+ },
+ "format-09": {
+  "class": "ref-bug",
+  "note": "Most §1.5 error lines are Elixir terms with exit 70 (APPENDIX)"
+ },
+ "format-10": {
+  "class": "ref-bug",
+  "note": "Feedback 'gate:' summary line differs from §3.7.3"
+ }
+}

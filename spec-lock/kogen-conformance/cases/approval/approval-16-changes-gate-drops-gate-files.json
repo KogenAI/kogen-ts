@@ -1,0 +1,75 @@
+{
+ "id": "approval-16",
+ "profile": "approval",
+ "fixture": "kt",
+ "title": "changes_gate: true drops the gate files",
+ "spec": [
+  "§2.5.2"
+ ],
+ "project": {
+  "checks": [
+   {
+    "name": "lint",
+    "argv": [
+     "make",
+     "-s",
+     "lint"
+    ],
+    "timeout_ms": 60000
+   },
+   {
+    "name": "unit",
+    "argv": [
+     "sh",
+     "checks/unit.sh"
+    ],
+    "timeout_ms": 60000
+   }
+  ],
+  "protected_paths": [
+   "Makefile",
+   "docs/**",
+   "SECRET.txt"
+  ]
+ },
+ "fixture_files": {
+  "Makefile": "lint:\n\tsh checks/lint.sh\n",
+  "docs/guide.md": "# Guide\n"
+ },
+ "steps": [
+  {
+   "intent": {
+    "slug": "greet",
+    "intent_text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\nchanges_gate: true\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+    "test_text": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n",
+    "commit": true
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "assert": {
+    "git": [
+     {
+      "args": [
+       "cat-file",
+       "-p",
+       "refs/kogen/intents/greet:.kogen/intents/greet/approval.json"
+      ],
+      "json": {
+       "protected_manifest": {
+        "$exact": true,
+        "Makefile": "{sha256_origin:Makefile}",
+        "docs/guide.md": "{sha256_origin:docs/guide.md}",
+        "SECRET.txt": "{absent_sha}",
+        ".kogen/intents/greet/intent.md": "{sha256_file:.kogen/intents/greet/intent.md}",
+        "test/acceptance/greet.t.sh": "{sha256_file:.kogen/acceptance/greet.t.sh}"
+       }
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

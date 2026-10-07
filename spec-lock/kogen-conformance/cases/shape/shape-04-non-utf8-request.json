@@ -1,0 +1,98 @@
+{
+ "id": "shape-04",
+ "profile": "shape",
+ "fixture": "kt",
+ "fake": true,
+ "title": "A non-UTF-8 request is kept byte for byte",
+ "spec": [
+  "§1.7.1",
+  "§2.1.2"
+ ],
+ "script": [
+  {
+   "id": "write",
+   "expect": {
+    "role": "shaper",
+    "turn": 1,
+    "tools": [
+     "read",
+     "search",
+     "write"
+    ]
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/intents/greet/intent.md",
+       "content": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: replace the single line in lib/greet.txt with the new greeting text.\n"
+      }
+     },
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/acceptance/greet.t.sh",
+       "content": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "done",
+   "expect": {
+    "role": "shaper",
+    "turn": 2
+   },
+   "reply": {
+    "text": "Both files are written."
+   }
+  },
+  {
+   "id": "ledger",
+   "expect": {
+    "role": "requirement_auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"rows\": [{\"constraint\": \"The greeting in lib/greet.txt says Hello, Almir!\", \"maps_to\": \"A1\"}]}"
+   }
+  },
+  {
+   "id": "audit",
+   "expect": {
+    "role": "test_auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test checks the requested line.\"}]}"
+   }
+  }
+ ],
+ "steps": [
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "shape",
+    "greet",
+    "-"
+   ],
+   "stdin_b64": "TWFrZSB0aGUgZ3JlZXRpbmcgaW4gbGliL2dyZWV0LnR4dCBzYXkgSGVsbG8sIEFsbWlyIQpMZWdhY3kgYnl0ZXM6IP/+6SBzdGF5IGFzIHRoZXkgYXJlLgo=",
+   "expect": {
+    "exit": 0,
+    "stdout_regex": "(?m)^Validated after 1 round\\(s\\)\\.$"
+   }
+  },
+  {
+   "assert": {
+    "files": {
+     ".kogen/intents/greet/intent.md": {
+      "bytes_b64": "LS0tCnRpdGxlOiBHcmVldCBBbG1pciBieSBuYW1lCnNpemU6IHNtYWxsCmRvbWFpbnM6IFthcHBdCi0tLQpDaGFuZ2UgdGhlIGdyZWV0aW5nIGluIGxpYi9ncmVldC50eHQgc28gdGhhdCBpdCBuYW1lcyBBbG1pci4KCiMjIEFjY2VwdGFuY2UKLSBBMTogbGliL2dyZWV0LnR4dCBjb250YWlucyB0aGUgbGluZSBIZWxsbywgQWxtaXIhCgojIyBWZXJpZnkKLSBBMTogdGVzdAoKIyMgTm90ZXMKQXBwcm9hY2g6IHJlcGxhY2UgdGhlIHNpbmdsZSBsaW5lIGluIGxpYi9ncmVldC50eHQgd2l0aCB0aGUgbmV3IGdyZWV0aW5nIHRleHQuCgojIyBSZXF1ZXN0Ck1ha2UgdGhlIGdyZWV0aW5nIGluIGxpYi9ncmVldC50eHQgc2F5IEhlbGxvLCBBbG1pciEKTGVnYWN5IGJ5dGVzOiD//ukgc3RheSBhcyB0aGV5IGFyZS4K"
+     }
+    }
+   }
+  }
+ ]
+}

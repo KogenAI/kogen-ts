@@ -1,0 +1,58 @@
+{
+  "id": "v1.2-14-cli-11-unknown-provider",
+  "profile": "v1.2",
+  "fixture": "none",
+  "title": "v1.2 replacement for cli-11: Unknown provider",
+  "spec": [
+    "§1.3",
+    "§1.7.6",
+    "§4.10"
+  ],
+  "rows": [
+    {
+      "label": "login github",
+      "verb": "login",
+      "prov": "github",
+      "page": "kogen-provider-login.txt"
+    },
+    {
+      "label": "logout openai",
+      "verb": "logout",
+      "prov": "openai",
+      "page": "kogen-provider-logout.txt"
+    },
+    {
+      "label": "use claude",
+      "verb": "use",
+      "prov": "claude",
+      "page": "kogen-provider-use.txt"
+    },
+    {
+      "label": "login ChatGPT",
+      "verb": "login",
+      "prov": "ChatGPT",
+      "page": "kogen-provider-login.txt"
+    }
+  ],
+  "steps": [
+    {
+      "run": [
+        "kogen",
+        "provider",
+        "{row.verb}",
+        "{row.prov}"
+      ],
+      "expect": {
+        "exit": 2,
+        "stdout": [
+          "kogen provider {row.verb}: unknown provider '{row.prov}' (supported: chatgpt, grok)\n\n",
+          {
+            "data": "v1.2/help/{row.page}"
+          }
+        ],
+        "stderr": ""
+      }
+    }
+  ],
+  "notes": "Unknown-provider diagnostics list chatgpt and grok as the supported names (§1.3, §1.7.6, §4.10)."
+}

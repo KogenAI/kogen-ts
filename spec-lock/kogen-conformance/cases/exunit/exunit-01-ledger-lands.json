@@ -1,0 +1,145 @@
+{
+ "id": "exunit-01",
+ "profile": "exunit",
+ "fixture": "exunit-hello",
+ "fake": true,
+ "needs": [
+  "elixir"
+ ],
+ "acceptance_ext": "_test.exs",
+ "title": "Ledger from tagged ExUnit tests; the Build lands",
+ "spec": [
+  "§2.4.3",
+  "§2.4.1"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "tools": []
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: Hello.greet/0 returns Hello, Almir!\n\n## Technical approach\nChange the return value.\n\n## Implementation steps\n1. Edit lib/hello.ex.\n"
+   }
+  },
+  {
+   "id": "edit",
+   "expect": {
+    "role": "builder",
+    "turn": 1,
+    "tools": [
+     "shell"
+    ]
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'defmodule Hello do\\n  def greet, do: \"Hello, Almir!\"\\nend\\n' > lib/hello.ex"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "done",
+   "expect": {
+    "role": "builder",
+    "turn": 2
+   },
+   "reply": {
+    "text": "Done."
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": {
+    "slug": "greet",
+    "template": "exunit-greet"
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "timeout": 600,
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "files": {
+     "{run_dir:greet}/ledger.jsonl": {
+      "jsonl": {
+       "$contains": [
+        {
+         "$exact": true,
+         "tag": "greet/A1",
+         "test": "greets Almir",
+         "status": "passed"
+        }
+       ]
+      }
+     }
+    },
+    "events": {
+     "slug": "greet",
+     "contains": [
+      {
+       "event": "verification",
+       "result": "green",
+       "acceptance": [
+        {
+         "id": "A1",
+         "status": "pass",
+         "demoted": false
+        }
+       ]
+      }
+     ],
+     "last": {
+      "event": "finished",
+      "status": "landed"
+     }
+    },
+    "git": [
+     {
+      "args": [
+       "show",
+       "main:lib/hello.ex"
+      ],
+      "stdout_contains": "Hello, Almir!"
+     },
+     {
+      "args": [
+       "ls-tree",
+       "-r",
+       "--name-only",
+       "main"
+      ],
+      "stdout_regex": [
+       "(?m)^test/acceptance/greet_test\\.exs$",
+       "(?m)^\\.kogen/intents/greet/intent\\.md$"
+      ],
+      "stdout_not_regex": "(?m)^\\.kogen/acceptance/greet_test\\.exs$"
+     }
+    ]
+   }
+  }
+ ],
+ "notes": "The ledger row's test is the ExUnit test name without the `test ` prefix (§2.4.3)."
+}

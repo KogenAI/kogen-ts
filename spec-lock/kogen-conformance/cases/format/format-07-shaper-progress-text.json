@@ -1,0 +1,42 @@
+{
+ "id": "format-07",
+ "profile": "format",
+ "title": "Shaper progress text",
+ "spec": [
+  "§3.2.6"
+ ],
+ "fixture": "kt",
+ "fake": true,
+ "script": [
+  {
+   "include": "shape_happy"
+  }
+ ],
+ "steps": [
+  {
+   "write": {
+    "path": "{case}/request.md",
+    "text": "Make the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "shape",
+    "greet",
+    "{case}/request.md"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": {
+     "lines": [
+      "shaper pass=1 role=shaper started",
+      "shaper pass=1 role=shaper complete turns=2",
+      "shaper pass=1 role=shaper validation_passed"
+     ]
+    }
+   }
+  }
+ ]
+}

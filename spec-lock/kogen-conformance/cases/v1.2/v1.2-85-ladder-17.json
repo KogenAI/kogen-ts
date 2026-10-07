@@ -1,0 +1,144 @@
+{
+  "id": "v1.2-85-ladder-17",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for ladder-17: An unverified best candidate is still emitted",
+  "spec": [
+    "§3.8.3",
+    "§3.0",
+    "§3.6",
+    "§4.7"
+  ],
+  "script": [
+    {
+      "id": "plan",
+      "expect": {
+        "role": "planner"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "r1.start",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 1
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "n=$(cat lib/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > lib/n; printf 'Hi R1 %s\\n' $n > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r1.again",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "last_item_type": "message"
+      },
+      "repeat": "always",
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "n=$(cat lib/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > lib/n; printf 'Hi R1 %s\\n' $n > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r1.claim",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "last_item_type": "function_call_output"
+      },
+      "repeat": "always",
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "audit",
+      "expect": {
+        "role": "auditor"
+      },
+      "reply": {
+        "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test follows the Request.\"}]}"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 1,
+        "stderr": "",
+        "stdout_lines": [
+          "building greet",
+          "~failed greet: [a-z_/]+; best candidate unverified at refs/kogen/parked/[0-9a-f]{32} \\(Build [0-9a-f]{8}\\)",
+          "queue: done; 1 Build(s), 0 landed, 1 not"
+        ]
+      }
+    },
+    {
+      "assert": {
+        "refs": {
+          "refs/kogen/parked/{run_id:greet}": true
+        },
+        "git": [
+          {
+            "args": [
+              "cat-file",
+              "-p",
+              "refs/kogen/parked/{run_id:greet}:lib/greet.txt"
+            ],
+            "stdout_regex": "\\AHi R1 "
+          }
+        ],
+        "files": {
+          "{run_dir:greet}/candidate.diff": {
+            "contains": "lib/greet.txt"
+          }
+        }
+      }
+    }
+  ],
+  "project": {
+    "build": {
+      "ladder": {
+        "max_rungs": 1
+      }
+    }
+  },
+  "notes": "v1.2 replacement for ladder-17. Text-only builder replies are progress; completion requires finish alone with {} (§3.6). Shell-recipe builders expose shell, finish, and tool_output (§4.7)."
+}

@@ -1,0 +1,14 @@
+{
+  "name": "02-other-class-resets-streak",
+  "about": "A timeout clears the overload streak, so the next overload does not switch. The one after it does.",
+  "steps": [
+    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+     "expect": {"phase": "open", "attempt": 1}},
+    {"do": ["Result", {"kind": "timeout", "items": false}],
+     "expect": {"decision": "retry", "delay": 2000, "attempt": 2, "overloads": 0, "reason": "provider/timeout", "continued": false}},
+    {"do": ["Result", {"kind": "overload", "items": false}],
+     "expect": {"decision": "retry", "delay": 4000, "attempt": 3, "overloads": 1, "model": "luna", "reason": "provider/overload"}},
+    {"do": ["Result", {"kind": "overload", "items": false}],
+     "expect": {"decision": "switch", "delay": 0, "attempt": 4, "overloads": 0, "model": "sol", "reason": "provider/overload"}}
+  ]
+}

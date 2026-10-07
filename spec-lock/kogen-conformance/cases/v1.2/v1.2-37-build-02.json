@@ -1,0 +1,249 @@
+{
+  "id": "v1.2-37-build-02",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for build-02: R1 happy path: requests, landed commit, refs and workspaces",
+  "spec": [
+    "§3.1",
+    "§3.4",
+    "§3.6",
+    "§2.5.4",
+    "§4.2",
+    "§4.7"
+  ],
+  "script": [
+    {
+      "id": "r1_happy.plan",
+      "expect": {
+        "role": "planner",
+        "turn": 1,
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "r1_happy.edit",
+      "expect": {
+        "role": "builder",
+        "turn": 1,
+        "tools": [
+          "shell",
+          "finish",
+          "tool_output"
+        ],
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r1_happy.done",
+      "expect": {
+        "role": "builder",
+        "turn": 2,
+        "last_output_contains": "exit 0",
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "git": [
+        "rev-parse",
+        "main"
+      ],
+      "in": "origin",
+      "capture": {
+        "base0": "^([0-9a-f]+)"
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 0,
+        "stderr": "",
+        "stdout_lines": [
+          "building greet",
+          "~\\~landed greet [0-9a-f]{8} \\(Build {id8:greet}\\)",
+          "queue: done; 1 Build(s), 1 landed, 0 not"
+        ]
+      },
+      "capture": {
+        "landed8": "landed greet ([0-9a-f]{8})"
+      }
+    },
+    {
+      "assert": {
+        "fake_requests": [
+          {
+            "select": {
+              "role": "planner"
+            },
+            "match": {
+              "body": {
+                "tools": {
+                  "$len": 3,
+                  "$contains": [
+                    {
+                      "name": "shell"
+                    },
+                    {
+                      "name": "finish",
+                      "strict": true
+                    },
+                    {
+                      "name": "tool_output"
+                    }
+                  ]
+                },
+                "input": {
+                  "$each": {
+                    "$not": {
+                      "type": "additional_tools"
+                    }
+                  }
+                },
+                "tool_choice": "none"
+              }
+            },
+            "input_contains": [
+              "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+              "lib/greet.txt",
+              "checks/lint.sh",
+              "run-acceptance.sh",
+              ".kogen/project.yaml"
+            ]
+          },
+          {
+            "select": {
+              "role": "builder",
+              "turn": 1
+            },
+            "match": {
+              "body": {
+                "instructions": {
+                  "$contains_text": "You are Kogen's builder."
+                }
+              }
+            },
+            "input_contains": [
+              "Approved Intent:\n",
+              "## Request\nMake the greeting",
+              "Acceptance on the base:",
+              "A1 (test): failed",
+              "Begin work in the supplied worktree."
+            ]
+          }
+        ],
+        "git": [
+          {
+            "args": [
+              "log",
+              "-1",
+              "--format=%B",
+              "main"
+            ],
+            "stdout": "Greet Almir by name\n\nKogen-Intent: greet\n\n"
+          },
+          {
+            "args": [
+              "log",
+              "-1",
+              "--format=%P",
+              "main"
+            ],
+            "stdout": "{var:base0}\n"
+          },
+          {
+            "args": [
+              "rev-parse",
+              "main"
+            ],
+            "stdout_regex": "\\A{var:landed8}"
+          },
+          {
+            "args": [
+              "cat-file",
+              "-p",
+              "main:lib/greet.txt"
+            ],
+            "stdout": "Hello, Almir!\n"
+          },
+          {
+            "args": [
+              "cat-file",
+              "-p",
+              "main:.kogen/intents/greet/intent.md"
+            ],
+            "stdout": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n"
+          },
+          {
+            "args": [
+              "cat-file",
+              "-p",
+              "main:test/acceptance/greet.t.sh"
+            ],
+            "stdout": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+          },
+          {
+            "args": [
+              "ls-tree",
+              "-r",
+              "--name-only",
+              "main"
+            ],
+            "stdout_not_regex": "(?m)^\\.kogen/acceptance/greet\\.t\\.sh$"
+          },
+          {
+            "args": [
+              "diff",
+              "--name-only",
+              "{var:base0}",
+              "main"
+            ],
+            "stdout": ".kogen/intents/greet/intent.md\nlib/greet.txt\ntest/acceptance/greet.t.sh\n"
+          }
+        ],
+        "refs": {
+          "refs/kogen/claim": false
+        },
+        "ref_count": {
+          "refs/kogen/incoming/": 0
+        },
+        "glob_count": {
+          "{state_root}/{run_id:greet}-*": 0
+        }
+      }
+    }
+  ],
+  "notes": "git log %B adds one newline after the message, so the stored message is exactly '<title>\\n\\nKogen-Intent: greet\\n'. v1.2 replacement for build-02. Text-only builder replies are progress; completion requires finish alone with {} (§3.6). Shell-recipe builders expose shell, finish, and tool_output (§4.7). Tool-less roles retain the shared canonical schemas and use tool_choice: none (§4.2)."
+}

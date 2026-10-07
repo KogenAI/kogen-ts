@@ -1,0 +1,9 @@
+{
+  "name": "06-cache-opt-out",
+  "about": "When setup or outputs are empty, setup runs without reading or writing cache entries.",
+  "steps": [
+    {"do": ["Run", {"base":"a","variant":"","tracked":false,"input":"","enabled":false,"stable":true,"ok":true,"payload":"uncached"}], "expect": {"entryCount":0,"reused":false,"setupRuns":1,"work":"uncached"}},
+    {"do": ["Run", {"base":"a","variant":"","tracked":false,"input":"","enabled":true,"stable":true,"ok":true,"payload":"cached"}], "expect": {"entryCount":1,"reused":false,"setupRuns":2}},
+    {"do": ["Run", {"base":"a","variant":"","tracked":false,"input":"","enabled":false,"stable":true,"ok":true,"payload":"uncached-again"}], "expect": {"entryCount":1,"reused":false,"setupRuns":3,"work":"uncached-again"}}
+  ]
+}

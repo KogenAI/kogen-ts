@@ -1,0 +1,14 @@
+{
+  "name": "05-provider-and-environment-precedence",
+  "about": "Environment provider/account override project and machine settings; otherwise project provider and account rows take precedence.",
+  "steps": [
+    {"do":["Seed",{"provider":"grok","label":"team-x","present":true,"saved":true,"signedIn":true,"email":"g@example.test","expires":0,"hasExpiry":false,"notice":false,"remoteRevoked":false}]},
+    {"do":["Seed",{"provider":"chatgpt","label":"work","present":true,"saved":true,"signedIn":true,"email":"w@example.test","expires":0,"hasExpiry":false,"notice":false,"remoteRevoked":false}]},
+    {"do":["Use",{"provider":"grok","label":"team-x","project":"alpha","projectExists":true}],"expect":{"last":"ok","grokAlpha":"team-x"}},
+    {"do":["Project",{"name":"alpha","exists":true,"provider":"grok","account":"default"}]},
+    {"do":["SelectionDefault",{"provider":"chatgpt"}]},
+    {"do":["Resolve",{"project":"alpha"}],"expect":{"resolvedProvider":"grok","resolvedLabel":"team-x","resolvedSaved":true}},
+    {"do":["Environment",{"provider":"chatgpt","account":"work"}]},
+    {"do":["Resolve",{"project":"alpha"}],"expect":{"resolvedProvider":"chatgpt","resolvedLabel":"work","resolvedSaved":true}}
+  ]
+}

@@ -1,0 +1,60 @@
+[
+ {
+  "id": "write",
+  "expect": {
+   "role": "shaper",
+   "turn": 1,
+   "tools": [
+    "read",
+    "search",
+    "write"
+   ]
+  },
+  "reply": {
+   "calls": [
+    {
+     "name": "write",
+     "arguments": {
+      "path": ".kogen/intents/greet/intent.md",
+      "content": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: replace the single line in lib/greet.txt with the new greeting text.\n"
+     }
+    },
+    {
+     "name": "write",
+     "arguments": {
+      "path": ".kogen/acceptance/greet.t.sh",
+      "content": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "id": "done",
+  "expect": {
+   "role": "shaper",
+   "turn": 2
+  },
+  "reply": {
+   "text": "Both files are written."
+  }
+ },
+ {
+  "id": "ledger",
+  "expect": {
+   "role": "requirement_auditor"
+  },
+  "reply": {
+   "text": "{\"rows\": [{\"constraint\": \"The greeting in lib/greet.txt says Hello, Almir!\", \"maps_to\": \"A1\"}]}"
+  }
+ },
+ {
+  "id": "audit",
+  "expect": {
+   "role": "test_auditor"
+  },
+  "reply": {
+   "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test checks the requested line.\"}]}"
+  }
+ }
+]

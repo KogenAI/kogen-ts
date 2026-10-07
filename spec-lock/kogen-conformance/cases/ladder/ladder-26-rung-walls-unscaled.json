@@ -1,0 +1,216 @@
+{
+ "id": "ladder-26",
+ "profile": "ladder",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Rung walls of 20/12/12 minutes appear as the unscaled values in rung_started",
+ "spec": [
+  "§3.1",
+  "§2.8",
+  "§4.1"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "tools": []
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+   }
+  },
+  {
+   "id": "r1.start",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "turn": 1
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "n=$(cat lib/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > lib/n; printf 'Hi R1 %s\\n' $n > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r1.again",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "last_item_type": "message"
+   },
+   "repeat": "always",
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "n=$(cat lib/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > lib/n; printf 'Hi R1 %s\\n' $n > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r1.claim",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "last_item_type": "function_call_output"
+   },
+   "repeat": "always",
+   "reply": {
+    "text": "Done."
+   }
+  },
+  {
+   "id": "audit",
+   "expect": {
+    "role": "auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test follows the Request.\"}]}"
+   }
+  },
+  {
+   "id": "r2.start",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6.1-sol",
+    "effort": "medium",
+    "turn": 1
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "n=$(cat lib/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > lib/n; printf 'Hi R2 %s\\n' $n > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r2.again",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6.1-sol",
+    "effort": "medium",
+    "last_item_type": "message"
+   },
+   "repeat": "always",
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "n=$(cat lib/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > lib/n; printf 'Hi R2 %s\\n' $n > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r2.claim",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6.1-sol",
+    "effort": "medium",
+    "last_item_type": "function_call_output"
+   },
+   "repeat": "always",
+   "reply": {
+    "text": "Done."
+   }
+  },
+  {
+   "id": "r3.edit",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "turn": 1,
+    "tools": [
+     "shell"
+    ]
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r3.done",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "turn": 2,
+    "last_item_type": "function_call_output"
+   },
+   "reply": {
+    "text": "Done."
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "subsequence": [
+      {
+       "event": "rung_started",
+       "rung": "R1",
+       "wall_ms": 1200000
+      },
+      {
+       "event": "rung_started",
+       "rung": "R2",
+       "wall_ms": 720000
+      },
+      {
+       "event": "rung_started",
+       "rung": "R3",
+       "wall_ms": 720000
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "notes": "SPEC AMBIGUITY: §2.8 lists rung_started fields as rung, model, effort, entered_because, with no wall field; this case assumes the field is named wall_ms (unscaled, like delay_ms/wait_ms)."
+}

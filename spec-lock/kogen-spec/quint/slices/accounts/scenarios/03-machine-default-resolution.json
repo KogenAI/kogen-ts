@@ -1,0 +1,9 @@
+{
+  "name": "03-machine-default-resolution",
+  "about": "Provider use changes the ChatGPT machine account default; resolution uses it when no higher-priority account choice applies.",
+  "steps": [
+    {"do":["Seed",{"provider":"chatgpt","label":"work","present":true,"saved":true,"signedIn":true,"email":"w@example.test","expires":0,"hasExpiry":false,"notice":false,"remoteRevoked":false}]},
+    {"do":["ProviderDefault",{"provider":"chatgpt","label":"work"}]},
+    {"do":["Resolve",{"project":""}],"expect":{"resolvedProvider":"chatgpt","resolvedLabel":"work","resolvedSaved":true,"last":"ok","exit":0}}
+  ]
+}

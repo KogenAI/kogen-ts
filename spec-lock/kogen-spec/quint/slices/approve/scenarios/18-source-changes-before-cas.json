@@ -1,0 +1,98 @@
+{
+  "name": "18-source-changes-before-cas",
+  "about": "If approved source bytes change after checks but before the ref CAS, the earlier approval remains and the command refuses.",
+  "steps": [
+    {
+      "do": [
+        "Approve",
+        {
+          "slug": "alpha",
+          "given": "aaaa1111",
+          "prefixOk": true,
+          "sha": "aaaa1111bbbb2222",
+          "sha8": "aaaa1111",
+          "by": "",
+          "byBad": false,
+          "ident": "Ann <ann@x.io>",
+          "parseErr": false,
+          "lintErr": false,
+          "lintWarn": false,
+          "missing": false,
+          "setup": "ok",
+          "cacheKey": "k1",
+          "baseline": "green",
+          "acceptance": "green",
+          "witnessMode": false,
+          "feas": "not checked",
+          "commit": "c1",
+          "baseSha": "b0",
+          "stableBeforeCas": true,
+          "newSha8": "aaaa1111"
+        }
+      ],
+      "expect": {
+        "last": "ok",
+        "exit": 0,
+        "sha8": "aaaa1111",
+        "approver": "Ann <ann@x.io>",
+        "ran": true,
+        "checkRuns": 1,
+        "approvals": {
+          "alpha": {
+            "n": 1,
+            "sha": "aaaa1111bbbb2222",
+            "by": "Ann <ann@x.io>",
+            "commit": "c1",
+            "base": "b0",
+            "feas": "not checked"
+          }
+        }
+      }
+    },
+    {
+      "do": [
+        "Approve",
+        {
+          "slug": "alpha",
+          "given": "aaaa1111",
+          "prefixOk": true,
+          "sha": "aaaa1111bbbb2222",
+          "sha8": "aaaa1111",
+          "by": "",
+          "byBad": false,
+          "ident": "Ann <ann@x.io>",
+          "parseErr": false,
+          "lintErr": false,
+          "lintWarn": false,
+          "missing": false,
+          "setup": "ok",
+          "cacheKey": "k1",
+          "baseline": "green",
+          "acceptance": "green",
+          "witnessMode": false,
+          "feas": "not checked",
+          "commit": "c2",
+          "baseSha": "b0",
+          "stableBeforeCas": false,
+          "newSha8": "bbbb2222"
+        }
+      ],
+      "expect": {
+        "last": "intent/hash_mismatch",
+        "exit": 1,
+        "approvals": {
+          "alpha": {
+            "n": 1,
+            "sha": "aaaa1111bbbb2222",
+            "by": "Ann <ann@x.io>",
+            "commit": "c1",
+            "base": "b0",
+            "feas": "not checked"
+          }
+        },
+        "checkRuns": 1,
+        "sha8": "bbbb2222"
+      }
+    }
+  ]
+}

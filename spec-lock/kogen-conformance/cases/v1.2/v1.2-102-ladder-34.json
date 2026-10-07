@@ -1,0 +1,201 @@
+{
+  "id": "v1.2-102-ladder-34",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for ladder-34: The same script twice gives an identical event sequence",
+  "spec": [
+    "§C.3 Determinism",
+    "§3.6",
+    "§4.7"
+  ],
+  "script": [
+    {
+      "id": "a.plan",
+      "expect": {
+        "role": "planner",
+        "turn": 1,
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "a.claim1",
+      "expect": {
+        "role": "builder",
+        "turn": 1
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "a.claim2",
+      "expect": {
+        "role": "builder",
+        "turn": 2,
+        "last_output_contains": "Kogen found no changed files"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "a.claim3",
+      "expect": {
+        "role": "builder",
+        "turn": 3,
+        "last_user_contains": "Kogen's controller reported this failure."
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "a.audit",
+      "expect": {
+        "role": "auditor"
+      },
+      "reply": {
+        "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test follows the Request.\"}]}"
+      }
+    },
+    {
+      "id": "b.plan",
+      "expect": {
+        "role": "planner",
+        "turn": 1,
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "b.claim1",
+      "expect": {
+        "role": "builder",
+        "turn": 1
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "b.claim2",
+      "expect": {
+        "role": "builder",
+        "turn": 2,
+        "last_output_contains": "Kogen found no changed files"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "b.claim3",
+      "expect": {
+        "role": "builder",
+        "turn": 3,
+        "last_user_contains": "Kogen's controller reported this failure."
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "b.audit",
+      "expect": {
+        "role": "auditor"
+      },
+      "reply": {
+        "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test follows the Request.\"}]}"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "assert": {
+        "runs_count": {
+          "greet": 2
+        },
+        "events": {
+          "slug": "greet",
+          "sequence_equal": [
+            0,
+            1
+          ]
+        }
+      }
+    }
+  ],
+  "project": {
+    "build": {
+      "ladder": {
+        "max_rungs": 1
+      }
+    }
+  },
+  "notes": "v1.2 replacement for ladder-34. Text-only builder replies are progress; completion requires finish alone with {} (§3.6). Shell-recipe builders expose shell, finish, and tool_output (§4.7)."
+}

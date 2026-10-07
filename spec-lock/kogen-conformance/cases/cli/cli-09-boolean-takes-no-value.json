@@ -1,0 +1,85 @@
+{
+ "id": "cli-09",
+ "profile": "cli",
+ "fixture": "none",
+ "title": "--json=true gives \"takes no value\"",
+ "spec": [
+  "§1.3.1"
+ ],
+ "rows": [
+  {
+   "label": "--json=true",
+   "argv": [
+    "status",
+    "--json=true"
+   ],
+   "path": "status",
+   "flag": "--json",
+   "page": "kogen-status"
+  },
+  {
+   "label": "--watch=1",
+   "argv": [
+    "status",
+    "--watch=1"
+   ],
+   "path": "status",
+   "flag": "--watch",
+   "page": "kogen-status"
+  },
+  {
+   "label": "--force=yes",
+   "argv": [
+    "intent",
+    "remove",
+    "greet",
+    "--force=yes"
+   ],
+   "path": "intent remove",
+   "flag": "--force",
+   "page": "kogen-intent-remove"
+  },
+  {
+   "label": "--detach=true",
+   "argv": [
+    "queue",
+    "start",
+    "--detach=true"
+   ],
+   "path": "queue start",
+   "flag": "--detach",
+   "page": "kogen-queue-start"
+  },
+  {
+   "label": "shape --json=false",
+   "argv": [
+    "intent",
+    "shape",
+    "greet",
+    "-",
+    "--json=false"
+   ],
+   "path": "intent shape",
+   "flag": "--json",
+   "page": "kogen-intent-shape"
+  }
+ ],
+ "steps": [
+  {
+   "run": [
+    "kogen",
+    "{*row.argv}"
+   ],
+   "expect": {
+    "exit": 2,
+    "stdout": [
+     "kogen {row.path}: {row.flag} takes no value\n\n",
+     {
+      "data": "help/{row.page}.txt"
+     }
+    ],
+    "stderr": ""
+   }
+  }
+ ]
+}

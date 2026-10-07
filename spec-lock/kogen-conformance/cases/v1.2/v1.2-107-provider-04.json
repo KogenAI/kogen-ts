@@ -1,0 +1,152 @@
+{
+  "id": "v1.2-107-provider-04",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for provider-04: Statelessness: the input chain and call_ids",
+  "spec": [
+    "§4.1",
+    "§4.2",
+    "§3.6",
+    "§4.7"
+  ],
+  "script": [
+    {
+      "id": "r1_happy.plan",
+      "expect": {
+        "role": "planner",
+        "turn": 1,
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "r1_happy.edit",
+      "expect": {
+        "role": "builder",
+        "turn": 1,
+        "tools": [
+          "shell",
+          "finish",
+          "tool_output"
+        ],
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r1_happy.done",
+      "expect": {
+        "role": "builder",
+        "turn": 2,
+        "last_output_contains": "exit 0",
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_lines": [
+          "building greet",
+          "~\\~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+          "queue: done; 1 Build(s), 1 landed, 0 not"
+        ]
+      }
+    },
+    {
+      "assert": {
+        "fake_requests": [
+          {
+            "select": {
+              "step": "r1_happy.done",
+              "turn": 2
+            },
+            "match": {
+              "body": {
+                "input": {
+                  "$subsequence": [
+                    {
+                      "role": "user"
+                    },
+                    {
+                      "$exact": true,
+                      "type": "function_call",
+                      "id": "fc_r1_happy.edit_0",
+                      "status": "completed",
+                      "call_id": "call_r1_happy.edit_0",
+                      "name": "shell",
+                      "arguments": "{\"cmd\": \"printf 'Hello, Almir!\\\\n' > lib/greet.txt\"}"
+                    },
+                    {
+                      "type": "function_call_output",
+                      "call_id": "call_r1_happy.edit_0",
+                      "output": "~exit 0\n.*"
+                    }
+                  ]
+                },
+                "previous_response_id": "$absent",
+                "tool_choice": {
+                  "type": "allowed_tools",
+                  "mode": "auto",
+                  "tools": {
+                    "$len": 3,
+                    "$contains": [
+                      {
+                        "type": "function",
+                        "name": "shell"
+                      },
+                      {
+                        "type": "function",
+                        "name": "finish"
+                      },
+                      {
+                        "type": "function",
+                        "name": "tool_output"
+                      }
+                    ]
+                  }
+                },
+                "parallel_tool_calls": false,
+                "max_output_tokens": "$absent",
+                "temperature": "$absent"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "notes": "The fake gives turn 2 only to a request whose input extends the turn-1 input, so selecting turn 2 also proves the replay; raw items are replayed verbatim. v1.2 replacement for provider-04. Text-only builder replies are progress; completion requires finish alone with {} (§3.6). Shell-recipe builders expose shell, finish, and tool_output (§4.7)."
+}

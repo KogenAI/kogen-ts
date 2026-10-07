@@ -1,0 +1,155 @@
+{
+ "id": "provider-03",
+ "profile": "provider",
+ "fixture": "kt",
+ "fake": true,
+ "title": "The planner and auditor send no tools and no additional_tools",
+ "spec": [
+  "§4.2",
+  "§4.7"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "tools": [],
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+   }
+  },
+  {
+   "id": "r1.start",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "turn": 1
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "n=$(cat lib/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > lib/n; printf 'Hi R1 %s\\n' $n > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r1.again",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "last_item_type": "message"
+   },
+   "repeat": "always",
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "n=$(cat lib/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > lib/n; printf 'Hi R1 %s\\n' $n > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r1.claim",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "last_item_type": "function_call_output"
+   },
+   "repeat": "always",
+   "reply": {
+    "text": "Done."
+   }
+  },
+  {
+   "id": "audit",
+   "expect": {
+    "role": "auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test follows the Request.\"}]}"
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 1
+   }
+  },
+  {
+   "assert": {
+    "fake_requests": [
+     {
+      "select": {
+       "role": "planner"
+      },
+      "match": {
+       "body": {
+        "tools": "$absent",
+        "input": {
+         "$not": {
+          "$contains": [
+           {
+            "type": "additional_tools"
+           }
+          ]
+         }
+        }
+       }
+      }
+     },
+     {
+      "select": {
+       "role": "test_auditor"
+      },
+      "match": {
+       "body": {
+        "tools": "$absent",
+        "input": {
+         "$not": {
+          "$contains": [
+           {
+            "type": "additional_tools"
+           }
+          ]
+         }
+        }
+       }
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "project": {
+  "build": {
+   "ladder": {
+    "max_rungs": 1
+   }
+  }
+ }
+}

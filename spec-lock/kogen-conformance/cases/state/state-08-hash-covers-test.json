@@ -1,0 +1,85 @@
+{
+ "id": "state-08",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "The approval hash covers the test",
+ "spec": [
+  "§2.1.3",
+  "§1.7.2"
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 5
+   },
+   "capture": {
+    "old": "SHA-256: ([0-9a-f]{64})"
+   }
+  },
+  {
+   "assert": {
+    "vars": {
+     "old": "{hash64:greet}"
+    }
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 5
+   },
+   "capture": {
+    "old8": "approve greet ([0-9a-f]{8})"
+   }
+  },
+  {
+   "write": {
+    "path": ".kogen/acceptance/greet.t.sh",
+    "text": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt && true; }\n"
+   }
+  },
+  {
+   "commit": "Edit the test"
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet",
+    "{var:old8}"
+   ],
+   "expect": {
+    "exit": 1,
+    "stderr": "",
+    "stdout": "intent/hash_mismatch: greet is now {hash8:greet}, not {var:old8}; review it again with kogen intent approve greet\n"
+   }
+  },
+  {
+   "assert": {
+    "refs": {
+     "refs/kogen/intents/greet": false
+    },
+    "vars": {
+     "old": {
+      "$not": "{hash64:greet}"
+     }
+    }
+   }
+  }
+ ]
+}

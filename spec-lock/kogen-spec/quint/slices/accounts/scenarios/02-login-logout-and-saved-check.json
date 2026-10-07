@@ -1,0 +1,11 @@
+{
+  "name": "02-login-logout-and-saved-check",
+  "about": "Login creates the default profile; logout preserves a signed-out list row; selecting a logged-out account is refused by the v1.2 rule.",
+  "steps": [
+    {"do":["Seed",{"provider":"chatgpt","label":"work","present":true,"saved":true,"signedIn":true,"email":"w@example.test","expires":0,"hasExpiry":false,"notice":false,"remoteRevoked":false}]},
+    {"do":["ProviderDefault",{"provider":"chatgpt","label":"work"}]},
+    {"do":["Login",{"provider":"chatgpt","success":true,"email":"c@example.test","expires":250,"hasExpiry":true,"notice":true}],"expect":{"operation":"login_notice","exit":0,"rows":[{"provider":"chatgpt","label":"default","isDefault":false,"signedIn":true,"email":"c@example.test","expires":250},{"provider":"chatgpt","label":"work","isDefault":true,"signedIn":true,"email":"w@example.test","expires":0}]}},
+    {"do":["Logout",{"provider":"chatgpt","remote":false}],"expect":{"operation":"logout_local","rows":[{"provider":"chatgpt","label":"default","isDefault":false,"signedIn":false,"email":"c@example.test","expires":250},{"provider":"chatgpt","label":"work","isDefault":true,"signedIn":true,"email":"w@example.test","expires":0}]}},
+    {"do":["Use",{"provider":"chatgpt","label":"default","project":"","projectExists":true}],"expect":{"last":"no_saved_login","exit":4,"chatDefault":"work"}}
+  ]
+}

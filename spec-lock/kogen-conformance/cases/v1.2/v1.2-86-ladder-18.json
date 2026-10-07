@@ -1,0 +1,195 @@
+{
+  "id": "v1.2-86-ladder-18",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for ladder-18: The budget runs out mid-R2: cancel, verify, select",
+  "spec": [
+    "§3.4 Budget",
+    "§3.6",
+    "§4.7"
+  ],
+  "script": [
+    {
+      "id": "plan",
+      "expect": {
+        "role": "planner"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "r1.start",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 1
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "n=$(cat lib/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > lib/n; printf 'Hi R1 %s\\n' $n > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r1.again",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "last_item_type": "message"
+      },
+      "repeat": "always",
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "n=$(cat lib/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > lib/n; printf 'Hi R1 %s\\n' $n > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r1.claim",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "last_item_type": "function_call_output"
+      },
+      "repeat": "always",
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "audit",
+      "expect": {
+        "role": "auditor"
+      },
+      "reply": {
+        "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test follows the Request.\"}]}"
+      }
+    },
+    {
+      "id": "r2.edit",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "turn": 1
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "n=$(cat lib/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > lib/n; printf 'Hi R2 %s\\n' $n > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r2.stall",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "turn": 2
+      },
+      "repeat": "always",
+      "pad_events": 12,
+      "chunk_gap_ms": 80000,
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 1,
+        "stdout_lines": [
+          "building greet",
+          "~failed greet: [a-z_/]+; best candidate unverified at refs/kogen/parked/[0-9a-f]{32} \\(Build [0-9a-f]{8}\\)",
+          "queue: done; 1 Build(s), 0 landed, 1 not"
+        ]
+      }
+    },
+    {
+      "assert": {
+        "events": {
+          "slug": "greet",
+          "subsequence": [
+            {
+              "event": "rung_started",
+              "rung": "R2"
+            },
+            {
+              "event": "verification",
+              "rung": "R2"
+            },
+            {
+              "event": "rung_finished",
+              "rung": "R2",
+              "reason": "budget"
+            },
+            "selection",
+            {
+              "event": "finished",
+              "status": "failed"
+            }
+          ],
+          "absent": [
+            "provider_retry"
+          ],
+          "count": {
+            "rung_started": 2
+          }
+        },
+        "files": {
+          "{run_dir:greet}/candidate-R2.diff": true
+        }
+      }
+    }
+  ],
+  "project": {
+    "build": {
+      "budget_ms": 400000
+    }
+  },
+  "time_scale": 0.05,
+  "allow_remaining": true,
+  "notes": "time_scale 0.05: budget 20 s real; R2's second request trickles events every 4 s real (idle deadline 6 s) for 48 s, so the budget, not a provider deadline, ends it. v1.2 replacement for ladder-18. Text-only builder replies are progress; completion requires finish alone with {} (§3.6). Shell-recipe builders expose shell, finish, and tool_output (§4.7)."
+}

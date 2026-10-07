@@ -1,0 +1,64 @@
+{
+  "id": "v1.2-18-cli-16-short-option",
+  "profile": "v1.2",
+  "fixture": "none",
+  "title": "v1.2 replacement for cli-16: -x is an unknown option",
+  "spec": [
+    "§1.3",
+    "§1.4"
+  ],
+  "rows": [
+    {
+      "label": "status -x",
+      "argv": [
+        "status",
+        "-x"
+      ],
+      "path": "status",
+      "opt": "-x",
+      "page": "kogen-status"
+    },
+    {
+      "label": "approve -h",
+      "argv": [
+        "intent",
+        "approve",
+        "greet",
+        "-h"
+      ],
+      "path": "intent approve",
+      "opt": "-h",
+      "page": "kogen-intent-approve"
+    },
+    {
+      "label": "queue start -d",
+      "argv": [
+        "queue",
+        "start",
+        "-d"
+      ],
+      "path": "queue start",
+      "opt": "-d",
+      "page": "kogen-queue-start"
+    }
+  ],
+  "steps": [
+    {
+      "run": [
+        "kogen",
+        "{*row.argv}"
+      ],
+      "expect": {
+        "exit": 2,
+        "stdout": [
+          "kogen {row.path}: unknown option '{row.opt}'\n\n",
+          {
+            "data": "v1.2/help/{row.page}.txt"
+          }
+        ],
+        "stderr": ""
+      }
+    }
+  ],
+  "notes": "There are no short options; errors use the v1.2 command help pages (§1.3–1.4)."
+}

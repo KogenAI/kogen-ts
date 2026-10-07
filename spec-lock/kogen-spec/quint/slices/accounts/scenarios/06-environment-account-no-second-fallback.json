@@ -1,0 +1,12 @@
+{
+  "name": "06-environment-account-no-second-fallback",
+  "about": "An explicit account label wins even when no profile exists; resolution does not silently choose another saved account.",
+  "steps": [
+    {"do":["Seed",{"provider":"chatgpt","label":"default","present":true,"saved":true,"signedIn":true,"email":"d@example.test","expires":0,"hasExpiry":false,"notice":false,"remoteRevoked":false}]},
+    {"do":["Environment",{"provider":"","account":"x_y"}]},
+    {"do":["Resolve",{"project":""}],"expect":{"resolvedProvider":"chatgpt","resolvedLabel":"x_y","resolvedSaved":false,"last":"ok"}},
+    {"do":["Environment",{"provider":"grok","account":""}]},
+    {"do":["SelectionDefault",{"provider":"grok"}]},
+    {"do":["Resolve",{"project":""}],"expect":{"resolvedProvider":"grok","resolvedLabel":"default","resolvedSaved":false}}
+  ]
+}

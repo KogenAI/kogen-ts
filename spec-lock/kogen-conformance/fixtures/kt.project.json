@@ -1,0 +1,62 @@
+{
+ "name": "kt",
+ "checks": [
+  {
+   "name": "lint",
+   "argv": [
+    "sh",
+    "checks/lint.sh"
+   ],
+   "timeout_ms": 60000
+  },
+  {
+   "name": "unit",
+   "argv": [
+    "sh",
+    "checks/unit.sh"
+   ],
+   "timeout_ms": 60000
+  }
+ ],
+ "fix": [
+  {
+   "name": "fmt",
+   "argv": [
+    "sh",
+    "checks/fmt.sh"
+   ],
+   "timeout_ms": 60000
+  }
+ ],
+ "setup": [
+  {
+   "name": "setup",
+   "argv": [
+    "sh",
+    "checks/setup.sh"
+   ],
+   "timeout_ms": 60000
+  }
+ ],
+ "setup_outputs": [
+  "build"
+ ],
+ "acceptance": {
+  "adapter": "command",
+  "ext": ".t.sh",
+  "candidate_dir": "test/acceptance",
+  "run": [
+   "sh",
+   "run-acceptance.sh",
+   "{path}"
+  ]
+ },
+ "protected_paths": [
+  "Makefile"
+ ],
+ "domains": {
+  "app": [
+   "lib"
+  ]
+ }
+}

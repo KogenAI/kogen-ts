@@ -1,0 +1,80 @@
+{
+ "id": "custody-01",
+ "profile": "custody",
+ "fixture": "kt",
+ "title": "A command printing continuously past its deadline stops within deadline + 1 s",
+ "spec": [
+  "§5.1.2",
+  "§5.5.1"
+ ],
+ "project": {
+  "checks": [
+   {
+    "name": "lint",
+    "argv": [
+     "sh",
+     "checks/lint.sh"
+    ],
+    "timeout_ms": 60000
+   },
+   {
+    "name": "chatty",
+    "argv": [
+     "sh",
+     "checks/chatty.sh"
+    ],
+    "timeout_ms": 3000
+   }
+  ]
+ },
+ "fixture_files": {
+  "checks/chatty.sh": "#!/bin/sh\nwhile :; do echo 'spam spam spam spam spam spam spam spam spam spam spam spam'; done\n"
+ },
+ "notes": "Wall bound = 3 s deadline + 1 s + 5 s allowance for the rest of the approval (setup, lint, git, process start).",
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 5,
+    "stderr": "",
+    "max_wall_ms": 9000
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "assert": {
+    "git": [
+     {
+      "args": [
+       "cat-file",
+       "-p",
+       "refs/kogen/intents/greet:.kogen/intents/greet/approval.json"
+      ],
+      "json": {
+       "check_baseline": [
+        {
+         "name": "lint",
+         "status": "green"
+        },
+        {
+         "name": "chatty",
+         "status": "timeout"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

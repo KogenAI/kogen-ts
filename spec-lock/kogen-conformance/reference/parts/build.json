@@ -1,0 +1,134 @@
+{
+ "build-02": {
+  "class": "ref-bug",
+  "note": "planner request sends tools: [] (\u00a74.2 says omit); builder first message lacks the 'Acceptance on the base:' block (\u00a73.6); landed commit, refs and workspace assertions pass"
+ },
+ "build-03": {
+  "class": "ref-bug",
+  "note": "journal uses phase_timing/stage_ok/check_result instead of plan/rung_started/base_acceptance/verification/rung_finished (\u00a73.4, \u00a72.8)"
+ },
+ "build-04": {
+  "class": "ref-bug",
+  "note": "no verification/repair events in \u00a72.8 shape; feedback lacks 'acceptance A1: failed' and the \u00a73.7.3 gate line"
+ },
+ "build-05": {
+  "class": "R-gap",
+  "note": "progress-based repairs not built (APPENDIX: repairs capped at 2 + 1); fails done_gate_red"
+ },
+ "build-06": {
+  "class": "R-gap",
+  "note": "build.ladder key / ladder not built (project.yaml rejected)"
+ },
+ "build-07": {
+  "class": "R-gap",
+  "note": "build.ladder key / ladder not built"
+ },
+ "build-08": {
+  "class": "ref-bug",
+  "note": "no empty-done refusal: the first empty done claim is verified and repaired (\u00a73.6)"
+ },
+ "build-09": {
+  "class": "ref-bug",
+  "note": "the restore note text matches \u00a73.6 exactly, but no protected_restored journal event"
+ },
+ "build-10": {
+  "class": "R-gap",
+  "note": "build.ladder key / ladder not built"
+ },
+ "build-11": {
+  "class": "ref-bug",
+  "note": "a check that mutates the tree is not detected; lib/generated.txt is landed"
+ },
+ "build-12": {
+  "class": "ref-bug",
+  "note": "check timeout becomes environment/check_unavailable and stops the drain (APPENDIX gate heuristics)"
+ },
+ "build-13": {
+  "class": "ref-bug",
+  "note": "exit 127 becomes environment/check_unavailable instead of red feedback"
+ },
+ "build-14": {
+  "class": "ref-bug",
+  "note": "a check unavailable on the base blocks green (APPENDIX)"
+ },
+ "build-15": {
+  "class": "ref-bug",
+  "note": "base-red lint with the same identities is fed back as red, not excused"
+ },
+ "build-16": {
+  "class": "ref-bug",
+  "note": "base-red identities are not excused after the new one is fixed"
+ },
+ "build-17": {
+  "class": "ref-bug",
+  "note": "a check with no findings is never excused as base-red (APPENDIX)"
+ },
+ "build-18": {
+  "class": "ref-bug",
+  "note": "approval refuses a mutating baseline check with candidate/tree_mutated instead of recording a mutating baseline"
+ },
+ "build-19": {
+  "class": "ref-bug",
+  "note": "identity-based excusing (path, rule, symbol) not applied"
+ },
+ "build-20": {
+  "class": "ref-bug",
+  "note": "a fix exiting 1 is not a red fix/fmt finding"
+ },
+ "build-22": {
+  "class": "ref-bug",
+  "note": "builds on the moved tip but records no base_moved_at_start event"
+ },
+ "build-23": {
+  "class": "ref-bug",
+  "note": "items already green on a moved base stop the Build with environment/base_acceptance_failed (APPENDIX)"
+ },
+ "build-24": {
+  "class": "ref-bug",
+  "note": "lands correctly on the moved base, but the journal has no verification events"
+ },
+ "build-25": {
+  "class": "R-gap",
+  "note": "no integration repairs: a rebase conflict parks the Build (APPENDIX)"
+ },
+ "build-26": {
+  "class": "R-gap",
+  "note": "no integration repairs; the parked Build stops the drain with exit 70 (APPENDIX)"
+ },
+ "build-27": {
+  "class": "ref-bug",
+  "note": "a .lock is retried once, then environment/landing_failed (APPENDIX); no 1/2/4 s landing_retry"
+ },
+ "build-29": {
+  "class": "ref-bug",
+  "note": "no land: warning line or landing_warning event for a dirty checked-out base"
+ },
+ "build-31": {
+  "class": "R-gap",
+  "note": "build.ladder key / ladder not built"
+ },
+ "build-37": {
+  "class": "ref-bug",
+  "note": "status cannot read a \u00a72.8 run.json (controller/:invalid_run; reference run.json is schema 1)"
+ },
+ "build-39": {
+  "class": "ref-bug",
+  "note": "setup failure ends the Build as failed (not stopped), and setup runs before the plan (B4 before B5)"
+ },
+ "build-40": {
+  "class": "ref-bug",
+  "note": "runner unavailable on base gives failed environment/base_acceptance_failed instead of stopped environment/tool_missing"
+ },
+ "build-41": {
+  "class": "ref-bug",
+  "note": "claim refusal prints 'failed ...' instead of the stopped line"
+ },
+ "build-42": {
+  "class": "ref-bug",
+  "note": "no skipped line: prints environment/approval_branch_mismatch and exits 3 (APPENDIX)"
+ },
+ "build-44": {
+  "class": "R-gap",
+  "note": "build.ladder key / ladder not built"
+ }
+}

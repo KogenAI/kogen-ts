@@ -1,0 +1,27 @@
+{
+  "name": "03-attempt-cap-and-budget",
+  "about": "Malformed stops at 4 attempts even with wall left. With no wall, timeout stops at 4 too. With wall, timeout continues.",
+  "steps": [
+    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 10000000, "mode": "build"}],
+     "expect": {"bounded": true, "attempt": 1}},
+    {"do": ["Result", {"kind": "malformed", "items": false}], "expect": {"decision": "retry", "delay": 2000, "attempt": 2, "reason": "provider/malformed"}},
+    {"do": ["Result", {"kind": "malformed", "items": false}], "expect": {"decision": "retry", "delay": 4000, "attempt": 3}},
+    {"do": ["Result", {"kind": "malformed", "items": false}], "expect": {"decision": "retry", "delay": 8000, "attempt": 4}},
+    {"do": ["Result", {"kind": "malformed", "items": false}],
+     "expect": {"decision": "stop", "phase": "stopped", "exit": 4, "attempt": 4, "delay": 0, "reason": "provider/malformed", "queued": true, "failed": false, "model": "luna"}},
+    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": false, "wall": 0, "mode": "build"}],
+     "expect": {"phase": "open", "bounded": false, "attempt": 1, "exit": 0}},
+    {"do": ["Result", {"kind": "timeout", "items": false}], "expect": {"decision": "retry", "delay": 2000, "attempt": 2}},
+    {"do": ["Result", {"kind": "timeout", "items": false}], "expect": {"decision": "retry", "delay": 4000, "attempt": 3}},
+    {"do": ["Result", {"kind": "timeout", "items": false}], "expect": {"decision": "retry", "delay": 8000, "attempt": 4}},
+    {"do": ["Result", {"kind": "timeout", "items": false}],
+     "expect": {"decision": "stop", "exit": 4, "reason": "provider/timeout", "attempt": 4, "queued": true, "failed": false}},
+    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 10000000, "mode": "build"}],
+     "expect": {"phase": "open", "attempt": 1}},
+    {"do": ["Result", {"kind": "timeout", "items": false}], "expect": {"decision": "retry", "delay": 2000, "attempt": 2}},
+    {"do": ["Result", {"kind": "timeout", "items": false}], "expect": {"decision": "retry", "delay": 4000, "attempt": 3}},
+    {"do": ["Result", {"kind": "timeout", "items": false}], "expect": {"decision": "retry", "delay": 8000, "attempt": 4}},
+    {"do": ["Result", {"kind": "timeout", "items": false}],
+     "expect": {"decision": "retry", "delay": 16000, "attempt": 5, "phase": "open", "exit": 0, "reason": "provider/timeout"}}
+  ]
+}

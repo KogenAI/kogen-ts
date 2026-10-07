@@ -1,0 +1,90 @@
+{
+ "id": "ladder-36",
+ "profile": "ladder",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Provider exhaustion: stopped provider/overload, the Intent stays queued, exit 4",
+ "spec": [
+  "§4.5",
+  "§3.0"
+ ],
+ "script": [
+  {
+   "id": "down",
+   "expect": {
+    "role": "planner"
+   },
+   "repeat": "always",
+   "reply": {
+    "http": {
+     "status": 503,
+     "body": {
+      "error": {
+       "message": "overloaded"
+      }
+     }
+    }
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 4,
+    "stderr": "",
+    "stdout_lines": [
+     "building greet",
+     "~stopped greet: provider/overload; it stays queued \\(Build [0-9a-f]{8}\\)",
+     "~queue: stopped because greet hit a provider error; [0-9]+ Build\\(s\\), 0 landed, [0-9]+ not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "contains": [
+      {
+       "event": "provider_retry",
+       "delay_ms": {
+        "$ge": 1000,
+        "$le": 2000
+       }
+      },
+      {
+       "event": "provider_switch"
+      }
+     ],
+     "last": {
+      "event": "finished",
+      "status": "stopped",
+      "reason": "provider/overload"
+     }
+    }
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "greet"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout": "greet: queued, 1 of 1\n"
+   }
+  }
+ ],
+ "notes": "v1.1: a request has at most 4 attempts and the stage is re-run at most 2 more times (§4.5, follows Kogen T66); then the Build stops without judging the Intent."
+}

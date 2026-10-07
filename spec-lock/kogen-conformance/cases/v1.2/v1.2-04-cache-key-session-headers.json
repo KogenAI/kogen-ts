@@ -1,0 +1,113 @@
+{
+  "id": "v1.2-04-cache-key-session-headers",
+  "profile": "v1.2",
+  "fixture": "exunit-hello",
+  "fake": true,
+  "title": "Cache key and session headers identify the Build and conversation separately",
+  "notes": "Checks one stable Build cache-affinity key across stages and distinct conversation threads as specified by §4.1 and §4.9.1; replaces provider-05. Its scripted builder uses finish alone with {}; text-only replies are progress (§3.6), and shell recipes include finish (§4.7).",
+  "spec": [
+    "spec/04-provider.md §4.9.1",
+    "spec/CONFORMANCE-v1.2-CASES.md P1",
+    "§3.6",
+    "§4.7"
+  ],
+  "script": [
+    {
+      "include": "v1.2_prefix"
+    }
+  ],
+  "steps": [
+    {
+      "intent": {
+        "slug": "greet",
+        "template": "exunit-greet"
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "intent",
+        "approve",
+        "greet"
+      ],
+      "expect": {
+        "exit": 5,
+        "stdout_regex": "SHA-256: [0-9a-f]{64}",
+        "stderr": ""
+      },
+      "capture": {
+        "approval_hash": "SHA-256: ([0-9a-f]{64})"
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "intent",
+        "approve",
+        "greet",
+        "{var:approval_hash}"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_regex": "approved greet [0-9a-f]{8} \\(approval [0-9a-f]{8}\\); it is queued\\n",
+        "stderr": ""
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "background": "drain"
+    },
+    {
+      "wait_until": {
+        "fake_requests": 4,
+        "timeout_s": 60
+      }
+    },
+    {
+      "assert": {
+        "fake_request_sequences": [
+          {
+            "label": "one builder conversation",
+            "slug": "greet",
+            "select": [
+              {
+                "step": "v1.2_prefix.edit"
+              },
+              {
+                "step": "v1.2_prefix.inspect"
+              },
+              {
+                "step": "v1.2_prefix.verify"
+              }
+            ],
+            "same_cache_key": true,
+            "session_header_matches_cache_key": true,
+            "same_thread_id": true,
+            "safe_ids": true,
+            "journal_identity": true
+          }
+        ]
+      }
+    },
+    {
+      "signal": {
+        "name": "drain",
+        "sig": "KILL",
+        "target": "group"
+      }
+    },
+    {
+      "wait": {
+        "name": "drain",
+        "timeout": 15,
+        "expect": {
+          "exit": 137
+        }
+      }
+    }
+  ]
+}

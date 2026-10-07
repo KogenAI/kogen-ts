@@ -1,0 +1,11 @@
+{
+  "name": "01-list-order-and-empty-state",
+  "about": "An empty profile store has one not-signed-in row per provider; saved profiles list provider-first and label-sorted with one selected default marker.",
+  "steps": [
+    {"do":["ListAccounts"],"expect":{"operation":"list","rows":[{"provider":"chatgpt","label":"","isDefault":false,"signedIn":false,"email":"","expires":0},{"provider":"grok","label":"","isDefault":false,"signedIn":false,"email":"","expires":0}]}},
+    {"do":["Seed",{"provider":"chatgpt","label":"work","present":true,"saved":true,"signedIn":true,"email":"w@example.test","expires":200,"hasExpiry":true,"notice":false,"remoteRevoked":false}]},
+    {"do":["Seed",{"provider":"chatgpt","label":"default","present":true,"saved":true,"signedIn":false,"email":"d@example.test","expires":0,"hasExpiry":false,"notice":false,"remoteRevoked":false}]},
+    {"do":["Seed",{"provider":"grok","label":"a","present":true,"saved":true,"signedIn":true,"email":"g@example.test","expires":300,"hasExpiry":true,"notice":false,"remoteRevoked":false}]},
+    {"do":["ListAccounts"],"expect":{"rows":[{"provider":"chatgpt","label":"default","isDefault":true,"signedIn":false,"email":"d@example.test","expires":0},{"provider":"chatgpt","label":"work","isDefault":false,"signedIn":true,"email":"w@example.test","expires":200},{"provider":"grok","label":"a","isDefault":false,"signedIn":true,"email":"g@example.test","expires":300}]}}
+  ]
+}

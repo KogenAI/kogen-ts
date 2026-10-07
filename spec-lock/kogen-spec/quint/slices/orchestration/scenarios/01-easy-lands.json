@@ -1,0 +1,14 @@
+{
+  "name": "01-easy-lands",
+  "about": "An easy Build plans once, starts at R1, goes green, and lands. The claim is released and nothing is parked.",
+  "steps": [
+    {"do": ["Begin", {"valid": true, "branchOk": true, "claimFree": true, "witness": false, "hard": false, "maxR": 3}], "expect": {"phase": "b1", "status": "running", "claim": true, "journal": ["started"]}},
+    {"do": ["Probe", {"confined": true}], "expect": {"phase": "b2"}},
+    {"do": ["Plan"], "expect": {"planned": true, "entry": 1, "rung": 1, "phase": "setup", "repairs": 6}},
+    {"do": ["Plan"], "expect": {"last": "already_planned", "planned": true}},
+    {"do": ["Setup", {"ok": true}], "expect": {"phase": "base"}},
+    {"do": ["BaseAccept", {"runner": true}], "expect": {"phase": "dev"}},
+    {"do": ["Verify", {"red": false, "landable": true, "counted": true, "count": 0}], "expect": {"phase": "b9", "landable": true, "snapshots": 1}},
+    {"do": ["Land", {"how": "landed"}], "expect": {"status": "landed", "exit": 0, "claim": false, "parkedRef": false, "phase": "done"}}
+  ]
+}

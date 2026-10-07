@@ -1,0 +1,33 @@
+{
+  "name": "03-repair-grant",
+  "about": "A red count that is not strictly lower ends the rung as no_progress. Six spent repairs end it as repair_cap.",
+  "steps": [
+    {"do": ["Begin", {"valid": true, "branchOk": true, "claimFree": true, "witness": false, "hard": false, "maxR": 1}]},
+    {"do": ["Probe", {"confined": true}]},
+    {"do": ["Plan"], "expect": {"entry": 1, "repairs": 6, "granted": 6}},
+    {"do": ["Setup", {"ok": true}]},
+    {"do": ["BaseAccept", {"runner": true}]},
+    {"do": ["Verify", {"red": true, "landable": false, "counted": true, "count": 4}], "expect": {"phase": "repair", "repairs": 6}},
+    {"do": ["Repair", {"lower": true}], "expect": {"repairs": 5, "phase": "dev"}},
+    {"do": ["Verify", {"red": true, "landable": false, "counted": true, "count": 4}], "expect": {"phase": "b6", "reason": "no_progress"}},
+    {"do": ["Audit", {"nowLandable": false}], "expect": {"status": "failed", "reason": "best_candidate", "phase": "done"}},
+    {"do": ["Begin", {"valid": true, "branchOk": true, "claimFree": true, "witness": false, "hard": false, "maxR": 1}]},
+    {"do": ["Probe", {"confined": true}]},
+    {"do": ["Plan"]},
+    {"do": ["Setup", {"ok": true}]},
+    {"do": ["BaseAccept", {"runner": true}]},
+    {"do": ["Verify", {"red": true, "landable": false, "counted": true, "count": 8}], "expect": {"phase": "repair", "repairs": 6}},
+    {"do": ["Repair", {"lower": false}]},
+    {"do": ["Verify", {"red": true, "landable": false, "counted": true, "count": 7}]},
+    {"do": ["Repair", {"lower": false}]},
+    {"do": ["Verify", {"red": true, "landable": false, "counted": true, "count": 6}]},
+    {"do": ["Repair", {"lower": false}]},
+    {"do": ["Verify", {"red": true, "landable": false, "counted": true, "count": 5}]},
+    {"do": ["Repair", {"lower": false}]},
+    {"do": ["Verify", {"red": true, "landable": false, "counted": true, "count": 4}]},
+    {"do": ["Repair", {"lower": false}]},
+    {"do": ["Verify", {"red": true, "landable": false, "counted": true, "count": 3}], "expect": {"phase": "repair", "repairs": 1}},
+    {"do": ["Repair", {"lower": false}], "expect": {"repairs": 0, "phase": "dev"}},
+    {"do": ["Verify", {"red": true, "landable": false, "counted": true, "count": 2}], "expect": {"phase": "b6", "reason": "repair_cap"}}
+  ]
+}

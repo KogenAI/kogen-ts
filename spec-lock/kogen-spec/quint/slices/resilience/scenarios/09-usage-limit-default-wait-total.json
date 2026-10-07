@@ -1,0 +1,548 @@
+{
+ "name": "09-usage-limit-default-wait-total",
+ "about": "With no retry_after the 15 min default is used; 24 waits make 6 h, and the next usage_limit stops the Build.",
+ "steps": [
+  {
+   "do": [
+    "Stage",
+    {
+     "name": "build",
+     "mode": "build",
+     "model": "luna",
+     "fallback": "sol",
+     "owned": true
+    }
+   ]
+  },
+  {
+   "do": [
+    "Request"
+   ]
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 900000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 1800000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 2700000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 3600000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 4500000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 5400000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 6300000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 7200000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 8100000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 9000000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 9900000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 10800000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 11700000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 12600000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 13500000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 14400000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 15300000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 16200000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 17100000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 18000000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 18900000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 19800000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 20700000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "wait",
+     "delay_ms": 900000,
+     "reason": "usage_limit",
+     "model": "luna"
+    },
+    "usage_ms": 21600000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "usage_limit",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "stop",
+     "delay_ms": 0,
+     "reason": "provider/usage_limit"
+    },
+    "exit": 4,
+    "phase": "stopped"
+   }
+  }
+ ]
+}

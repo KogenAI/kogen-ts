@@ -1,0 +1,33 @@
+{
+ "id": "approval-06",
+ "profile": "approval",
+ "fixture": "kt",
+ "title": "The approver defaults to the git identity",
+ "spec": [
+  "§1.7.2"
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "assert": {
+    "git": [
+     {
+      "args": [
+       "cat-file",
+       "-p",
+       "refs/kogen/intents/greet:.kogen/intents/greet/approval.json"
+      ],
+      "json": {
+       "by": "Kogen Test <test@kogen.invalid>"
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

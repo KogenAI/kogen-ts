@@ -1,0 +1,157 @@
+{
+  "id": "v1.2-23-cli-26-status-slug",
+  "profile": "v1.2",
+  "title": "v1.2 replacement for cli-26: Status detail omits verdict",
+  "spec": [
+    "§1.7.5",
+    "§2.10",
+    "§2.11"
+  ],
+  "fixture": "kt",
+  "steps": [
+    {
+      "intent": {
+        "slug": "draft-a",
+        "template": "greet",
+        "replace": {
+          "Greet Almir by name": "Intent draft-a"
+        },
+        "commit": true
+      }
+    },
+    {
+      "intent": {
+        "slug": "q-one",
+        "template": "greet",
+        "replace": {
+          "Greet Almir by name": "Intent q-one"
+        },
+        "commit": true
+      }
+    },
+    {
+      "intent": {
+        "slug": "q-two",
+        "template": "greet",
+        "replace": {
+          "Greet Almir by name": "Intent q-two"
+        },
+        "commit": true
+      }
+    },
+    {
+      "intent": {
+        "slug": "q-three",
+        "template": "greet",
+        "replace": {
+          "Greet Almir by name": "Intent q-three"
+        },
+        "commit": true
+      }
+    },
+    {
+      "intent": {
+        "slug": "fail-a",
+        "template": "greet",
+        "replace": {
+          "Greet Almir by name": "Intent fail-a"
+        },
+        "commit": true
+      }
+    },
+    {
+      "approve": "q-one"
+    },
+    {
+      "sleep": 1.1
+    },
+    {
+      "approve": "q-two"
+    },
+    {
+      "sleep": 1.1
+    },
+    {
+      "approve": "q-three"
+    },
+    {
+      "approve": "fail-a"
+    },
+    {
+      "synthetic_run": {
+        "slug": "fail-a",
+        "run_id": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+        "status": "failed",
+        "reason": "repair_cap",
+        "verdict": "unverified",
+        "candidate_diff": "diff --git a/lib/greet.txt b/lib/greet.txt\n"
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "status",
+        "draft-a"
+      ],
+      "expect": {
+        "exit": 0,
+        "stderr": "",
+        "stdout": "draft-a: draft; review it with kogen intent approve draft-a\n"
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "status",
+        "q-two"
+      ],
+      "expect": {
+        "exit": 0,
+        "stderr": "",
+        "stdout": "q-two: queued, 2 of 3\n"
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "status",
+        "q-one"
+      ],
+      "expect": {
+        "exit": 0,
+        "stderr": "",
+        "stdout": "q-one: queued, 1 of 3\n"
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "status",
+        "fail-a"
+      ],
+      "expect": {
+        "exit": 0,
+        "stderr": "",
+        "stdout_lines": [
+          "fail-a: failed, repair_cap",
+          "Build a1a1a1a1: failed, repair_cap",
+          "  candidate diff: {state_root}/runs/a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1/candidate.diff",
+          "  journal: {state_root}/runs/a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1"
+        ]
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "status",
+        "nope-nope"
+      ],
+      "expect": {
+        "exit": 2,
+        "stderr": "",
+        "stdout": "intent/not_found: Intent does not exist\n"
+      }
+    }
+  ],
+  "notes": "Status detail includes the listed Build fields and has no verdict line (§1.7.5); the JSON Build report is specified in §2.10."
+}

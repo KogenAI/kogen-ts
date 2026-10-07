@@ -1,0 +1,11 @@
+{
+  "name": "08-priority-before-time",
+  "about": "Higher priority precedes older approval; ties use approval time and slug. Reapproval changes the queue key.",
+  "steps": [
+    {"do": ["Enqueue", {"slug": "alpha", "time": 1, "priority": 0}]},
+    {"do": ["Enqueue", {"slug": "bravo", "time": 2, "priority": 5}]},
+    {"do": ["Start"], "expect": {"current": "bravo", "queue": ["alpha"]}},
+    {"do": ["Outcome", {"kind": "landed"}], "expect": {"current": "alpha"}},
+    {"do": ["Outcome", {"kind": "landed"}], "expect": {"line": "done", "landed": 2}}
+  ]
+}

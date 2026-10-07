@@ -1,0 +1,139 @@
+{
+ "id": "shape-10",
+ "profile": "shape",
+ "fixture": "kt",
+ "fake": true,
+ "title": "A lint error gives a repair message with the exact text, in the same conversation",
+ "spec": [
+  "§3.2.3",
+  "§3.2.4",
+  "§3.2.6"
+ ],
+ "script": [
+  {
+   "id": "write",
+   "expect": {
+    "role": "shaper",
+    "turn": 1
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/intents/greet/intent.md",
+       "content": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir. TBD which punctuation.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: replace the single line in lib/greet.txt with the new greeting text.\n"
+      }
+     },
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/acceptance/greet.t.sh",
+       "content": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "done",
+   "expect": {
+    "role": "shaper",
+    "turn": 2
+   },
+   "reply": {
+    "text": "Both files are written."
+   }
+  },
+  {
+   "id": "fix",
+   "expect": {
+    "role": "shaper",
+    "turn": 3,
+    "last_user_contains": "Validation failed."
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/intents/greet/intent.md",
+       "content": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: replace the single line in lib/greet.txt with the new greeting text.\n"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "done2",
+   "expect": {
+    "role": "shaper",
+    "turn": 4
+   },
+   "reply": {
+    "text": "Fixed."
+   }
+  },
+  {
+   "id": "ledger",
+   "expect": {
+    "role": "requirement_auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"rows\": [{\"constraint\": \"The greeting in lib/greet.txt says Hello, Almir!\", \"maps_to\": \"A1\"}]}"
+   }
+  },
+  {
+   "id": "audit",
+   "expect": {
+    "role": "test_auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test checks the requested line.\"}]}"
+   }
+  }
+ ],
+ "steps": [
+  {
+   "write": {
+    "path": "{case}/request.md",
+    "text": "Make the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "shape",
+    "greet",
+    "{case}/request.md"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_regex": "(?m)^Validated after 2 round\\(s\\)\\.$",
+    "stderr_regex": "(?m)^shaper pass=1 role=shaper validation_failed reason=intent_lint_failed$"
+   }
+  },
+  {
+   "assert": {
+    "fake_requests": [
+     {
+      "select": {
+       "role": "shaper",
+       "turn": 3
+      },
+      "input_regex": "^Validation failed\\. Repair the generated files in this conversation\\. The required paths and their current state are:\n- `[^`\n]*\\.kogen/intents/greet/intent\\.md`: present on disk\\. Keep it in place; change it only if the failure below requires a correction\\.\n- `[^`\n]*\\.kogen/acceptance/greet\\.t\\.sh`: present on disk\\. Keep it in place; change it only if the failure below requires a correction\\.\nBoth exact paths must exist after this pass\\. Every missing path must be written now\\. Do not delete required files\\. The available tools can read, search, and write files; they cannot remove them\\. Preserve present content unless the failure below requires a focused correction\\.\n\nExact failure output:\n\ncandidate/intent_lint_failed: "
+     }
+    ],
+    "files": {
+     ".kogen/intents/greet/intent.md": {
+      "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: replace the single line in lib/greet.txt with the new greeting text.\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n"
+     }
+    }
+   }
+  }
+ ],
+ "notes": "The detail after `candidate/intent_lint_failed: ` is free text (§6.2)."
+}

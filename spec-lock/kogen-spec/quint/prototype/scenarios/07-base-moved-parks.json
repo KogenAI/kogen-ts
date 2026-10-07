@@ -1,0 +1,23 @@
+{
+  "name": "07-base-moved-parks",
+  "about": "Someone pushes to the base during the Build: the CAS fails, the candidate is parked, nothing lands.",
+  "steps": [
+    {"do": ["Approve", {"slug": "alpha", "time": 1}]},
+    {"do": ["Start", "r1"]},
+    {"do": ["Gate", true]},
+    {"do": ["PushExternal", "x1"]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Step"], "expect": {"base": ["root", "x1"], "parked": ["r1"], "incoming": [], "claim": "", "status": {"alpha": "parked"}, "runs": {"r1": {"status": "parked", "reason": "base_moved"}}}},
+    {"do": ["Step"], "expect": {"last": "nothing_to_step"}},
+    {"do": ["Approve", {"slug": "alpha", "time": 2}], "expect": {"queue": ["alpha"]}},
+    {"do": ["Start", "r2"]},
+    {"do": ["Gate", true]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Recover"], "expect": {"base": ["root", "x1", "r2"], "status": {"alpha": "landed"}}}
+  ]
+}

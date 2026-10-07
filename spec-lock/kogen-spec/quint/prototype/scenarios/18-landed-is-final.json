@@ -1,0 +1,16 @@
+{
+  "name": "18-landed-is-final",
+  "about": "A landed Intent cannot be approved again and never re-enters the queue.",
+  "steps": [
+    {"do": ["Approve", {"slug": "alpha", "time": 1}]},
+    {"do": ["Start", "r1"]},
+    {"do": ["Gate", true]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Approve", {"slug": "alpha", "time": 5}], "expect": {"last": "already_landed", "queue": [], "status": {"alpha": "landed"}}},
+    {"do": ["Start", "r2"], "expect": {"last": "nothing_to_build"}}
+  ]
+}

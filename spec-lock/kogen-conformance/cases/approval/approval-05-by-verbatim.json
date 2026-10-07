@@ -1,0 +1,68 @@
+{
+ "id": "approval-05",
+ "profile": "approval",
+ "fixture": "kt",
+ "title": "--by is stored verbatim",
+ "spec": [
+  "§1.7.2",
+  "§2.5.1"
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet",
+    "--by",
+    "Claude (agent) for Almir <agent@example.invalid>"
+   ],
+   "expect": {
+    "exit": 5,
+    "stdout_contains": "Approver: Claude (agent) for Almir <agent@example.invalid>\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet",
+    "{hash8:greet}",
+    "--by=Claude (agent) for Almir <agent@example.invalid>"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": ""
+   }
+  },
+  {
+   "assert": {
+    "git": [
+     {
+      "args": [
+       "cat-file",
+       "-p",
+       "refs/kogen/intents/greet:.kogen/intents/greet/approval.json"
+      ],
+      "json": {
+       "by": "Claude (agent) for Almir <agent@example.invalid>"
+      }
+     },
+     {
+      "args": [
+       "log",
+       "-1",
+       "--format=%B",
+       "refs/kogen/intents/greet"
+      ],
+      "stdout_contains": "Kogen-Approved-By: Claude (agent) for Almir <agent@example.invalid>\n"
+     }
+    ]
+   }
+  }
+ ]
+}

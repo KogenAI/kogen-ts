@@ -1,0 +1,77 @@
+{
+ "id": "cli-30",
+ "profile": "cli",
+ "title": "The queue: stopped because <slug> hit a provider error line",
+ "spec": [
+  "§1.7.4",
+  "§4.4",
+  "§4.5"
+ ],
+ "fixture": "kt",
+ "fake": true,
+ "script": [
+  {
+   "id": "plan401",
+   "expect": {
+    "role": "planner"
+   },
+   "reply": {
+    "http": {
+     "status": 401,
+     "body": {
+      "error": {
+       "message": "unauthorized"
+      }
+     }
+    }
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 4,
+    "stderr": "",
+    "stdout_lines": [
+     "building greet",
+     "~stopped greet: provider/login; it stays queued \\(Build [0-9a-f]{8}\\)",
+     "~queue: stopped because greet hit a provider error; 1 Build\\(s\\), 0 landed, 1 not"
+    ]
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "greet"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout": "greet: queued, 1 of 1\n"
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "last": {
+      "event": "finished",
+      "status": "stopped",
+      "reason": "provider/login"
+     }
+    }
+   }
+  }
+ ]
+}

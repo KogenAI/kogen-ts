@@ -1,0 +1,94 @@
+{
+  "id": "v1.2-12-cli-08-option-needs-value",
+  "profile": "v1.2",
+  "fixture": "none",
+  "title": "v1.2 replacement for cli-08: Option that needs a value",
+  "spec": [
+    "§1.2",
+    "§1.3",
+    "§1.4"
+  ],
+  "rows": [
+    {
+      "label": "--by",
+      "argv": [
+        "intent",
+        "approve",
+        "greet",
+        "--by"
+      ],
+      "path": "intent approve",
+      "opt": "--by",
+      "page": "kogen-intent-approve",
+      "error": "kogen intent approve: --by needs a value"
+    },
+    {
+      "label": "--project",
+      "argv": [
+        "status",
+        "--project"
+      ],
+      "path": "status",
+      "opt": "--project",
+      "page": "kogen-status",
+      "error": "kogen status: --project needs a value"
+    },
+    {
+      "label": "--origin",
+      "argv": [
+        "queue",
+        "stop",
+        "--origin"
+      ],
+      "path": "queue stop",
+      "opt": "--origin",
+      "page": "kogen-queue-stop",
+      "error": "kogen queue stop: --origin needs a value"
+    },
+    {
+      "label": "--base",
+      "argv": [
+        "intent",
+        "remove",
+        "greet",
+        "--base"
+      ],
+      "path": "intent remove",
+      "opt": "--base",
+      "page": "kogen-intent-remove",
+      "error": "kogen intent remove: --base needs a value"
+    },
+    {
+      "label": "--as",
+      "argv": [
+        "provider",
+        "login",
+        "chatgpt",
+        "--as"
+      ],
+      "path": "provider login",
+      "opt": "--as",
+      "page": "kogen-provider-login",
+      "error": "kogen provider login: unknown option '--as'"
+    }
+  ],
+  "steps": [
+    {
+      "run": [
+        "kogen",
+        "{*row.argv}"
+      ],
+      "expect": {
+        "exit": 2,
+        "stdout": [
+          "{row.error}\n\n",
+          {
+            "data": "v1.2/help/{row.page}.txt"
+          }
+        ],
+        "stderr": ""
+      }
+    }
+  ],
+  "notes": "A missing option value is reported per §1.3; --as is route-disallowed on login and is reported as an unknown option (§1.2–1.4)."
+}

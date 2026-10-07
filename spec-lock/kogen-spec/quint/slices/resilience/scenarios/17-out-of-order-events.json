@@ -1,0 +1,95 @@
+{
+ "name": "17-out-of-order-events",
+ "about": "Events out of order are refused without changing the policy state.",
+ "steps": [
+  {
+   "do": [
+    "Request"
+   ],
+   "expect": {
+    "last": "no_stage"
+   }
+  },
+  {
+   "do": [
+    "Stage",
+    {
+     "name": "build",
+     "mode": "build",
+     "model": "luna",
+     "fallback": "sol",
+     "owned": true
+    }
+   ]
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "ok",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "last": "not_sending",
+    "attempts": 0
+   }
+  },
+  {
+   "do": [
+    "Request"
+   ]
+  },
+  {
+   "do": [
+    "Request"
+   ],
+   "expect": {
+    "last": "request_in_flight"
+   }
+  },
+  {
+   "do": [
+    "Stage",
+    {
+     "name": "build",
+     "mode": "build",
+     "model": "luna",
+     "fallback": "sol",
+     "owned": true
+    }
+   ],
+   "expect": {
+    "last": "request_in_flight"
+   }
+  },
+  {
+   "do": [
+    "Refresh",
+    true
+   ],
+   "expect": {
+    "last": "not_refreshing"
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "ok",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "last": "ok",
+    "phase": "idle"
+   }
+  }
+ ]
+}

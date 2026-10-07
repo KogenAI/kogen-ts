@@ -1,0 +1,116 @@
+{
+ "id": "ladder-04",
+ "profile": "ladder",
+ "fixture": "kt",
+ "fake": true,
+ "title": "With max_rungs: 1, hard is ignored",
+ "spec": [
+  "§3.1"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "tools": []
+   },
+   "reply": {
+    "text": "Difficulty: hard\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+   }
+  },
+  {
+   "id": "r1.edit",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "turn": 1,
+    "tools": [
+     "shell"
+    ]
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r1.done",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "turn": 2,
+    "last_item_type": "function_call_output"
+   },
+   "reply": {
+    "text": "Done."
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "fake_requests": [
+     {
+      "select": {
+       "step": "r1.edit"
+      },
+      "input_contains": [
+       "Implementation plan:",
+       "## Technical approach"
+      ]
+     }
+    ],
+    "events": {
+     "slug": "greet",
+     "contains": [
+      {
+       "event": "rung_started",
+       "rung": "R1",
+       "model": "gpt-6-luna",
+       "effort": "max"
+      }
+     ],
+     "count": {
+      "rung_started": 1
+     }
+    }
+   }
+  }
+ ],
+ "project": {
+  "build": {
+   "ladder": {
+    "max_rungs": 1
+   }
+  }
+ }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "06-controller-stops",
+  "about": "not_fast_forward and tree_mismatch stop the Build as controller errors. The claim is released. The Intent is not failed.",
+  "steps": [
+    {"do": ["Record"], "expect": {"claim": true}},
+    {"do": ["Head", {"kind": "not_fast_forward"}], "expect": {"status": "stopped", "reason": "controller/not_fast_forward", "exit": 70, "claim": false, "onBase": false}},
+    {"do": ["Init"]},
+    {"do": ["Record"]},
+    {"do": ["Head", {"kind": "tree_mismatch"}], "expect": {"status": "stopped", "reason": "controller/tree_mismatch", "exit": 70, "claim": false}}
+  ]
+}

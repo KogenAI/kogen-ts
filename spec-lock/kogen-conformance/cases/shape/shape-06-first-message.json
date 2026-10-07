@@ -1,0 +1,139 @@
+{
+ "id": "shape-06",
+ "profile": "shape",
+ "fixture": "kt",
+ "fake": true,
+ "title": "The first message matches the template and carries the marker",
+ "spec": [
+  "§3.2.1",
+  "§4.8.2"
+ ],
+ "project": {
+  "domains": {
+   "docs": [
+    "docs"
+   ],
+   "app": [
+    "lib"
+   ]
+  }
+ },
+ "script": [
+  {
+   "id": "write",
+   "expect": {
+    "role": "shaper",
+    "turn": 1,
+    "tools": [
+     "read",
+     "search",
+     "write"
+    ]
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/intents/greet/intent.md",
+       "content": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: replace the single line in lib/greet.txt with the new greeting text.\n"
+      }
+     },
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/acceptance/greet.t.sh",
+       "content": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "done",
+   "expect": {
+    "role": "shaper",
+    "turn": 2
+   },
+   "reply": {
+    "text": "Both files are written."
+   }
+  },
+  {
+   "id": "ledger",
+   "expect": {
+    "role": "requirement_auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"rows\": [{\"constraint\": \"The greeting in lib/greet.txt says Hello, Almir!\", \"maps_to\": \"A1\"}]}"
+   }
+  },
+  {
+   "id": "audit",
+   "expect": {
+    "role": "test_auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test checks the requested line.\"}]}"
+   }
+  }
+ ],
+ "notes": "The order of the gate-path list and the blank lines around the request are not fixed; the set of gate paths is asserted separately.",
+ "steps": [
+  {
+   "write": {
+    "path": "{case}/request.md",
+    "text": "Make the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "shape",
+    "greet",
+    "{case}/request.md"
+   ],
+   "expect": {
+    "exit": 0
+   }
+  },
+  {
+   "assert": {
+    "fake_requests": [
+     {
+      "select": {
+       "role": "shaper",
+       "turn": 1
+      },
+      "match": {
+       "body": {
+        "instructions": {
+         "$contains_text": "You are Kogen Intent shaper."
+        },
+        "model": "gpt-6.1-sol",
+        "reasoning": {
+         "effort": "high"
+        }
+       }
+      },
+      "input_regex": "\\ASlug: greet\n\nConfigured project domains: app, docs\\. Use only these names in the Intent and Verify lines\\.\n\nEffective gate paths: (`[^`\n]+`, )*`[^`\n]+`\\. Set `changes_gate: true` only when the task or planned changes require modifying one of these paths\\. Omit it for unrelated changes; running or inspecting checks alone does not count\\.\n\nTask statement:\nMake the greeting in lib/greet\\.txt say Hello, Almir! instead of Hello!\n+Write the Intent to `\\.kogen/intents/greet/intent\\.md` and its acceptance test to `\\.kogen/acceptance/greet\\.t\\.sh`\\.\n?\\Z",
+      "input_contains": [
+       "`.kogen/project.yaml`",
+       "`checks/lint.sh`",
+       "`checks/unit.sh`",
+       "`checks/fmt.sh`",
+       "`run-acceptance.sh`"
+      ],
+      "input_not_contains": [
+       "`checks/setup.sh`",
+       "`lib/greet.txt`"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

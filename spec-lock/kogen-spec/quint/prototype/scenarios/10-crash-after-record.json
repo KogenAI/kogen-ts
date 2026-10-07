@@ -1,0 +1,12 @@
+{
+  "name": "10-crash-after-record",
+  "about": "Crash after the Landing record but before any push: recovery fails the run.",
+  "steps": [
+    {"do": ["Approve", {"slug": "alpha", "time": 1}]},
+    {"do": ["Start", "r1"]},
+    {"do": ["Gate", true]},
+    {"do": ["Step"]},
+    {"do": ["Crash"]},
+    {"do": ["Recover"], "expect": {"runs": {"r1": {"status": "failed", "reason": "interrupted"}}, "base": ["root"], "claim": ""}}
+  ]
+}

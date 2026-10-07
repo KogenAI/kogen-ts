@@ -1,0 +1,110 @@
+{
+  "id": "v1.2-122-custody-09",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "title": "v1.2 replacement for custody-09: A workspace .git/config hook or filter never runs, and info/exclude cannot hide a change from the landed tree",
+  "spec": [
+    "§5.4",
+    "§5.5.9",
+    "§3.6",
+    "§4.7"
+  ],
+  "fake": true,
+  "script": [
+    {
+      "id": "plan",
+      "expect": {
+        "role": "planner",
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "evil",
+      "expect": {
+        "role": "builder",
+        "turn": 1,
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "mkdir -p .git/hooks && printf '#!/bin/sh\\ntouch \"{case}/hook-ran\"\\n' > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit && cp .git/hooks/pre-commit .git/hooks/post-commit && cp .git/hooks/pre-commit .git/hooks/commit-msg && cp .git/hooks/pre-commit .git/hooks/post-checkout && git config filter.evil.clean 'sh -c \"touch {case}/filter-ran; cat\"' && git config filter.evil.smudge cat && mkdir -p .git/info && printf '* filter=evil\\n' >> .git/info/attributes && printf 'lib/hidden.txt\\n' >> .git/info/exclude && printf 'secret\\n' > lib/hidden.txt && printf 'Hello, Almir!\\n' > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "done",
+      "expect": {
+        "role": "builder",
+        "turn": 2,
+        "input_contains": "Greet Almir by name",
+        "last_output_contains": "exit 0"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_lines": [
+          "building greet",
+          "~\\~landed greet [0-9a-f]{8} \\(Build {id8:greet}\\)",
+          "queue: done; 1 Build(s), 1 landed, 0 not"
+        ]
+      }
+    },
+    {
+      "assert": {
+        "files": {
+          "{case}/hook-ran": false,
+          "{case}/filter-ran": false
+        },
+        "git": [
+          {
+            "args": [
+              "cat-file",
+              "-p",
+              "main:lib/hidden.txt"
+            ],
+            "stdout": "secret\n"
+          },
+          {
+            "args": [
+              "cat-file",
+              "-p",
+              "main:lib/greet.txt"
+            ],
+            "stdout": "Hello, Almir!\n"
+          }
+        ]
+      }
+    }
+  ],
+  "notes": "v1.2 replacement for custody-09. Text-only builder replies are progress; completion requires finish alone with {} (§3.6). Shell-recipe builders expose shell, finish, and tool_output (§4.7)."
+}

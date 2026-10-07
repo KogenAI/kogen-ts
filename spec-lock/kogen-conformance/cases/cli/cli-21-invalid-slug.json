@@ -1,0 +1,100 @@
+{
+ "id": "cli-21",
+ "profile": "cli",
+ "fixture": "none",
+ "title": "Invalid slug gives a usage error",
+ "spec": [
+  "§1.3.3.6",
+  "§2.1.1"
+ ],
+ "rows": [
+  {
+   "label": "uppercase",
+   "argv": [
+    "intent",
+    "approve",
+    "Greet"
+   ],
+   "path": "intent approve",
+   "page": "kogen-intent-approve"
+  },
+  {
+   "label": "underscore",
+   "argv": [
+    "intent",
+    "remove",
+    "my_slug"
+   ],
+   "path": "intent remove",
+   "page": "kogen-intent-remove"
+  },
+  {
+   "label": "too short",
+   "argv": [
+    "status",
+    "ab"
+   ],
+   "path": "status",
+   "page": "kogen-status"
+  },
+  {
+   "label": "double dash",
+   "argv": [
+    "intent",
+    "shape",
+    "a--b",
+    "-"
+   ],
+   "path": "intent shape",
+   "page": "kogen-intent-shape"
+  },
+  {
+   "label": "leading dash",
+   "argv": [
+    "intent",
+    "approve",
+    "-",
+    "abcdef"
+   ],
+   "path": "intent approve",
+   "page": "kogen-intent-approve"
+  },
+  {
+   "label": "49 chars",
+   "argv": [
+    "status",
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+   ],
+   "path": "status",
+   "page": "kogen-status"
+  },
+  {
+   "label": "trailing dash",
+   "argv": [
+    "intent",
+    "remove",
+    "greet-"
+   ],
+   "path": "intent remove",
+   "page": "kogen-intent-remove"
+  }
+ ],
+ "steps": [
+  {
+   "run": [
+    "kogen",
+    "{*row.argv}"
+   ],
+   "expect": {
+    "exit": 2,
+    "stdout": [
+     "kogen {row.path}: <slug> must be 3 to 48 lowercase letters, digits or single dashes\n\n",
+     {
+      "data": "help/{row.page}.txt"
+     }
+    ],
+    "stderr": ""
+   }
+  }
+ ]
+}

@@ -1,0 +1,43 @@
+[
+ {
+  "id": "plan",
+  "expect": {
+   "role": "planner",
+   "turn": 1,
+   "input_contains": "Add a farewell line"
+  },
+  "reply": {
+   "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/bye.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/bye.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/bye.txt.\n"
+  }
+ },
+ {
+  "id": "edit",
+  "expect": {
+   "role": "builder",
+   "turn": 1,
+   "input_contains": "Add a farewell line"
+  },
+  "reply": {
+   "calls": [
+    {
+     "name": "shell",
+     "arguments": {
+      "cmd": "printf 'Bye, Almir!\\n' > lib/bye.txt"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "id": "done",
+  "expect": {
+   "role": "builder",
+   "turn": 2,
+   "input_contains": "Add a farewell line",
+   "last_output_contains": "exit 0"
+  },
+  "reply": {
+   "text": "Done."
+  }
+ }
+]

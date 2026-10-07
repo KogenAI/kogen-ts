@@ -1,0 +1,14 @@
+{
+  "name": "05-reapprove-and-refusals",
+  "about": "Landed is final. A second claim is refused. A terminal run is not rewritten. A refusal keeps the claim.",
+  "steps": [
+    {"do": ["Put", {"id": "r1", "status": "landed", "alive": false, "onBase": true, "lastEvent": "other", "incoming": false, "queued": false, "claim": false, "reason": "reconciled"}]},
+    {"do": ["Reapprove", {"id": "r1"}], "expect": {"last": "already_landed", "runs": {"r1": {"status": "landed"}}}},
+    {"do": ["Recover"], "expect": {"line": "unchanged", "runs": {"r1": {"status": "landed"}}}},
+    {"do": ["Put", {"id": "r1", "status": "running", "alive": true, "onBase": false, "lastEvent": "other", "incoming": false, "queued": false, "claim": true, "reason": ""}]},
+    {"do": ["Put", {"id": "r2", "status": "running", "alive": true, "onBase": false, "lastEvent": "other", "incoming": false, "queued": false, "claim": true, "reason": ""}],
+     "expect": {"last": "claim_held", "claim": "r1"}},
+    {"do": ["Put", {"id": "r1", "status": "failed", "alive": false, "onBase": true, "lastEvent": "other", "incoming": true, "queued": false, "claim": false, "reason": "gate"}],
+     "expect": {"last": "bad_run", "claim": "r1", "runs": {"r1": {"status": "running"}}}}
+  ]
+}

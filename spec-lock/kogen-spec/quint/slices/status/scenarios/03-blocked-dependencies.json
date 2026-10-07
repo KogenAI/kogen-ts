@@ -1,0 +1,9 @@
+{
+  "name": "03-blocked-dependencies",
+  "about": "Cycles and unknown dependencies are blocked and excluded from the queue.",
+  "steps": [
+    {"do":["Row",{"slug":"alpha","status":"approved","priority":99,"at":1,"blocks":"bravo","sched":"","started":0,"index":0}]},
+    {"do":["Row",{"slug":"bravo","status":"approved","priority":99,"at":2,"blocks":"alpha","sched":"","started":0,"index":0}]},
+    {"do":["Row",{"slug":"charlie","status":"approved","priority":100,"at":3,"blocks":"ghost","sched":"","started":0,"index":0}],"expect":{"alpha":"blocked","bravo":"blocked","charlie":"blocked","whyA":"dependency cycle: alpha -> bravo -> alpha","whyB":"dependency cycle: bravo -> alpha -> bravo","whyC":"unknown dependencies: ghost","queue":[],"sections":["Blocked"]}}
+  ]
+}

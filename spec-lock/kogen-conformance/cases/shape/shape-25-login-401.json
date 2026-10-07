@@ -1,0 +1,60 @@
+{
+ "id": "shape-25",
+ "profile": "shape",
+ "fixture": "kt",
+ "fake": true,
+ "title": "401 gives exit 4",
+ "spec": [
+  "§4.4",
+  "§4.5",
+  "§1.7.1"
+ ],
+ "script": [
+  {
+   "id": "u401",
+   "expect": {
+    "role": "shaper",
+    "turn": 1
+   },
+   "reply": {
+    "http": {
+     "status": 401,
+     "body": {
+      "error": {
+       "message": "unauthorized"
+      }
+     }
+    }
+   }
+  }
+ ],
+ "steps": [
+  {
+   "write": {
+    "path": "{case}/request.md",
+    "text": "Make the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "shape",
+    "greet",
+    "{case}/request.md"
+   ],
+   "expect": {
+    "exit": 4,
+    "stdout_regex": "\\Aprovider/login: ChatGPT rejected the login; sign in again\\.\n"
+   }
+  },
+  {
+   "assert": {
+    "fake_request_count": 1,
+    "files": {
+     ".kogen/intents/greet/intent.md": false
+    }
+   }
+  }
+ ]
+}

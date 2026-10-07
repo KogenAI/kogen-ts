@@ -1,0 +1,37 @@
+{
+  "id": "v1.2-35-state-02-schema-errors",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "title": "v1.2 replacement for state-02: Schema errors are all listed",
+  "spec": [
+    "§2.3"
+  ],
+  "steps": [
+    {
+      "write": {
+        "path": ".kogen/project.yaml",
+        "text": "name: kt\nfrobnicate: yes\nchecks:\n  - name: lint\n    argv: [sh, checks/lint.sh]\n    timeout_ms: 60000\n    cmd: lint\nsetup:\n  - name: s\n    argv: [sh, checks/setup.sh]\n    timeout_ms: 1000\n  - name: s\n    argv: [sh, checks/setup.sh]\n    timeout_ms: 1000\nfix:\n  - name: fmt\n    argv: [sh, checks/fmt.sh]\n    timeout_ms: soon\nbuild:\n  roles:\n    judge: {model: gpt-6.1-sol, effort: high}\n"
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "status"
+      ],
+      "expect": {
+        "exit": 3,
+        "stderr": "",
+        "stdout_regex": [
+          "\\Aenvironment/project_config_invalid: {checkout}/\\.kogen/project\\.yaml\n",
+          "(?m)^  project has unknown key \"frobnicate\"$",
+          "(?m)^  checks\\[1\\] has unknown key \"cmd\"$",
+          "(?m)^  setup has duplicate name \"s\"$",
+          "(?m)^  fix\\[1\\]\\.timeout_ms must be .+$",
+          "(?m)^  build\\.roles has unknown role \"judge\"$"
+        ],
+        "stdout_not_regex": "(?m)^(?!environment/project_config_invalid: |  ).+\\S.*$"
+      }
+    }
+  ],
+  "notes": "Checks the §2.3 issue list and avoids matching the terminal empty line after newline-terminated stdout; the output contract remains §1.1."
+}

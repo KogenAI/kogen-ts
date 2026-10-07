@@ -1,0 +1,13 @@
+{
+  "name": "02-hard-and-next-rung",
+  "about": "Difficulty hard starts rung 1 and rung 2 together. Both red continues from rung 3, which lands.",
+  "steps": [
+    {"do": ["Begin", {"valid": true, "branchOk": true, "claimFree": true, "witness": false, "hard": true, "maxR": 3}]},
+    {"do": ["Probe", {"confined": false}], "expect": {"journal": ["started", "sandbox_unavailable"]}},
+    {"do": ["Plan"], "expect": {"phase": "pair", "entry": 1, "rung": 1, "journal": ["started", "sandbox_unavailable", "plan", "parallel_started"]}},
+    {"do": ["Pair", {"first": "red", "second": "red"}], "expect": {"phase": "setup", "rung": 3, "repairs": 6, "snapshots": 2}},
+    {"do": ["Setup", {"ok": true}], "expect": {"phase": "dev"}},
+    {"do": ["Verify", {"red": false, "landable": true, "counted": true, "count": 0}], "expect": {"phase": "b9", "rung": 3}},
+    {"do": ["Land", {"how": "landed"}], "expect": {"status": "landed", "claim": false}}
+  ]
+}

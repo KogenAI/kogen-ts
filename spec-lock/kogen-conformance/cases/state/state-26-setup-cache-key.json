@@ -1,0 +1,184 @@
+{
+ "id": "state-26",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "The setup cache key changes with setup, env and base tree, but not with TMPDIR or MISE_STATE_DIR",
+ "spec": [
+  "§2.9",
+  "§5.2"
+ ],
+ "fake": true,
+ "project": {
+  "build": {
+   "ladder": {
+    "max_rungs": 1
+   }
+  }
+ },
+ "script": [
+  {
+   "include": "r1_fail_unchanged_noaudit",
+   "prefix": "g1"
+  },
+  {
+   "include": "r1_fail_unchanged_noaudit",
+   "prefix": "f1",
+   "override": {
+    "plan": {
+     "expect": {
+      "role": "planner",
+      "input_contains": "Add a farewell line"
+     }
+    },
+    "claim1": {
+     "expect": {
+      "role": "builder",
+      "turn": 1,
+      "input_contains": "Add a farewell line"
+     }
+    }
+   }
+  },
+  {
+   "include": "r1_fail_unchanged_noaudit",
+   "prefix": "g2"
+  },
+  {
+   "include": "r1_fail_unchanged_noaudit",
+   "prefix": "g3"
+  }
+ ],
+ "allow_remaining": false,
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "intent": "farewell"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 1
+   }
+  },
+  {
+   "assert": {
+    "glob_count": {
+     "{state_root}/setup-cache/*/complete": 1
+    },
+    "events": {
+     "slug": "greet",
+     "absent": [
+      "setup_reused"
+     ]
+    }
+   }
+  },
+  {
+   "approve": "farewell"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "env": {
+    "TMPDIR": "{case}/other-tmp",
+    "MISE_STATE_DIR": "{case}/mise-state"
+   },
+   "expect": {
+    "exit": 1
+   }
+  },
+  {
+   "assert": {
+    "glob_count": {
+     "{state_root}/setup-cache/*/complete": 1
+    },
+    "events": {
+     "slug": "farewell",
+     "contains": [
+      {
+       "event": "setup_reused",
+       "setup_key": "$str",
+       "saved_wall_ms": "$int"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "env": {
+    "MISE_CONFORMANCE_FLAVOUR": "different"
+   },
+   "expect": {
+    "exit": 1
+   }
+  },
+  {
+   "assert": {
+    "glob_count": {
+     "{state_root}/setup-cache/*/complete": 2
+    },
+    "events": {
+     "slug": "greet",
+     "absent": [
+      "setup_reused"
+     ]
+    }
+   }
+  },
+  {
+   "origin_commit": {
+    "files": {
+     "README.md": "moved\n"
+    },
+    "message": "Move the base",
+    "pull": true
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 1
+   }
+  },
+  {
+   "assert": {
+    "glob_count": {
+     "{state_root}/setup-cache/*/complete": 3
+    },
+    "events": {
+     "slug": "greet",
+     "absent": [
+      "setup_reused"
+     ]
+    }
+   }
+  }
+ ]
+}

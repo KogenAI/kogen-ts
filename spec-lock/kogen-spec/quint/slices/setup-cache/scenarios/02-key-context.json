@@ -1,0 +1,12 @@
+{
+  "name": "02-key-context",
+  "about": "Base tree, child environment and tracked input changes produce distinct cache identities.",
+  "steps": [
+    {"do": ["Run", {"base":"a","variant":"env1","tracked":false,"input":"","enabled":true,"stable":true,"ok":true,"payload":"base-a"}], "expect": {"entryCount":1,"reused":false}},
+    {"do": ["Run", {"base":"b","variant":"env1","tracked":false,"input":"","enabled":true,"stable":true,"ok":true,"payload":"base-b"}], "expect": {"entryCount":2,"reused":false}},
+    {"do": ["Run", {"base":"b","variant":"env2","tracked":false,"input":"","enabled":true,"stable":true,"ok":true,"payload":"env-2"}], "expect": {"entryCount":3,"reused":false}},
+    {"do": ["Run", {"base":"a","variant":"","tracked":true,"input":"one","enabled":true,"stable":true,"ok":true,"payload":"input-one"}], "expect": {"entryCount":3,"reused":false}},
+    {"do": ["Run", {"base":"c","variant":"","tracked":true,"input":"one","enabled":true,"stable":true,"ok":true,"payload":"ignored"}], "expect": {"entryCount":3,"reused":true,"work":"input-one"}},
+    {"do": ["Run", {"base":"c","variant":"","tracked":true,"input":"two","enabled":true,"stable":true,"ok":true,"payload":"input-two"}], "expect": {"entryCount":3,"reused":false,"work":"input-two"}}
+  ]
+}

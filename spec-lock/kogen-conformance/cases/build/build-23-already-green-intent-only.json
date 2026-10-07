@@ -1,0 +1,128 @@
+{
+ "id": "build-23",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Base moved, every item already green on the tip: Intent-only landing",
+ "spec": [
+  "§3.4",
+  "§3.8.1"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+   }
+  },
+  {
+   "id": "claim1",
+   "expect": {
+    "role": "builder",
+    "turn": 1,
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Done."
+   }
+  },
+  {
+   "id": "claim2",
+   "expect": {
+    "role": "builder",
+    "turn": 2,
+    "input_contains": "Greet Almir by name",
+    "last_user_contains": "Kogen found no changed files"
+   },
+   "reply": {
+    "text": "Done."
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "origin_commit": {
+    "files": {
+     "lib/greet.txt": "Hello, Almir!\n"
+    },
+    "message": "Someone else greeted Almir"
+   }
+  },
+  {
+   "git": [
+    "rev-parse",
+    "main"
+   ],
+   "in": "origin",
+   "capture": {
+    "tip": "^([0-9a-f]+)"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build {id8:greet}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "contains": [
+      {
+       "event": "base_acceptance",
+       "items": [
+        {
+         "id": "A1",
+         "kind": "test",
+         "base_status": "passed"
+        }
+       ]
+      }
+     ]
+    },
+    "git": [
+     {
+      "args": [
+       "diff",
+       "--name-only",
+       "{var:tip}",
+       "main"
+      ],
+      "stdout": ".kogen/intents/greet/intent.md\ntest/acceptance/greet.t.sh\n"
+     },
+     {
+      "args": [
+       "log",
+       "-1",
+       "--format=%P",
+       "main"
+      ],
+      "stdout": "{var:tip}\n"
+     }
+    ]
+   }
+  }
+ ],
+ "notes": "The builder claims done twice without a change: the first empty claim is refused (§3.6), the second is verified green and lands Intent-and-test only (§3.8.1)."
+}

@@ -1,0 +1,280 @@
+{
+  "id": "v1.2-92-ladder-24",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for ladder-24: Status report records no_progress and the v1.2 audit shape",
+  "spec": [
+    "§2.10",
+    "§3.5",
+    "§3.6",
+    "§3.8.2",
+    "§4.7",
+    "§2.8"
+  ],
+  "script": [
+    {
+      "id": "plan",
+      "expect": {
+        "role": "planner"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "r1.start",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 1
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "n=$(cat lib/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > lib/n; printf 'Hi R1 %s\\n' $n > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r1.again",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "last_item_type": "message"
+      },
+      "repeat": "always",
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "n=$(cat lib/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > lib/n; printf 'Hi R1 %s\\n' $n > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r1.claim",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "last_item_type": "function_call_output"
+      },
+      "repeat": "always",
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "audit",
+      "expect": {
+        "role": "auditor"
+      },
+      "reply": {
+        "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"reason\": \"The test follows the Request.\"}]}"
+      }
+    },
+    {
+      "id": "r2.edit",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "turn": 1,
+        "tools": [
+          "shell",
+          "finish",
+          "tool_output"
+        ]
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r2.done",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "turn": 2,
+        "last_item_type": "function_call_output"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 0
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "status",
+        "greet",
+        "--json"
+      ],
+      "expect": {
+        "exit": 0,
+        "stderr": "",
+        "stdout_json": {
+          "verdict": "green",
+          "advisory_items": [],
+          "status": "landed",
+          "rungs": [
+            {
+              "rung": "R1",
+              "model": "gpt-6-luna",
+              "effort": "max",
+              "reason": "no_progress",
+              "verdict": "unverified",
+              "diff_lines": "$int",
+              "candidate_ref": "$any",
+              "wall_ms": "$int",
+              "tokens": "$any"
+            },
+            {
+              "rung": "R2",
+              "model": "gpt-6.1-sol",
+              "effort": "medium",
+              "reason": "green",
+              "verdict": "green",
+              "diff_lines": "$int",
+              "candidate_ref": "$any",
+              "wall_ms": "$int",
+              "tokens": "$any"
+            }
+          ],
+          "best_candidate": {
+            "$any_of": [
+              null,
+              {
+                "rung": "R2",
+                "ref": "$any",
+                "diff_path": "$any",
+                "verdict": "green"
+              }
+            ]
+          },
+          "audit": [
+            {
+              "rung": "R1",
+              "id": "A1",
+              "verdict": "valid",
+              "reason": "$any"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "assert": {
+        "fake_requests": [
+          {
+            "select": {
+              "step": "audit"
+            },
+            "input_contains": [
+              "Make the greeting in lib/greet.txt say Hello, Almir! instead of Hello!",
+              "t_A1()",
+              "diff --git"
+            ]
+          },
+          {
+            "select": {
+              "step": "r2.edit"
+            },
+            "input_contains": [
+              "Repairs available: 6."
+            ],
+            "input_regex": "^R1 gpt-6-luna: no_progress"
+          }
+        ],
+        "events": {
+          "slug": "greet",
+          "subsequence": [
+            {
+              "event": "rung_started",
+              "rung": "R1"
+            },
+            {
+              "event": "audit",
+              "rung": "R1",
+              "items": [
+                {
+                  "id": "A1",
+                  "verdict": "valid",
+                  "reason": "$any"
+                }
+              ]
+            },
+            {
+              "event": "repair",
+              "rung": "R1"
+            },
+            {
+              "event": "rung_finished",
+              "rung": "R1",
+              "reason": "no_progress"
+            },
+            {
+              "event": "rung_started",
+              "rung": "R2"
+            },
+            {
+              "event": "finished",
+              "rung": "R2",
+              "status": "landed"
+            }
+          ],
+          "count": {
+            "audit": 1,
+            "repair": 1
+          }
+        }
+      }
+    }
+  ],
+  "notes": "The red acceptance count does not decrease, so R1 ends no_progress after one repair (§3.5); R2 starts with six repairs available (§§3.5–3.6). The status audit row is id, verdict, and reason, without citation (§§2.8, 2.10, 3.8.2). Builder completion uses finish alone with {} and shell-recipe tools (§§3.6, 4.7)."
+}

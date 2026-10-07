@@ -1,0 +1,11 @@
+{
+  "name": "04-lite-session",
+  "about": "Lite's session_id is the v1 material. It is not the conversation key, so taking it does not change that key.",
+  "steps": [
+    {"do": ["Bind", {"stage": "develop", "attempt": "", "rung": ""}],
+     "expect": {"version": "v2", "lite": ""}},
+    {"do": ["Rung", {"name": "1"}], "expect": {"keyChanged": true, "rung": "1"}},
+    {"do": ["Lite"],
+     "expect": {"lite": "v1", "keyChanged": false, "version": "v2", "stage": "develop", "rung": "1", "previous": false, "last": "ok"}}
+  ]
+}

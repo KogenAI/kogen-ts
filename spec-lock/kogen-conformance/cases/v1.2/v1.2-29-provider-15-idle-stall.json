@@ -1,0 +1,119 @@
+{
+  "id": "v1.2-29-provider-15-idle-stall",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for provider-15: Idle gap is a stall",
+  "spec": [
+    "§4.4",
+    "§4.5",
+    "§3.6",
+    "§4.7"
+  ],
+  "script": [
+    {
+      "id": "slow",
+      "expect": {
+        "role": "planner"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n"
+      },
+      "pad_events": 3,
+      "chunk_gap_ms": 200000
+    },
+    {
+      "id": "r1_happy.plan",
+      "expect": {
+        "role": "planner",
+        "turn": 1,
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "r1_happy.edit",
+      "expect": {
+        "role": "builder",
+        "turn": 1,
+        "tools": [
+          "shell",
+          "finish",
+          "tool_output"
+        ],
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r1_happy.done",
+      "expect": {
+        "role": "builder",
+        "turn": 2,
+        "last_output_contains": "exit 0",
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_lines": [
+          "building greet",
+          "~\\~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+          "queue: done; 1 Build(s), 1 landed, 0 not"
+        ]
+      }
+    },
+    {
+      "assert": {
+        "events": {
+          "slug": "greet",
+          "contains": [
+            {
+              "event": "provider_retry",
+              "stage": "$str",
+              "reason": "~(provider/)?(stall)",
+              "delay_ms": {
+                "$ge": 1000,
+                "$le": 2000
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "notes": "Gaps of 200 s between events exceed the v1.2 90 s idle deadline; silence after bytes is stall (§4.4–4.5). Builder completion uses finish alone with {}; text-only replies are progress (§3.6), and shell recipes expose shell, finish, and tool_output (§4.7)."
+}

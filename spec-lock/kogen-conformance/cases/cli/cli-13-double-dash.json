@@ -1,0 +1,61 @@
+{
+ "id": "cli-13",
+ "profile": "cli",
+ "fixture": "none",
+ "title": "-- makes the next token a positional",
+ "spec": [
+  "§1.3.2"
+ ],
+ "rows": [
+  {
+   "label": "approve -- --by",
+   "argv": [
+    "intent",
+    "approve",
+    "--",
+    "--by"
+   ],
+   "path": "intent approve",
+   "page": "kogen-intent-approve"
+  },
+  {
+   "label": "status -- --json",
+   "argv": [
+    "status",
+    "--",
+    "--json"
+   ],
+   "path": "status",
+   "page": "kogen-status"
+  },
+  {
+   "label": "remove -- --force",
+   "argv": [
+    "intent",
+    "remove",
+    "--",
+    "--force"
+   ],
+   "path": "intent remove",
+   "page": "kogen-intent-remove"
+  }
+ ],
+ "steps": [
+  {
+   "run": [
+    "kogen",
+    "{*row.argv}"
+   ],
+   "expect": {
+    "exit": 2,
+    "stdout": [
+     "kogen {row.path}: <slug> must be 3 to 48 lowercase letters, digits or single dashes\n\n",
+     {
+      "data": "help/{row.page}.txt"
+     }
+    ],
+    "stderr": ""
+   }
+  }
+ ]
+}

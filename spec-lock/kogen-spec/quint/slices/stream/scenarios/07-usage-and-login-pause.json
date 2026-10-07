@@ -1,0 +1,20 @@
+{
+  "name": "07-usage-and-login-pause",
+  "about": "usage_limit pauses without a credential refresh. A refreshable login failure refreshes once, then pauses; a non-refreshable login stops the provider request.",
+  "steps": [
+    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+     "expect": {"phase": "open", "refreshed": false, "waited": 0}},
+    {"do": ["Result", {"kind": "usage_limit", "items": false}],
+     "expect": {"decision": "pause", "delay": 300000, "waited": 300000, "attempt": 1, "phase": "idle", "exit": 0, "reason": "provider/usage_limit", "mode": "build", "wall": 100000}},
+    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+     "expect": {"refreshed": false, "waited": 300000, "attempt": 1, "phase": "open"}},
+    {"do": ["Result", {"kind": "login", "items": false}],
+     "expect": {"decision": "refresh", "delay": 0, "refreshed": true, "waited": 300000, "reason": "provider/login", "attempt": 1}},
+    {"do": ["Result", {"kind": "login", "items": false}],
+     "expect": {"decision": "pause", "delay": 300000, "waited": 600000, "attempt": 1, "reason": "provider/login", "phase": "idle", "exit": 0}},
+    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": false, "bounded": true, "wall": 100000, "mode": "build"}],
+     "expect": {"refreshable": false, "phase": "open", "attempt": 1}},
+    {"do": ["Result", {"kind": "login", "items": false}],
+     "expect": {"decision": "stop", "phase": "stopped", "exit": 4, "reason": "provider/login", "queued": true, "failed": false, "refreshed": false}}
+  ]
+}

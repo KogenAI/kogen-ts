@@ -1,0 +1,57 @@
+{
+  "id": "v1.2-25-state-20-status-next",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "title": "v1.2 replacement for state-20: Stopped queue status includes Next",
+  "spec": [
+    "§1.7.5",
+    "§2.11"
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "synthetic_run": {
+        "slug": "greet",
+        "run_id": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+        "status": "stopped",
+        "reason": "provider/login",
+        "verdict": "none"
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "status",
+        "greet"
+      ],
+      "expect": {
+        "exit": 0,
+        "stderr": "",
+        "stdout_starts_lines": [
+          "greet: queued, 1 of 1"
+        ]
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "status"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_lines": [
+          "Queue: stopped, 1 waiting; start it with kogen queue start",
+          "Next: greet (priority 0; no dependencies; ties by approval time and slug)",
+          "Queued:",
+          "~  greet(  +\\S.*)?"
+        ]
+      }
+    }
+  ],
+  "notes": "A ready queue prints its next Intent and priority before the Queued section (§1.7.5, §2.11)."
+}

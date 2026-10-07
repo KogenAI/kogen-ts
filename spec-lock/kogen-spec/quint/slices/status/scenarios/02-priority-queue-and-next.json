@@ -1,0 +1,11 @@
+{
+  "name": "02-priority-queue-and-next",
+  "about": "Queue order is priority descending, then approval time and slug; status watch reports an unlanded Intent as pending.",
+  "steps": [
+    {"do":["Row",{"slug":"alpha","status":"approved","priority":5,"at":2,"blocks":"","sched":"","started":0,"index":0}]},
+    {"do":["Row",{"slug":"bravo","status":"approved","priority":5,"at":1,"blocks":"","sched":"","started":0,"index":0}]},
+    {"do":["Row",{"slug":"charlie","status":"approved","priority":10,"at":3,"blocks":"","sched":"","started":0,"index":0}],"expect":{"queue":["charlie","bravo","alpha"],"queueLine":"waiting","next":"charlie","nextPriority":10,"nextDependencies":"no_dependencies","sections":["Queued"]}},
+    {"do":["Queue",{"running":true}],"expect":{"queueLine":"running"}},
+    {"do":["Watch",{"slug":"alpha"}],"expect":{"exit":1,"watchSlug":"alpha","watchStatus":"queued","watchPosition":2,"watchQueueSize":3}}
+  ]
+}

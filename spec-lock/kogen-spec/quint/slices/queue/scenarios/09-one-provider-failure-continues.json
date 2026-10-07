@@ -1,0 +1,11 @@
+{
+  "name": "09-one-provider-failure-continues",
+  "about": "A non-outage provider failure for one Intent fails that Build but does not end the serial drain; login/outage stop is a separate outcome.",
+  "steps": [
+    {"do": ["Enqueue", {"slug": "alpha", "time": 1, "priority": 0}]},
+    {"do": ["Enqueue", {"slug": "bravo", "time": 2, "priority": 0}]},
+    {"do": ["Start"], "expect": {"current": "alpha"}},
+    {"do": ["Outcome", {"kind": "failed_provider"}], "expect": {"held": true, "current": "bravo", "built": 1}},
+    {"do": ["Outcome", {"kind": "landed"}], "expect": {"line": "done", "exit": 1, "built": 2, "landed": 1}}
+  ]
+}

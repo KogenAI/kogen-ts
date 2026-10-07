@@ -1,0 +1,10 @@
+{
+  "spec": "spec/orchestration.qnt",
+  "module": "orchestration",
+  "init": "init",
+  "fire": "fire",
+  "invariant": "invariant",
+  "obs_var": "obs",
+  "ev_var": "ev",
+  "coverage": ["phase", "status", "reason", "exit"]
+}

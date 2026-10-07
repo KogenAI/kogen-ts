@@ -1,0 +1,198 @@
+{
+ "id": "ladder-24",
+ "profile": "ladder",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Report fields: rungs, best_candidate, audit, verdict, advisory_items",
+ "spec": [
+  "§2.10"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "tools": []
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+   }
+  },
+  {
+   "id": "r1.start",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "turn": 1
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "n=$(cat lib/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > lib/n; printf 'Hi R1 %s\\n' $n > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r1.again",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "last_item_type": "message"
+   },
+   "repeat": "always",
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "n=$(cat lib/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > lib/n; printf 'Hi R1 %s\\n' $n > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r1.claim",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "last_item_type": "function_call_output"
+   },
+   "repeat": "always",
+   "reply": {
+    "text": "Done."
+   }
+  },
+  {
+   "id": "audit",
+   "expect": {
+    "role": "auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test follows the Request.\"}]}"
+   }
+  },
+  {
+   "id": "r2.edit",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6.1-sol",
+    "effort": "medium",
+    "turn": 1,
+    "tools": [
+     "shell"
+    ]
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r2.done",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6.1-sol",
+    "effort": "medium",
+    "turn": 2,
+    "last_item_type": "function_call_output"
+   },
+   "reply": {
+    "text": "Done."
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "greet",
+    "--json"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_json": {
+     "verdict": "green",
+     "advisory_items": [],
+     "status": "landed",
+     "rungs": [
+      {
+       "rung": "R1",
+       "model": "gpt-6-luna",
+       "effort": "max",
+       "reason": "repair_cap",
+       "verdict": "unverified",
+       "diff_lines": "$int",
+       "candidate_ref": "$any",
+       "wall_ms": "$int",
+       "tokens": "$any"
+      },
+      {
+       "rung": "R2",
+       "model": "gpt-6.1-sol",
+       "effort": "medium",
+       "reason": "green",
+       "verdict": "green",
+       "diff_lines": "$int",
+       "candidate_ref": "$any",
+       "wall_ms": "$int",
+       "tokens": "$any"
+      }
+     ],
+     "best_candidate": {
+      "$any_of": [
+       null,
+       {
+        "rung": "R2",
+        "ref": "$any",
+        "diff_path": "$any",
+        "verdict": "green"
+       }
+      ]
+     },
+     "audit": [
+      {
+       "rung": "R1",
+       "id": "A1",
+       "verdict": "valid",
+       "citation": "$any",
+       "reason": "$any"
+      }
+     ]
+    }
+   }
+  }
+ ]
+}

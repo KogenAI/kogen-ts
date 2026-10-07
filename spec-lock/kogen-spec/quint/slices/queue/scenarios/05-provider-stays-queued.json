@@ -1,0 +1,11 @@
+{
+  "name": "05-provider-stays-queued",
+  "about": "A provider stop ends the drain with exit 4 and leaves the Intent queued for the next start.",
+  "steps": [
+    {"do": ["Enqueue", {"slug": "alpha", "time": 1, "priority": 0}]},
+    {"do": ["Enqueue", {"slug": "bravo", "time": 2, "priority": 0}]},
+    {"do": ["Start"]},
+    {"do": ["Outcome", {"kind": "stopped_provider"}], "expect": {"line": "stopped_because", "exit": 4, "held": false, "queue": ["alpha", "bravo"], "built": 1}},
+    {"do": ["Start"], "expect": {"current": "alpha", "line": "building"}}
+  ]
+}

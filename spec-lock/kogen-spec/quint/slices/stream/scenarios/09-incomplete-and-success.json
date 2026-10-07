@@ -1,0 +1,16 @@
+{
+  "name": "09-incomplete-and-success",
+  "about": "incomplete is not retried and is not a provider stop. A result outside an open request is refused.",
+  "steps": [
+    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+     "expect": {"phase": "open", "attempt": 1}},
+    {"do": ["Result", {"kind": "incomplete", "items": true}],
+     "expect": {"decision": "incomplete", "phase": "idle", "exit": 0, "queued": true, "failed": false, "continued": false, "attempt": 1, "reason": ""}},
+    {"do": ["Result", {"kind": "ok", "items": false}],
+     "expect": {"last": "not_open", "phase": "idle", "decision": "incomplete"}},
+    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+     "expect": {"phase": "open", "decision": ""}},
+    {"do": ["Result", {"kind": "ok", "items": true}],
+     "expect": {"decision": "success", "phase": "idle", "exit": 0, "queued": true, "failed": false}}
+  ]
+}

@@ -1,0 +1,87 @@
+{
+ "id": "build-32",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "already running",
+ "spec": [
+  "§1.7.4"
+ ],
+ "allow_remaining": true,
+ "script": [
+  {
+   "id": "stall",
+   "expect": {
+    "role": "planner"
+   },
+   "repeat": "always",
+   "first_byte_ms": 900000,
+   "reply": {
+    "text": "Difficulty: easy\n"
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "background": "q"
+  },
+  {
+   "wait_until": {
+    "fake_requests": 1,
+    "timeout_s": 60
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_regex": "\\Aqueue: already running \\(pid [0-9]+\\)\n\\Z"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start",
+    "--detach"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_regex": "\\Aqueue: already running \\(pid [0-9]+\\)\n\\Z"
+   }
+  },
+  {
+   "signal": {
+    "name": "q",
+    "sig": "TERM",
+    "after_s": 0
+   }
+  },
+  {
+   "wait": {
+    "name": "q",
+    "expect": {
+     "exit": 143,
+     "stderr_any": true
+    }
+   }
+  }
+ ]
+}

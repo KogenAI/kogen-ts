@@ -1,0 +1,10 @@
+{
+  "name": "02-gate-red",
+  "about": "A red gate fails the Build, releases the claim, and the Intent leaves the queue.",
+  "steps": [
+    {"do": ["Approve", {"slug": "alpha", "time": 1}]},
+    {"do": ["Start", "r1"]},
+    {"do": ["Gate", false], "expect": {"status": {"alpha": "failed"}, "claim": "", "runs": {"r1": {"status": "failed", "reason": "gate_red"}}}},
+    {"do": ["Start", "r2"], "expect": {"last": "nothing_to_build", "runs": {"r1": {"status": "failed"}}}}
+  ]
+}

@@ -1,0 +1,51 @@
+{
+ "id": "cli-19",
+ "profile": "cli",
+ "fixture": "none",
+ "title": "A moved form beats --help",
+ "spec": [
+  "§1.3.3.1"
+ ],
+ "rows": [
+  {
+   "label": "build --help",
+   "argv": [
+    "build",
+    "--help"
+   ],
+   "msg": "kogen queue start (approved Intents build from the queue)"
+  },
+  {
+   "label": "approve --yes --help",
+   "argv": [
+    "intent",
+    "approve",
+    "greet",
+    "--yes",
+    "--help"
+   ],
+   "msg": "kogen intent approve <slug> <hash>"
+  },
+  {
+   "label": "--version --help",
+   "argv": [
+    "--version",
+    "--help"
+   ],
+   "msg": "kogen version"
+  }
+ ],
+ "steps": [
+  {
+   "run": [
+    "kogen",
+    "{*row.argv}"
+   ],
+   "expect": {
+    "exit": 2,
+    "stdout": "kogen: moved: use {row.msg}\n",
+    "stderr": ""
+   }
+  }
+ ]
+}

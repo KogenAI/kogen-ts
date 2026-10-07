@@ -1,0 +1,54 @@
+{
+ "id": "custody-02",
+ "profile": "custody",
+ "fixture": "kt",
+ "title": "A TERM-trapping child is killed after the grace period",
+ "spec": [
+  "§5.1.3",
+  "§5.5.2"
+ ],
+ "project": {
+  "checks": [
+   {
+    "name": "lint",
+    "argv": [
+     "sh",
+     "checks/lint.sh"
+    ],
+    "timeout_ms": 60000
+   },
+   {
+    "name": "trapper",
+    "argv": [
+     "sh",
+     "checks/trapper.sh"
+    ],
+    "timeout_ms": 2000
+   }
+  ]
+ },
+ "fixture_files": {
+  "checks/trapper.sh": "#!/bin/sh\ntrap '' TERM\nmkdir -p build\necho $$ > build/trapper.pid\nwhile :; do sleep 0.2; done\n"
+ },
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 5,
+    "stderr": "",
+    "max_wall_ms": 9000
+   }
+  },
+  {
+   "sh": "p=$(cat build/trapper.pid) || exit 1; i=0; while kill -0 \"$p\" 2>/dev/null; do i=$((i+1)); if [ $i -gt 10 ]; then kill -9 \"$p\" 2>/dev/null; echo \"pid $p still alive\"; exit 1; fi; sleep 0.1; done; exit 0"
+  }
+ ]
+}

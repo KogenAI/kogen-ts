@@ -1,0 +1,149 @@
+{
+ "id": "provider-20",
+ "profile": "provider",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Usage accounting",
+ "spec": [
+  "§4.1",
+  "§4.3",
+  "§2.8"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "tools": [],
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+   },
+   "usage": {
+    "input_tokens": 50,
+    "input_tokens_details": {
+     "cached_tokens": 80
+    },
+    "cache_write_tokens": 7,
+    "output_tokens": 30,
+    "output_tokens_details": {
+     "reasoning_tokens": 10
+    }
+   }
+  },
+  {
+   "id": "r1.edit",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "turn": 1,
+    "tools": [
+     "shell"
+    ]
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r1.done",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "turn": 2,
+    "last_item_type": "function_call_output"
+   },
+   "reply": {
+    "text": "Done."
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "contains": [
+      {
+       "event": "model_stage",
+       "model": "gpt-6.1-sol",
+       "effort": "high",
+       "tokens": {
+        "input": 0,
+        "cached_input": 50,
+        "cache_write": 7,
+        "output": 30,
+        "reasoning": 10
+       }
+      },
+      {
+       "event": "model_stage",
+       "model": "gpt-6-luna",
+       "effort": "max",
+       "rung": "R1",
+       "tokens": {
+        "input": {
+         "$any_of": [
+          100,
+          200
+         ]
+        },
+        "cached_input": {
+         "$any_of": [
+          20,
+          40
+         ]
+        },
+        "cache_write": 0,
+        "output": {
+         "$any_of": [
+          30,
+          60
+         ]
+        },
+        "reasoning": {
+         "$any_of": [
+          10,
+          20
+         ]
+        }
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "notes": "Planner usage reports cached 80 > input 50, so cached is clamped to 50 and input (excluding cached) is 0. SPEC AMBIGUITY: whether model_stage is per call or per stage; the builder row accepts one call or the two-call sum."
+}

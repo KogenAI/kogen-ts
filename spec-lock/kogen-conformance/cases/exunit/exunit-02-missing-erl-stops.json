@@ -1,0 +1,86 @@
+{
+ "id": "exunit-02",
+ "profile": "exunit",
+ "fixture": "exunit-hello",
+ "fake": true,
+ "needs": [
+  "elixir"
+ ],
+ "acceptance_ext": "_test.exs",
+ "title": "Missing erl makes the runner unavailable, which stops the Build",
+ "spec": [
+  "§2.4.3",
+  "§3.4 B5",
+  "§3.0"
+ ],
+ "fixture_files": {
+  ".kogen/project.yaml": "name: hello\nchecks:\n  - name: compile\n    argv: [mix, compile, --warnings-as-errors]\n    timeout_ms: 300000\ndomains:\n  app: [lib]\n"
+ },
+ "notes": "Elixir is hidden from the Build (after approval) by stubs in the case's stub dir, first on PATH, for `elixir` and `mix` that print a missing-`erl` error and exit 127 (the adapter's unavailable signal); Kogen itself keeps running. The project has no setup so that the base acceptance run is the first Elixir call.",
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "tools": []
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: Hello.greet/0 returns Hello, Almir!\n\n## Technical approach\nChange the return value.\n\n## Implementation steps\n1. Edit lib/hello.ex.\n"
+   }
+  }
+ ],
+ "allow_remaining": false,
+ "steps": [
+  {
+   "intent": {
+    "slug": "greet",
+    "template": "exunit-greet"
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "sh": "for t in elixir mix; do printf '#!/bin/sh\\necho \"/usr/bin/env: erl: No such file or directory\"\\nexit 127\\n' > \"{stubs}/$t\"; chmod +x \"{stubs}/$t\"; done"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "timeout": 300,
+   "expect": {
+    "exit": 3,
+    "stdout_lines": [
+     "building greet",
+     "~stopped greet: environment/tool_missing; it stays queued \\(Build [0-9a-f]{8}\\)",
+     "~queue: stopped because greet hit an environment error; [0-9]+ Build\\(s\\), 0 landed, [0-9]+ not"
+    ]
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "greet"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout": "greet: queued, 1 of 1\n"
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "last": {
+      "event": "finished",
+      "status": "stopped",
+      "reason": "environment/tool_missing"
+     }
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,100 @@
+{
+  "id": "v1.2-11-cli-07-unexpected-argument",
+  "profile": "v1.2",
+  "fixture": "none",
+  "title": "v1.2 replacement for cli-07: Unexpected argument",
+  "spec": [
+    "§1.3",
+    "§1.4"
+  ],
+  "rows": [
+    {
+      "label": "version extra",
+      "argv": [
+        "version",
+        "extra"
+      ],
+      "path": "version",
+      "arg": "extra",
+      "page": "kogen-version"
+    },
+    {
+      "label": "queue start extra",
+      "argv": [
+        "queue",
+        "start",
+        "extra"
+      ],
+      "path": "queue start",
+      "arg": "extra",
+      "page": "kogen-queue-start"
+    },
+    {
+      "label": "approve slug hash extra",
+      "argv": [
+        "intent",
+        "approve",
+        "greet",
+        "abcdef12",
+        "extra"
+      ],
+      "path": "intent approve",
+      "arg": "extra",
+      "page": "kogen-intent-approve"
+    },
+    {
+      "label": "status a b",
+      "argv": [
+        "status",
+        "greet",
+        "other"
+      ],
+      "path": "status",
+      "arg": "other",
+      "page": "kogen-status"
+    },
+    {
+      "label": "provider list x",
+      "argv": [
+        "provider",
+        "list",
+        "chatgpt"
+      ],
+      "path": "provider list",
+      "arg": "chatgpt",
+      "page": "kogen-provider-list"
+    },
+    {
+      "label": "shape slug file extra",
+      "argv": [
+        "intent",
+        "shape",
+        "greet",
+        "req.md",
+        "more"
+      ],
+      "path": "intent shape",
+      "arg": "more",
+      "page": "kogen-intent-shape"
+    }
+  ],
+  "steps": [
+    {
+      "run": [
+        "kogen",
+        "{*row.argv}"
+      ],
+      "expect": {
+        "exit": 2,
+        "stdout": [
+          "kogen {row.path}: unexpected argument '{row.arg}'\n\n",
+          {
+            "data": "v1.2/help/{row.page}.txt"
+          }
+        ],
+        "stderr": ""
+      }
+    }
+  ],
+  "notes": "Unexpected-argument diagnostics use the v1.2 command tree and page corpus (§1.3, §1.4)."
+}

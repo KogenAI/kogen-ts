@@ -1,0 +1,193 @@
+{
+  "id": "v1.2-133-state-26",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "title": "v1.2 replacement for state-26: setup cache key inputs",
+  "spec": [
+    "§2.9",
+    "§5.2",
+    "§3.6",
+    "§3.8.2",
+    "§4.2",
+    "§4.7"
+  ],
+  "fake": true,
+  "project": {
+    "build": {
+      "ladder": {
+        "max_rungs": 1
+      }
+    }
+  },
+  "script": [
+    {
+      "include": "r1_fail_unchanged_v12",
+      "prefix": "g1"
+    },
+    {
+      "include": "r1_fail_unchanged_v12",
+      "prefix": "f1",
+      "override": {
+        "plan": {
+          "expect": {
+            "role": "planner",
+            "input_contains": "Add a farewell line"
+          }
+        },
+        "claim1": {
+          "expect": {
+            "role": "builder",
+            "turn": 1,
+            "input_contains": "Add a farewell line"
+          }
+        }
+      }
+    },
+    {
+      "include": "r1_fail_unchanged_v12",
+      "prefix": "g2"
+    },
+    {
+      "include": "r1_fail_unchanged_v12",
+      "prefix": "g3"
+    }
+  ],
+  "allow_remaining": false,
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "intent": "farewell"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "assert": {
+        "glob_count": {
+          "{state_root}/setup-cache/*/complete": 1
+        },
+        "events": {
+          "slug": "greet"
+        }
+      }
+    },
+    {
+      "approve": "farewell"
+    },
+    {
+      "write": {
+        "path": "other-tmp/.keep",
+        "in": "case",
+        "text": ""
+      }
+    },
+    {
+      "write": {
+        "path": "mise-state/.keep",
+        "in": "case",
+        "text": ""
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "env": {
+        "TMPDIR": "{case}/other-tmp",
+        "MISE_STATE_DIR": "{case}/mise-state"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "assert": {
+        "glob_count": {
+          "{state_root}/setup-cache/*/complete": 1
+        },
+        "events": {
+          "slug": "farewell",
+          "contains": [
+            {
+              "event": "setup_reused",
+              "setup_key": "$str",
+              "saved_wall_ms": "$int"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "env": {
+        "MISE_CONFORMANCE_FLAVOUR": "different"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "assert": {
+        "glob_count": {
+          "{state_root}/setup-cache/*/complete": 2
+        },
+        "events": {
+          "slug": "greet"
+        }
+      }
+    },
+    {
+      "origin_commit": {
+        "files": {
+          "README.md": "moved\n"
+        },
+        "message": "Move the base"
+      }
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "assert": {
+        "glob_count": {
+          "{state_root}/setup-cache/*/complete": 3
+        },
+        "events": {
+          "slug": "greet"
+        }
+      }
+    }
+  ],
+  "notes": "The v1.1 fake expected empty planner schemas and treated builder text as completion. v1.2 uses shared schemas, finish alone with {}, and answers the required acceptance auditor request on red-only rungs."
+}

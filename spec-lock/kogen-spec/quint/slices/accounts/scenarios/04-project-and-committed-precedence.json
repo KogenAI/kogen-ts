@@ -1,0 +1,14 @@
+{
+  "name": "04-project-and-committed-precedence",
+  "about": "For ChatGPT, a project machine choice overrides committed account; committed account wins over the machine default.",
+  "steps": [
+    {"do":["Seed",{"provider":"chatgpt","label":"default","present":true,"saved":true,"signedIn":true,"email":"d@example.test","expires":0,"hasExpiry":false,"notice":false,"remoteRevoked":false}]},
+    {"do":["Seed",{"provider":"chatgpt","label":"team-x","present":true,"saved":true,"signedIn":true,"email":"t@example.test","expires":0,"hasExpiry":false,"notice":false,"remoteRevoked":false}]},
+    {"do":["Seed",{"provider":"chatgpt","label":"work","present":true,"saved":true,"signedIn":true,"email":"w@example.test","expires":0,"hasExpiry":false,"notice":false,"remoteRevoked":false}]},
+    {"do":["Project",{"name":"alpha","exists":true,"provider":"chatgpt","account":"team-x"}]},
+    {"do":["ProviderDefault",{"provider":"chatgpt","label":"work"}]},
+    {"do":["Resolve",{"project":"alpha"}],"expect":{"resolvedProvider":"chatgpt","resolvedLabel":"team-x","resolvedSaved":true}},
+    {"do":["Use",{"provider":"chatgpt","label":"work","project":"alpha","projectExists":true}],"expect":{"last":"ok","chatAlpha":"work"}},
+    {"do":["Resolve",{"project":"alpha"}],"expect":{"resolvedLabel":"work","resolvedSaved":true}}
+  ]
+}

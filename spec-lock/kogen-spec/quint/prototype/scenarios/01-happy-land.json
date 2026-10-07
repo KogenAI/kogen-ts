@@ -1,0 +1,14 @@
+{
+  "name": "01-happy-land",
+  "about": "An approved Intent builds green and lands; claim and incoming ref are gone; trailer commit on base.",
+  "steps": [
+    {"do": ["Approve", {"slug": "alpha", "time": 1}], "expect": {"last": "ok", "status": {"alpha": "approved"}, "queue": ["alpha"]}},
+    {"do": ["Start", "r1"], "expect": {"claim": "r1", "status": {"alpha": "building"}, "queue": [], "proc": {"rid": "r1", "phase": "building"}}},
+    {"do": ["Gate", true]},
+    {"do": ["Step"], "expect": {"proc": {"phase": "recorded"}}},
+    {"do": ["Step"], "expect": {"incoming": ["r1"]}},
+    {"do": ["Step"], "expect": {"base": ["root", "r1"], "status": {"alpha": "landed"}}},
+    {"do": ["Step"], "expect": {"incoming": []}},
+    {"do": ["Step"], "expect": {"claim": "", "runs": {"r1": {"status": "landed", "reason": ""}}, "proc": {"rid": "", "phase": ""}}}
+  ]
+}

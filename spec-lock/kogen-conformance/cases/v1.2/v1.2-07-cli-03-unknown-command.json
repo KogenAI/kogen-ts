@@ -1,0 +1,46 @@
+{
+  "id": "v1.2-07-cli-03-unknown-command",
+  "profile": "v1.2",
+  "fixture": "none",
+  "title": "v1.2 replacement for cli-03: Unknown command",
+  "spec": [
+    "§1.3",
+    "§1.4"
+  ],
+  "rows": [
+    {
+      "label": "frob",
+      "argv": [
+        "frob"
+      ],
+      "tok": "frob"
+    },
+    {
+      "label": "statuss",
+      "argv": [
+        "statuss",
+        "--json"
+      ],
+      "tok": "statuss"
+    }
+  ],
+  "steps": [
+    {
+      "run": [
+        "kogen",
+        "{*row.argv}"
+      ],
+      "expect": {
+        "exit": 2,
+        "stdout": [
+          "kogen: unknown command '{row.tok}'\n\n",
+          {
+            "data": "v1.2/help/kogen.txt"
+          }
+        ],
+        "stderr": ""
+      }
+    }
+  ],
+  "notes": "Uses the v1.2 unknown-command order and top-page bytes (§1.3, §1.4)."
+}

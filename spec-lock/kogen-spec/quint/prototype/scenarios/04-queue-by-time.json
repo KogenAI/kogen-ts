@@ -1,0 +1,9 @@
+{
+  "name": "04-queue-by-time",
+  "about": "The queue is ordered by approval time first.",
+  "steps": [
+    {"do": ["Approve", {"slug": "charlie", "time": 1}]},
+    {"do": ["Approve", {"slug": "alpha", "time": 2}], "expect": {"queue": ["charlie", "alpha"]}},
+    {"do": ["Start", "r1"], "expect": {"runs": {"r1": {"slug": "charlie"}}, "queue": ["alpha"]}}
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "spec": "spec/gate.qnt",
+  "module": "gate",
+  "init": "init",
+  "fire": "fire",
+  "invariant": "invariant",
+  "obs_var": "obs",
+  "ev_var": "ev",
+  "coverage": ["verdict", "ledger", "landable", "winner"]
+}

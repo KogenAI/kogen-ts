@@ -1,0 +1,11 @@
+{
+  "name": "07-landed-history-window",
+  "about": "Landed rows form their own final section and older landings are counted beyond the five-row display window.",
+  "steps": [
+    {"do":["Row",{"slug":"alpha","status":"landed","priority":0,"at":0,"blocks":"","sched":"","started":0,"index":0}]},
+    {"do":["Row",{"slug":"bravo","status":"landed","priority":0,"at":0,"blocks":"","sched":"","started":0,"index":1}]},
+    {"do":["Row",{"slug":"charlie","status":"landed","priority":0,"at":0,"blocks":"","sched":"","started":0,"index":2}]},
+    {"do":["Older",{"n":4}],"expect":{"sections":["Landed"],"earlier":2,"landedShown":5,"queue":[]}},
+    {"do":["Watch",{"slug":"charlie"}],"expect":{"watchStatus":"landed","exit":0}}
+  ]
+}

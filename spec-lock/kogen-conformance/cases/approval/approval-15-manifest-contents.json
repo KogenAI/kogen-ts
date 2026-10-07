@@ -1,0 +1,75 @@
+{
+ "id": "approval-15",
+ "profile": "approval",
+ "fixture": "kt",
+ "title": "Manifest contents: protected globs, project.yaml, Makefile, the script of sh x.sh, an absent literal, the acceptance.run script",
+ "spec": [
+  "§2.5.2"
+ ],
+ "project": {
+  "checks": [
+   {
+    "name": "lint",
+    "argv": [
+     "make",
+     "-s",
+     "lint"
+    ],
+    "timeout_ms": 60000
+   },
+   {
+    "name": "unit",
+    "argv": [
+     "sh",
+     "checks/unit.sh"
+    ],
+    "timeout_ms": 60000
+   }
+  ],
+  "protected_paths": [
+   "Makefile",
+   "docs/**",
+   "SECRET.txt"
+  ]
+ },
+ "fixture_files": {
+  "Makefile": "lint:\n\tsh checks/lint.sh\n",
+  "docs/guide.md": "# Guide\n"
+ },
+ "notes": "checks/lint.sh is reached only through make, so it is not a gate file; setup scripts are not gate files.",
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "assert": {
+    "git": [
+     {
+      "args": [
+       "cat-file",
+       "-p",
+       "refs/kogen/intents/greet:.kogen/intents/greet/approval.json"
+      ],
+      "json": {
+       "protected_manifest": {
+        "$exact": true,
+        "Makefile": "{sha256_origin:Makefile}",
+        "docs/guide.md": "{sha256_origin:docs/guide.md}",
+        "SECRET.txt": "{absent_sha}",
+        ".kogen/intents/greet/intent.md": "{sha256_file:.kogen/intents/greet/intent.md}",
+        "test/acceptance/greet.t.sh": "{sha256_file:.kogen/acceptance/greet.t.sh}",
+        ".kogen/project.yaml": "{sha256_origin:.kogen/project.yaml}",
+        "checks/unit.sh": "{sha256_origin:checks/unit.sh}",
+        "checks/fmt.sh": "{sha256_origin:checks/fmt.sh}",
+        "run-acceptance.sh": "{sha256_origin:run-acceptance.sh}"
+       }
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

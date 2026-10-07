@@ -1,0 +1,12 @@
+{
+  "name": "05-selector",
+  "about": "The selector prefers more passing undemoted items, then fewer blocking findings, then a smaller diff, then the earlier rung.",
+  "steps": [
+    {"do": ["Offer", {"rung": "2", "passed": 1, "blocking": 0, "diff": 10}]},
+    {"do": ["Offer", {"rung": "1", "passed": 1, "blocking": 0, "diff": 10}]},
+    {"do": ["Offer", {"rung": "3", "passed": 2, "blocking": 5, "diff": 100}]},
+    {"do": ["Pick"], "expect": {"winner": "3"}},
+    {"do": ["Offer", {"rung": "3", "passed": 1, "blocking": 3, "diff": 1}]},
+    {"do": ["Pick"], "expect": {"winner": "1"}}
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "06-dead-owner",
+  "about": "A dead owner does not count as already running. The next start takes the lock over.",
+  "steps": [
+    {"do": ["Enqueue", {"slug": "alpha", "time": 1, "priority": 0}]},
+    {"do": ["Start"], "expect": {"current": "alpha"}},
+    {"do": ["Die"], "expect": {"alive": false, "held": true, "phase": "building"}},
+    {"do": ["Outcome", {"kind": "landed"}], "expect": {"last": "not_building", "phase": "building"}},
+    {"do": ["Start"], "expect": {"line": "building", "alive": true, "current": "alpha", "held": true}}
+  ]
+}

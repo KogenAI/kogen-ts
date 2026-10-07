@@ -1,0 +1,30 @@
+{
+  "id": "v1.2-01-fixed-cli-help-and-grok",
+  "profile": "v1.2",
+  "fixture": "none",
+  "title": "Fixed CLI help corpus and Grok is an admitted provider name",
+  "spec": [
+    "§1.2",
+    "§1.3",
+    "§1.4",
+    "§1.7.6",
+    "§4.10"
+  ],
+  "rows_from": {
+    "generator": "help_pages_v1_2"
+  },
+  "steps": [
+    {
+      "run": [
+        "kogen",
+        "{*row.argv}"
+      ],
+      "expect": {
+        "exit": "{row.exit}",
+        "stdout": "{row.stdout}",
+        "stderr": ""
+      }
+    }
+  ],
+  "notes": "Checks the fixed help corpus and only the v1.2 help/error routes (§1.2–1.4); provider list and Grok acceptance follow §1.7.6 and §4.10."
+}

@@ -1,0 +1,108 @@
+{
+ "id": "state-18",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "Status: the claim marks the latest run as building",
+ "spec": [
+  "§2.11",
+  "§2.5.3"
+ ],
+ "fake": true,
+ "allow_remaining": true,
+ "script": [
+  {
+   "id": "stall",
+   "expect": {
+    "role": "planner"
+   },
+   "repeat": "always",
+   "first_byte_ms": 900000,
+   "reply": {
+    "text": "Difficulty: easy\n"
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "background": "q"
+  },
+  {
+   "wait_until": {
+    "fake_requests": 1,
+    "timeout_s": 60
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "greet"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_starts_lines": [
+     "~greet: building, \\S.*\\(Build {id8:greet}\\)"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "git": [
+     {
+      "args": [
+       "cat-file",
+       "-p",
+       "refs/kogen/claim:.kogen/claim"
+      ],
+      "stdout_regex": "\\A{run_id:greet}\n?\\Z"
+     },
+     {
+      "args": [
+       "log",
+       "-1",
+       "--format=%B",
+       "refs/kogen/claim"
+      ],
+      "stdout_regex": "\\AKogen project claim\n\nKogen-Run: {run_id:greet}\n"
+     },
+     {
+      "args": [
+       "rev-list",
+       "--count",
+       "refs/kogen/claim"
+      ],
+      "stdout": "1\n"
+     }
+    ]
+   }
+  },
+  {
+   "signal": {
+    "name": "q",
+    "sig": "TERM",
+    "after_s": 0
+   }
+  },
+  {
+   "wait": {
+    "name": "q",
+    "expect": {
+     "exit": 143,
+     "stderr_any": true
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,93 @@
+{
+ "id": "build-37",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "A synthetic landed run is reconciled",
+ "spec": [
+  "§3.10"
+ ],
+ "steps": [
+  {
+   "intent": {
+    "slug": "greet",
+    "push": true
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "sh": "git commit -q --allow-empty -m 'Greet Almir by name' -m 'Kogen-Intent: greet' && git push -q origin HEAD:refs/heads/main"
+  },
+  {
+   "git": [
+    "rev-parse",
+    "main"
+   ],
+   "in": "origin",
+   "capture": {
+    "landed": "^([0-9a-f]+)"
+   }
+  },
+  {
+   "synthetic_run": {
+    "slug": "greet",
+    "run_id": "d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4",
+    "status": "running",
+    "landing": {
+     "approval_commit": "{approval_commit:greet}",
+     "run_id": "d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4",
+     "expected_parent": "{var:landed}",
+     "final_tree": "{ref:main^{tree}}",
+     "candidate_commit": "{var:landed}"
+    },
+    "events": [
+     {
+      "event": "commit_result",
+      "commit": "{var:landed}",
+      "tree": "{ref:main^{tree}}"
+     },
+     {
+      "event": "landing_prepared",
+      "landing": {
+       "candidate_commit": "{var:landed}"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "greet"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_starts_lines": [
+     "~greet: landed [0-9a-f]{8}"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "last": {
+      "event": "reconciled",
+      "status": "landed"
+     }
+    },
+    "files": {
+     "{state_root}/runs/d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4/run.json": {
+      "json": {
+       "status": "landed"
+      }
+     }
+    }
+   }
+  }
+ ]
+}

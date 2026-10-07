@@ -1,0 +1,46 @@
+{
+ "id": "state-28",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "The approval-baseline cache: the card call and the hash call run the checks once",
+ "spec": [
+  "§3.3",
+  "§2.9"
+ ],
+ "fixture_files": {
+  "checks/lint.sh": "#!/bin/sh\n# kt lint check (counting variant): records each run in build/lint-runs.\nmkdir -p build && echo run >> build/lint-runs\nstatus=0\nfor f in lib/*.txt; do\n  n=0\n  while IFS= read -r line || [ -n \"$line\" ]; do\n    n=$((n + 1))\n    case \"$line\" in *TODO*) echo \"$f:$n:1: error: [lint/todo] ${f#lib/}: TODO found\"; status=1 ;; esac\n  done < \"$f\"\ndone\nexit $status\n"
+ },
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 5
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "sh": "wc -l < build/lint-runs | tr -d ' '",
+   "expect": {
+    "exit": 0,
+    "stdout": "1\n"
+   }
+  },
+  {
+   "assert": {
+    "glob_count": {
+     "{state_root}/approval-cache/*.json": 1
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,26 @@
+[
+ {
+  "id": "plan",
+  "expect": {"turn": 1},
+  "reply": {
+   "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the greeting line.\n\n## Implementation steps\n1. Write the requested greeting.\n"
+  }
+ },
+ {
+  "id": "edit",
+  "reply": {"calls": [{"name": "shell", "arguments": {"cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"}}]}
+ },
+ {
+  "id": "inspect",
+  "reply": {"calls": [{"name": "shell", "arguments": {"cmd": "cat lib/greet.txt"}}]}
+ },
+ {
+  "id": "verify",
+  "reply": {"calls": [{"name": "shell", "arguments": {"cmd": "grep -qx 'Hello, Almir!' lib/greet.txt"}}]}
+ },
+ {
+  "id": "hold",
+  "reply": {"calls": [{"name": "finish", "arguments": {}}]},
+  "first_byte_ms": 3000000
+ }
+]

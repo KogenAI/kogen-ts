@@ -1,0 +1,99 @@
+{
+ "id": "format-03",
+ "profile": "format",
+ "title": "Every hedge (13)",
+ "spec": [
+  "§2.2",
+  "data/lint.json"
+ ],
+ "fixture": "kt",
+ "rows": [
+  {
+   "label": "should",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt should contain the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "line": "  - lint_hedge: A1 — A1 contains a hedge; state an observable result"
+  },
+  {
+   "label": "may",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt may contain the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "line": "  - lint_hedge: A1 — A1 contains a hedge; state an observable result"
+  },
+  {
+   "label": "might",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt might contain the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "line": "  - lint_hedge: A1 — A1 contains a hedge; state an observable result"
+  },
+  {
+   "label": "could",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt could contain the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "line": "  - lint_hedge: A1 — A1 contains a hedge; state an observable result"
+  },
+  {
+   "label": "ideally",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt ideally contain the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "line": "  - lint_hedge: A1 — A1 contains a hedge; state an observable result"
+  },
+  {
+   "label": "possibly",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt possibly contain the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "line": "  - lint_hedge: A1 — A1 contains a hedge; state an observable result"
+  },
+  {
+   "label": "probably",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt probably contain the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "line": "  - lint_hedge: A1 — A1 contains a hedge; state an observable result"
+  },
+  {
+   "label": "generally",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt generally contain the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "line": "  - lint_hedge: A1 — A1 contains a hedge; state an observable result"
+  },
+  {
+   "label": "typically",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt typically contain the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "line": "  - lint_hedge: A1 — A1 contains a hedge; state an observable result"
+  },
+  {
+   "label": "usually",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt usually contain the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "line": "  - lint_hedge: A1 — A1 contains a hedge; state an observable result"
+  },
+  {
+   "label": "try to",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt try to contain the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "line": "  - lint_hedge: A1 — A1 contains a hedge; state an observable result"
+  },
+  {
+   "label": "where possible",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt where possible contain the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "line": "  - lint_hedge: A1 — A1 contains a hedge; state an observable result"
+  },
+  {
+   "label": "as much as possible",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt as much as possible contain the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "line": "  - lint_hedge: A1 — A1 contains a hedge; state an observable result"
+  }
+ ],
+ "steps": [
+  {
+   "intent": {
+    "slug": "wordy",
+    "intent_text": "{row.text}",
+    "test_text": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "wordy"
+   ],
+   "expect": {
+    "exit": 5,
+    "stderr": "",
+    "stdout_contains": "{row.line}"
+   }
+  }
+ ]
+}

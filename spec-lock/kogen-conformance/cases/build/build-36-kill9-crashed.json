@@ -1,0 +1,114 @@
+{
+ "id": "build-36",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "kill -9, then status shows crashed",
+ "spec": [
+  "§3.10",
+  "§2.11"
+ ],
+ "allow_remaining": true,
+ "script": [
+  {
+   "id": "stall",
+   "expect": {
+    "role": "planner"
+   },
+   "repeat": "always",
+   "first_byte_ms": 900000,
+   "reply": {
+    "text": "Difficulty: easy\n"
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "background": "q"
+  },
+  {
+   "wait_until": {
+    "fake_requests": 1,
+    "timeout_s": 60
+   }
+  },
+  {
+   "signal": {
+    "name": "q",
+    "sig": "KILL",
+    "after_s": 0
+   }
+  },
+  {
+   "wait": {
+    "name": "q",
+    "expect": {
+     "exit": 137,
+     "stderr_any": true,
+     "utf8_lines": false
+    }
+   }
+  },
+  {
+   "sleep": 0.5
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "greet"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_starts_lines": [
+     "greet: failed, crashed",
+     "~Build {id8:greet}: failed, crashed"
+    ]
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "Queue: stopped",
+     "Failed:",
+     "  greet  crashed (Build {id8:greet})"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "refs": {
+     "refs/kogen/claim": false
+    },
+    "glob_count": {
+     "{state_root}/{run_id:greet}-*": 0
+    },
+    "events": {
+     "slug": "greet",
+     "last": {
+      "event": "finished",
+      "status": "failed",
+      "reason": "crashed"
+     }
+    }
+   }
+  }
+ ]
+}

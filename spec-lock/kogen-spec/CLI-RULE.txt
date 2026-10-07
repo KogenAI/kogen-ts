@@ -1,0 +1,3 @@
+The Kogen CLI is FIXED and non-negotiable (Almir): `kogen status [<slug>] [--watch] [--json]`, `kogen intent shape <slug> <file|->`, `kogen intent approve <slug> [<hash>]`, `kogen intent remove <slug> [--force]`, `kogen queue start [--detach] | stop`, `kogen provider list | login chatgpt | logout chatgpt | use chatgpt --as <label> [--project]`, `kogen version`, `kogen help`, with options --project/--origin/--base/--by. Never add, rename or remove commands, subcommands or flags.
+
+Addendum (Almir, 6 Oct 2026): adding a provider NAME to the existing provider commands is allowed: `grok` (SuperGrok subscription) alongside ChatGPT. No new commands or flags.

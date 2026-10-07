@@ -1,0 +1,56 @@
+{
+ "id": "format-11",
+ "profile": "format",
+ "title": "The accounts.yaml header comment",
+ "spec": [
+  "§2.7"
+ ],
+ "fixture": "kt",
+ "fake": true,
+ "auth": "owned",
+ "needs": [
+  "login"
+ ],
+ "serial": true,
+ "steps": [
+  {
+   "run": [
+    "kogen",
+    "provider",
+    "login",
+    "chatgpt"
+   ],
+   "timeout": 120,
+   "expect": {
+    "exit": 0,
+    "stdout_contains": "chatgpt:default signed in"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "provider",
+    "use",
+    "chatgpt",
+    "--as",
+    "default",
+    "--project",
+    "{checkout}"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout": "chatgpt:default is the account for {checkout}\n"
+   }
+  },
+  {
+   "assert": {
+    "files": {
+     "{home}/.kogen/accounts.yaml": {
+      "text": "# Kogen accounts on this machine, written by kogen provider use.\nchatgpt:\n  projects:\n    - path: \"{checkout}\"\n      account: default\n"
+     }
+    }
+   }
+  }
+ ]
+}

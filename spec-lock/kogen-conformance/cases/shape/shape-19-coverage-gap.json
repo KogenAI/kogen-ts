@@ -1,0 +1,145 @@
+{
+ "id": "shape-19",
+ "profile": "shape",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Requirement ledger: a number in the Request with no row gives a coverage_gap repair, then a warning",
+ "spec": [
+  "§3.2.3 step 7"
+ ],
+ "script": [
+  {
+   "id": "write",
+   "expect": {
+    "role": "shaper",
+    "turn": 1,
+    "tools": [
+     "read",
+     "search",
+     "write"
+    ]
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/intents/greet/intent.md",
+       "content": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: replace the single line in lib/greet.txt with the new greeting text.\n"
+      }
+     },
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/acceptance/greet.t.sh",
+       "content": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "done",
+   "expect": {
+    "role": "shaper",
+    "turn": 2
+   },
+   "reply": {
+    "text": "Both files are written."
+   }
+  },
+  {
+   "id": "ledger",
+   "expect": {
+    "role": "requirement_auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"rows\": [{\"constraint\": \"The greeting in `lib/greet.txt` says Hello, Almir!\", \"maps_to\": \"A1\"}]}"
+   },
+   "repeat": 2
+  },
+  {
+   "id": "again",
+   "expect": {
+    "role": "shaper",
+    "turn": 3,
+    "last_user_contains": "coverage_gap"
+   },
+   "reply": {
+    "text": "The test already covers the greeting."
+   }
+  },
+  {
+   "id": "audit",
+   "expect": {
+    "role": "test_auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test checks the requested line.\"}]}"
+   }
+  }
+ ],
+ "steps": [
+  {
+   "write": {
+    "path": "{case}/request.md",
+    "text": "Make the greeting say Hello, Almir! and keep at most 2 lines in `lib/greet.txt`.\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "shape",
+    "greet",
+    "{case}/request.md",
+    "--json"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_json": {
+     "status": "valid",
+     "rounds": 2,
+     "warnings": {
+      "$contains": [
+       {
+        "code": "coverage_gap",
+        "item_ids": "$list",
+        "message": "~(?s).*2.*"
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "assert": {
+    "fake_requests": [
+     {
+      "select": {
+       "role": "shaper",
+       "turn": 3
+      },
+      "input_regex": "^Validation failed\\. Repair the generated files in this conversation\\. The required paths and their current state are:\n- `[^`\n]*\\.kogen/intents/greet/intent\\.md`: present on disk\\. Keep it in place; change it only if the failure below requires a correction\\.\n- `[^`\n]*\\.kogen/acceptance/greet\\.t\\.sh`: present on disk\\. Keep it in place; change it only if the failure below requires a correction\\.\nBoth exact paths must exist after this pass\\. Every missing path must be written now\\. Do not delete required files\\. The available tools can read, search, and write files; they cannot remove them\\. Preserve present content unless the failure below requires a focused correction\\.\n\nExact failure output:\n\ncandidate/coverage_gap: "
+     }
+    ],
+    "files": {
+     ".kogen/intents/greet/ledger.json": {
+      "json": {
+       "approval_sha256": "{hash64:greet}",
+       "rows": [
+        {
+         "constraint": "$str",
+         "maps_to": "A1"
+        }
+       ]
+      }
+     }
+    }
+   }
+  }
+ ],
+ "notes": "The coverage_gap repair is assumed to use the §3.2.4 template with class candidate; the ledger is re-run in the next pass (§3.2.3 runs each pass)."
+}

@@ -1,0 +1,44 @@
+{
+ "id": "v1.2-06-crash-after-base-cas",
+ "profile": "v1.2",
+ "fixture": "exunit-hello",
+ "fake": true,
+ "title": "Crash after base CAS is recovered as landed",
+ "notes": "This fixture omits the optional acceptance key and uses the spec v1.2 default adapter, exunit. Installed Kogen b73a0534 rejects the spec-defined acceptance project key as unknown during approval; that is Kogen drift. Approval reads the implementation-advertised digest so this downstream case can proceed despite the hash drift directly tested in v1.2-02.",
+ "spec": ["spec/03-build.md §3.9.3, §3.10", "quint/prototype/scenarios/12-crash-after-cas.json"],
+ "script": [{"include": "v1.2_landing_finish"}],
+ "steps": [
+  {"intent": {"slug": "greet", "template": "exunit-greet"}},
+  {"run": ["kogen", "intent", "approve", "greet"], "expect": {"exit": 5, "stdout_regex": "SHA-256: [0-9a-f]{64}", "stderr": ""}, "capture": {"approval_hash": "SHA-256: ([0-9a-f]{64})"}},
+  {"run": ["kogen", "intent", "approve", "greet", "{var:approval_hash}"], "expect": {"exit": 0, "stdout_regex": "approved greet [0-9a-f]{8} \\(approval [0-9a-f]{8}\\); it is queued\\n", "stderr": ""}},
+  {
+   "write": {
+    "path": "{stubs}/git",
+    "mode": "0755",
+    "text": "#!/bin/sh\ncase_dir='{case}'\norigin='{origin}'\npath_no_wrapper=$(printf '%s' \"$PATH\" | sed 's|^[^:]*:||')\nPATH=$path_no_wrapper\nreal_git=$(command -v git) || exit 127\n\"$real_git\" \"$@\"\nresult=$?\nref_seen=0\nnew_value=\nwant_value=0\nfor arg in \"$@\"; do\n  if [ \"$want_value\" = 1 ]; then new_value=$arg; break; fi\n  if [ \"$arg\" = refs/heads/main ]; then ref_seen=1; want_value=1; fi\ndone\nif [ \"$result\" = 0 ] && [ \"$ref_seen\" = 1 ]; then\n  tip=$(\"$real_git\" --git-dir \"$origin\" rev-parse --verify refs/heads/main 2>/dev/null)\n  incoming=$(\"$real_git\" --git-dir \"$origin\" for-each-ref --format='%(refname)' refs/kogen/incoming/)\n  if [ \"$tip\" = \"$new_value\" ] && [ -n \"$incoming\" ]; then\n    : > \"$case_dir/post-cas\"\n    while [ ! -f \"$case_dir/release-git\" ]; do sleep 0.02; done\n  fi\nfi\nexit \"$result\"\n"
+   }
+  },
+  {
+   "run": ["kogen", "queue", "start"],
+   "background": "drain"
+  },
+  {"wait_until": {"file_exists": "{case}/post-cas", "timeout_s": 60}},
+  {"signal": {"name": "drain", "sig": "KILL", "target": "group"}},
+  {"wait": {"name": "drain", "timeout": 15, "expect": {"exit": 137}}},
+  {
+   "run": ["kogen", "status", "greet", "--json"],
+   "expect": {"exit": 0, "stdout_json": {"status": "landed"}, "stderr": ""}
+  },
+  {
+   "assert": {
+    "run_json": {"slug": "greet", "match": {"status": "landed", "landing": "$obj"}},
+    "events": {"slug": "greet", "contains": [{"event": "reconciled"}]},
+    "refs": {"refs/kogen/claim": false},
+    "ref_count": {"refs/kogen/incoming/": 0},
+    "git": [
+     {"args": ["log", "-1", "--format=%B", "main"], "stdout_contains": "Kogen-Intent: greet"}
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,66 @@
+{
+  "id": "v1.2-137-format-12",
+  "profile": "v1.2",
+  "title": "v1.2 replacement for format-12: status watch frame separator",
+  "spec": [
+    "§1.7.5",
+    "§3.6",
+    "§4.2",
+    "§4.7"
+  ],
+  "fixture": "kt",
+  "fake": true,
+  "script": [
+    {
+      "include": "r1_happy_v12",
+      "prefix": "r1_happy"
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "background": "q"
+    },
+    {
+      "wait_until": {
+        "fake_requests": 1,
+        "timeout_s": 60
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "status",
+        "--watch"
+      ],
+      "timeout": 120,
+      "expect": {
+        "exit": 0,
+        "stderr": "",
+        "stdout_regex": "\\A(?:[^\\n]+\\n)+(?:\\n(?:[^\\n]+\\n)+)+\\Z",
+        "watch_frames": {
+          "min": 2
+        }
+      }
+    },
+    {
+      "wait": {
+        "name": "q",
+        "expect": {
+          "exit": 0
+        }
+      }
+    }
+  ],
+  "notes": "The shared v1.1 script expected an empty tool schema list for the planner and treated builder text as completion. v1.2 uses the shared schemas and finish alone with {} (§3.6, §4.2, §4.7)."
+}

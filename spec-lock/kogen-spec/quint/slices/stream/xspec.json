@@ -1,0 +1,10 @@
+{
+  "spec": "spec/stream.qnt",
+  "module": "stream",
+  "init": "init",
+  "fire": "fire",
+  "invariant": "invariant",
+  "obs_var": "obs",
+  "ev_var": "ev",
+  "coverage": ["phase", "decision", "reason", "delay", "model", "continued", "checkpoint"]
+}

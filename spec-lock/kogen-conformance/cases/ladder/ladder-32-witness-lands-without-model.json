@@ -1,0 +1,216 @@
+{
+ "id": "ladder-32",
+ "profile": "ladder",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Witness mode: the witness re-verifies green and lands with zero model requests",
+ "spec": [
+  "§3.2.7",
+  "§3.4 B3"
+ ],
+ "script": [
+  {
+   "id": "shape.write",
+   "expect": {
+    "role": "shaper",
+    "turn": 1,
+    "tools": [
+     "read",
+     "search",
+     "write"
+    ]
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/intents/greet/intent.md",
+       "content": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: replace the single line in lib/greet.txt with the new greeting text.\n"
+      }
+     },
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/acceptance/greet.t.sh",
+       "content": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "shape.done",
+   "expect": {
+    "role": "shaper",
+    "turn": 2
+   },
+   "reply": {
+    "text": "Both files are written."
+   }
+  },
+  {
+   "id": "shape.ledger",
+   "expect": {
+    "role": "requirement_auditor"
+   },
+   "reply": {
+    "text": "{\"rows\": [{\"constraint\": \"The greeting in lib/greet.txt says Hello, Almir!\", \"maps_to\": \"A1\"}]}"
+   }
+  },
+  {
+   "id": "shape.audit",
+   "expect": {
+    "role": "test_auditor"
+   },
+   "reply": {
+    "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test checks the requested line.\"}]}"
+   }
+  },
+  {
+   "id": "wit.plan",
+   "expect": {
+    "role": "planner",
+    "tools": []
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+   }
+  },
+  {
+   "id": "wit.edit",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "turn": 1,
+    "tools": [
+     "shell"
+    ]
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "wit.done",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "turn": 2,
+    "last_item_type": "function_call_output"
+   },
+   "reply": {
+    "text": "Done."
+   }
+  }
+ ],
+ "steps": [
+  {
+   "write": {
+    "path": "{case}/request.md",
+    "text": "Make the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "shape",
+    "greet",
+    "{case}/request.md"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr_any": true,
+    "stdout_contains": "Feasibility: PROVEN\n"
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "assert": {
+    "refs": {
+     "refs/kogen/witness/greet": true
+    },
+    "git": [
+     {
+      "args": [
+       "cat-file",
+       "-p",
+       "refs/kogen/intents/greet:.kogen/intents/greet/approval.json"
+      ],
+      "json": {
+       "witness": {
+        "verdict": "PROVEN",
+        "commit": "$sha",
+        "diff_sha256": "$hex64",
+        "base_sha": "{base_sha}"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "fake": {
+    "reset": true
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "fake_request_count": 0,
+    "events": {
+     "slug": "greet",
+     "absent": [
+      "plan",
+      "rung_started",
+      "audit"
+     ],
+     "subsequence": [
+      "started",
+      {
+       "event": "verification",
+       "result": "green"
+      },
+      "commit_result",
+      {
+       "event": "finished",
+       "status": "landed"
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "project": {
+  "shaping": {
+   "proof": "witness"
+  }
+ },
+ "notes": "The witness comes from a real `intent shape` in witness mode (shaper, ledger, audit, then witness plan + R1)."
+}

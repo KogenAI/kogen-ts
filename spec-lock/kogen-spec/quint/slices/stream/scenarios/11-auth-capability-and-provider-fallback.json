@@ -1,0 +1,24 @@
+{
+  "name": "11-auth-capability-and-provider-fallback",
+  "about": "login refresh depends on request credential capability; Grok does not use the Luna-to-Sol fallback even when a caller requests it.",
+  "steps": [
+    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+     "expect": {"refreshable": true, "fallbackOn": true, "phase": "open"}},
+    {"do": ["Result", {"kind": "login", "items": false}],
+     "expect": {"decision": "refresh", "refreshed": true, "phase": "open", "exit": 0}},
+    {"do": ["Result", {"kind": "login", "items": false}],
+     "expect": {"decision": "pause", "phase": "idle", "waited": 300000, "exit": 0}},
+    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": false, "bounded": true, "wall": 100000, "mode": "build"}],
+     "expect": {"refreshable": false, "phase": "open"}},
+    {"do": ["Result", {"kind": "login", "items": false}],
+     "expect": {"decision": "stop", "phase": "stopped", "reason": "provider/login", "exit": 4, "queued": true, "refreshed": false}},
+    {"do": ["Open", {"role": "builder", "model": "grok", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+     "expect": {"model": "grok", "fallbackOn": false, "phase": "open"}},
+    {"do": ["Result", {"kind": "overload", "items": false}],
+     "expect": {"decision": "retry", "model": "grok", "fallbackOn": false, "overloads": 1, "attempt": 2}},
+    {"do": ["Result", {"kind": "overload", "items": false}],
+     "expect": {"decision": "retry", "model": "grok", "fallbackOn": false, "overloads": 2, "attempt": 3}},
+    {"do": ["Result", {"kind": "ok", "items": false}],
+     "expect": {"decision": "success", "model": "grok", "phase": "idle", "exit": 0}}
+  ]
+}

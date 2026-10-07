@@ -1,0 +1,150 @@
+{
+ "id": "build-10",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "A 4th restore ends the rung",
+ "spec": [
+  "§3.5",
+  "§3.9.4"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+   }
+  },
+  {
+   "id": "tamper1",
+   "expect": {
+    "role": "builder",
+    "turn": 1,
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 't_A1() { true 1; }\\n' > test/acceptance/greet.t.sh"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "tamper2",
+   "expect": {
+    "role": "builder",
+    "turn": 2,
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 't_A1() { true 2; }\\n' > test/acceptance/greet.t.sh"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "tamper3",
+   "expect": {
+    "role": "builder",
+    "turn": 3,
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 't_A1() { true 3; }\\n' > test/acceptance/greet.t.sh"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "tamper4",
+   "expect": {
+    "role": "builder",
+    "turn": 4,
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 't_A1() { true 4; }\\n' > test/acceptance/greet.t.sh"
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "project": {
+  "build": {
+   "ladder": {
+    "max_rungs": 1
+   }
+  }
+ },
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 1,
+    "stderr": "",
+    "stdout_lines": [
+     "building greet",
+     "~failed greet: \\S+; best candidate (green|green-with-advisory-tests|unverified|none) at refs/kogen/parked/{run_id:greet} \\(Build {id8:greet}\\)",
+     "queue: done; 1 Build(s), 0 landed, 1 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "count": {
+      "protected_restored": 4
+     },
+     "subsequence": [
+      {
+       "event": "rung_finished",
+       "rung": "R1",
+       "reason": "protected_restore_limit"
+      },
+      {
+       "event": "finished",
+       "status": "failed"
+      }
+     ]
+    },
+    "fake_request_count": {
+     "builder": 4
+    }
+   }
+  }
+ ]
+}

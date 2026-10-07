@@ -1,0 +1,18 @@
+{
+  "name": "07-cleanup-warning-refusals",
+  "about": "A dirty checkout warns and still lands. A failed incoming delete does not fail the Build. A refusal leaves the Landing record and the claim.",
+  "steps": [
+    {"do": ["Record"]},
+    {"do": ["Head", {"kind": "ok"}]},
+    {"do": ["Push"]},
+    {"do": ["Cas", {"won": true}]},
+    {"do": ["Worktree", {"dirty": true}], "expect": {"line": "landing_warning", "warning": true, "phase": "based", "onBase": true}},
+    {"do": ["Drop", {"ok": false}], "expect": {"status": "landed", "line": "cleanup_failure", "cleanup": true, "incoming": true, "exit": 0, "claim": false}},
+    {"do": ["Init"]},
+    {"do": ["Cas", {"won": true}], "expect": {"last": "not_incoming", "phase": "idle", "claim": false}},
+    {"do": ["Record"], "expect": {"claim": true, "phase": "recorded"}},
+    {"do": ["Cas", {"won": true}], "expect": {"last": "not_incoming", "phase": "recorded", "claim": true, "recorded": true, "onBase": false}},
+    {"do": ["Drop", {"ok": true}], "expect": {"last": "not_based", "phase": "recorded", "claim": true}},
+    {"do": ["Rebase", {"kind": "green"}], "expect": {"last": "not_moved", "status": "running"}}
+  ]
+}

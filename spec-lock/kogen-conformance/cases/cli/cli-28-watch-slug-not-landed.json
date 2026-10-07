@@ -1,0 +1,53 @@
+{
+ "id": "cli-28",
+ "profile": "cli",
+ "title": "status <slug> --watch exits 1 when the Intent did not land",
+ "spec": [
+  "§1.7.5"
+ ],
+ "fixture": "kt",
+ "steps": [
+  {
+   "intent": {
+    "slug": "fail-a",
+    "template": "greet",
+    "replace": {
+     "Greet Almir by name": "Intent fail-a"
+    },
+    "commit": true
+   }
+  },
+  {
+   "approve": "fail-a"
+  },
+  {
+   "synthetic_run": {
+    "slug": "fail-a",
+    "run_id": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+    "status": "failed",
+    "reason": "repair_cap",
+    "verdict": "unverified"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "fail-a",
+    "--watch"
+   ],
+   "timeout": 60,
+   "expect": {
+    "exit": 1,
+    "stderr": "",
+    "stdout_starts_lines": [
+     "fail-a: failed, repair_cap"
+    ],
+    "watch_frames": {
+     "min": 1,
+     "max": 1
+    }
+   }
+  }
+ ]
+}

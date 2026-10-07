@@ -1,0 +1,396 @@
+{
+ "id": "format-09",
+ "profile": "format",
+ "title": "Error-line wording (§1.5 table)",
+ "spec": [
+  "§1.5"
+ ],
+ "fixture": "kt",
+ "notes": "Rows that need the fake provider (provider/*) are covered by provider cases; status 'base unavailable' detail is free text.",
+ "rows": [
+  {
+   "label": "project_unavailable",
+   "pre": [],
+   "argv": [
+    "status",
+    "--project",
+    "{case}/nope"
+   ],
+   "exit": 3,
+   "out": "environment/project_unavailable: {case}/nope\n",
+   "expect": {
+    "exit": 3,
+    "stderr": "",
+    "stdout": "environment/project_unavailable: {case}/nope\n"
+   },
+   "env": {}
+  },
+  {
+   "label": "not_a_git_repo",
+   "pre": [],
+   "argv": [
+    "status",
+    "--project",
+    "{nowhere}"
+   ],
+   "exit": 3,
+   "out": "environment/not_a_git_repo: {nowhere}\n",
+   "expect": {
+    "exit": 3,
+    "stderr": "",
+    "stdout": "environment/not_a_git_repo: {nowhere}\n"
+   },
+   "env": {}
+  },
+  {
+   "label": "not_found",
+   "pre": [],
+   "argv": [
+    "intent",
+    "approve",
+    "nope"
+   ],
+   "exit": 2,
+   "out": "intent/not_found: Intent does not exist\n",
+   "expect": {
+    "exit": 2,
+    "stderr": "",
+    "stdout": "intent/not_found: Intent does not exist\n"
+   },
+   "env": {}
+  },
+  {
+   "label": "acceptance_missing",
+   "pre": [
+    {
+     "intent": {
+      "slug": "greet",
+      "test": false
+     }
+    }
+   ],
+   "argv": [
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "exit": 2,
+   "out": "intent/acceptance_missing: .kogen/acceptance/greet.t.sh does not exist\n",
+   "alt": "intent/acceptance_missing: {checkout}/.kogen/acceptance/greet.t.sh does not exist\n",
+   "expect": {
+    "exit": 2,
+    "stderr": "",
+    "stdout_regex": "\\A(?:intent/acceptance_missing:\\ \\.kogen/acceptance/greet\\.t\\.sh\\ does\\ not\\ exist\\\n|intent/acceptance_missing:\\ {checkout}/\\.kogen/acceptance/greet\\.t\\.sh\\ does\\ not\\ exist\\\n)\\Z"
+   },
+   "env": {}
+  },
+  {
+   "label": "hash_mismatch",
+   "pre": [
+    {
+     "intent": "greet"
+    }
+   ],
+   "argv": [
+    "intent",
+    "approve",
+    "greet",
+    "000000"
+   ],
+   "exit": 1,
+   "out": "intent/hash_mismatch: greet is now {hash8:greet}, not 000000; review it again with kogen intent approve greet\n",
+   "expect": {
+    "exit": 1,
+    "stderr": "",
+    "stdout": "intent/hash_mismatch: greet is now {hash8:greet}, not 000000; review it again with kogen intent approve greet\n"
+   },
+   "env": {}
+  },
+  {
+   "label": "approval_identity_unavailable",
+   "pre": [
+    {
+     "intent": "greet"
+    },
+    {
+     "write": {
+      "path": "{case}/gitconfig",
+      "text": "[user]\n\tuseConfigOnly = true\n[init]\n\tdefaultBranch = main\n[commit]\n\tgpgsign = false\n"
+     }
+    }
+   ],
+   "argv": [
+    "intent",
+    "approve",
+    "greet",
+    "{hash8:greet}"
+   ],
+   "exit": 2,
+   "out": "intent/approval_identity_unavailable: configure git user.name and user.email\n",
+   "expect": {
+    "exit": 2,
+    "stderr": "",
+    "stdout": "intent/approval_identity_unavailable: configure git user.name and user.email\n"
+   },
+   "env": {}
+  },
+  {
+   "label": "request_unavailable not found",
+   "pre": [],
+   "argv": [
+    "intent",
+    "shape",
+    "greet",
+    "{case}/missing.md"
+   ],
+   "exit": 2,
+   "out": "intent/request_unavailable: {case}/missing.md: not found\n",
+   "alt": "intent/request_unavailable: missing.md: not found\n",
+   "expect": {
+    "exit": 2,
+    "stderr": "",
+    "stdout_regex": "\\A(?:intent/request_unavailable:\\ {case}/missing\\.md:\\ not\\ found\\\n|intent/request_unavailable:\\ missing\\.md:\\ not\\ found\\\n)\\Z"
+   },
+   "env": {}
+  },
+  {
+   "label": "request_unavailable empty stdin",
+   "pre": [],
+   "argv": [
+    "intent",
+    "shape",
+    "greet",
+    "-"
+   ],
+   "exit": 2,
+   "out": "intent/request_unavailable: stdin: empty\n",
+   "expect": {
+    "exit": 2,
+    "stderr": "",
+    "stdout": "intent/request_unavailable: stdin: empty\n"
+   },
+   "env": {}
+  },
+  {
+   "label": "acceptance_check_failed",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "text": "name: kt\nchecks: []\nacceptance_checks:\n  - name: syntax\n    argv: [sh, -n, \"{path}\"]\n    timeout_ms: 60000\nacceptance:\n  adapter: command\n  ext: .t.sh\n  candidate_dir: test/acceptance\n  run: [sh, run-acceptance.sh, \"{path}\"]\n"
+     }
+    },
+    {
+     "commit": {
+      "message": "acceptance check",
+      "push": true
+     }
+    },
+    {
+     "intent": {
+      "slug": "greet",
+      "test_text": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; \n"
+     }
+    }
+   ],
+   "argv": [
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "exit": 1,
+   "out_rx": "\\Acheck/acceptance_check_failed: acceptance check syntax failed\n(  .*\n){0,20}\\Z",
+   "expect": {
+    "exit": 1,
+    "stderr": "",
+    "stdout_regex": "\\Acheck/acceptance_check_failed: acceptance check syntax failed\n(  .*\n){0,20}\\Z"
+   },
+   "env": {}
+  },
+  {
+   "label": "setup_failed",
+   "pre": [
+    {
+     "write": {
+      "path": "checks/setup.sh",
+      "text": "echo setup broke\nexit 7\n"
+     }
+    },
+    {
+     "commit": {
+      "message": "break setup",
+      "push": true
+     }
+    },
+    {
+     "intent": "greet"
+    }
+   ],
+   "argv": [
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "exit": 3,
+   "out_rx": "\\Aenvironment/setup_failed: Setup setup failed \\(status=7, timed_out=false\\)\\.\n",
+   "expect": {
+    "exit": 3,
+    "stderr": "",
+    "stdout_regex": "\\Aenvironment/setup_failed: Setup setup failed \\(status=7, timed_out=false\\)\\.\n"
+   },
+   "env": {}
+  },
+  {
+   "label": "checkout_behind_base",
+   "pre": [
+    {
+     "intent": "greet"
+    },
+    {
+     "origin_commit": {
+      "files": {
+       "checks/lint.sh": "exit 0\n"
+      },
+      "message": "Change lint"
+     }
+    }
+   ],
+   "argv": [
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "exit": 3,
+   "out": "environment/checkout_behind_base: checkout is behind main: checks/lint.sh differ; update your checkout first\n",
+   "expect": {
+    "exit": 3,
+    "stderr": "",
+    "stdout": "environment/checkout_behind_base: checkout is behind main: checks/lint.sh differ; update your checkout first\n"
+   },
+   "env": {}
+  },
+  {
+   "label": "acceptance_check_path_conflict",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "text": "name: kt\nchecks: []\nacceptance_checks:\n  - name: syntax\n    argv: [sh, -n, \"{path}\"]\n    timeout_ms: 60000\nacceptance:\n  adapter: command\n  ext: .t.sh\n  candidate_dir: test/acceptance\n  run: [sh, run-acceptance.sh, \"{path}\"]\n"
+     }
+    },
+    {
+     "write": {
+      "path": "test/acceptance/greet.t.sh",
+      "text": "# occupied\n"
+     }
+    },
+    {
+     "commit": {
+      "message": "occupy",
+      "push": true
+     }
+    },
+    {
+     "intent": "greet"
+    }
+   ],
+   "argv": [
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "exit": 3,
+   "out": "environment/acceptance_check_path_conflict: test/acceptance/greet.t.sh\n",
+   "alt": "environment/acceptance_check_path_conflict: {checkout}/test/acceptance/greet.t.sh\n",
+   "expect": {
+    "exit": 3,
+    "stderr": "",
+    "stdout_regex": "\\A(?:environment/acceptance_check_path_conflict:\\ test/acceptance/greet\\.t\\.sh\\\n|environment/acceptance_check_path_conflict:\\ {checkout}/test/acceptance/greet\\.t\\.sh\\\n)\\Z"
+   },
+   "env": {}
+  },
+  {
+   "label": "tool_missing",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "text": "name: kt\nchecks: []\nacceptance_checks:\n  - name: missing\n    argv: [kogen-conformance-no-such-tool, \"{path}\"]\n    timeout_ms: 60000\nacceptance:\n  adapter: command\n  ext: .t.sh\n  candidate_dir: test/acceptance\n  run: [sh, run-acceptance.sh, \"{path}\"]\n"
+     }
+    },
+    {
+     "commit": {
+      "message": "missing tool",
+      "push": true
+     }
+    },
+    {
+     "intent": "greet"
+    }
+   ],
+   "argv": [
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "exit": 3,
+   "out": "environment/tool_missing: kogen-conformance-no-such-tool is not available\n",
+   "expect": {
+    "exit": 3,
+    "stderr": "",
+    "stdout": "environment/tool_missing: kogen-conformance-no-such-tool is not available\n"
+   },
+   "env": {}
+  },
+  {
+   "label": "base_unavailable",
+   "pre": [],
+   "argv": [
+    "status",
+    "--base",
+    "no-such-branch"
+   ],
+   "exit": 3,
+   "out_rx": "\\Aenvironment/base_unavailable: .+\n\\Z",
+   "expect": {
+    "exit": 3,
+    "stderr": "",
+    "stdout_regex": "\\Aenvironment/base_unavailable: .+\n\\Z"
+   },
+   "env": {}
+  },
+  {
+   "label": "project_config_invalid",
+   "pre": [
+    {
+     "write": {
+      "path": ".kogen/project.yaml",
+      "text": "name: kt\n"
+     }
+    }
+   ],
+   "argv": [
+    "status"
+   ],
+   "exit": 3,
+   "out_rx": "\\Aenvironment/project_config_invalid: {checkout}/\\.kogen/project\\.yaml\n  (line [0-9]+: )?missing required key `checks`\n\\Z",
+   "expect": {
+    "exit": 3,
+    "stderr": "",
+    "stdout_regex": "\\Aenvironment/project_config_invalid: {checkout}/\\.kogen/project\\.yaml\n  (line [0-9]+: )?missing required key `checks`\n\\Z"
+   },
+   "env": {}
+  }
+ ],
+ "steps": [
+  "{*row.pre}",
+  {
+   "run": [
+    "kogen",
+    "{*row.argv}"
+   ],
+   "env": "{row.env}",
+   "expect": "{row.expect}"
+  }
+ ]
+}

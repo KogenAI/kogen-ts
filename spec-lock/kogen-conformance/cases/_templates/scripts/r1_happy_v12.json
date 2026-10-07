@@ -1,0 +1,63 @@
+[
+  {
+    "id": "plan",
+    "expect": {
+      "role": "planner",
+      "turn": 1,
+      "tools": [
+        "finish",
+        "shell",
+        "tool_output"
+      ],
+      "input_contains": "Greet Almir by name"
+    },
+    "reply": {
+      "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+    }
+  },
+  {
+    "id": "edit",
+    "expect": {
+      "role": "builder",
+      "turn": 1,
+      "tools": [
+        "finish",
+        "shell",
+        "tool_output"
+      ],
+      "input_contains": "Greet Almir by name"
+    },
+    "reply": {
+      "calls": [
+        {
+          "name": "shell",
+          "arguments": {
+            "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "done",
+    "expect": {
+      "role": "builder",
+      "turn": 2,
+      "last_output_contains": "exit 0",
+      "input_contains": "Greet Almir by name",
+      "tools": [
+        "finish",
+        "shell",
+        "tool_output"
+      ]
+    },
+    "reply": {
+      "calls": [
+        {
+          "name": "finish",
+          "arguments": {}
+        }
+      ]
+    }
+  }
+]

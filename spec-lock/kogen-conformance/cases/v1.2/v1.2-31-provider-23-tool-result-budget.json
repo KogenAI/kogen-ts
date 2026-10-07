@@ -1,0 +1,219 @@
+{
+  "id": "v1.2-31-provider-23-tool-result-budget",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for provider-23: Tool result range notice and full-payload base64",
+  "spec": [
+    "§4.7",
+    "§4.9.3",
+    "§3.6"
+  ],
+  "script": [
+    {
+      "id": "plan",
+      "expect": {
+        "role": "planner",
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "t1",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 1
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt; exit 3"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "t2",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 2,
+        "last_output_contains": "exit 3"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "sleep 200"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "t3",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 3,
+        "last_output_contains": "timed out after 120 seconds"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "head -c 15000 /dev/zero | tr '\\000' 'x'; echo; echo END-OF-OUTPUT"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "t4",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 4,
+        "last_output_contains": "END-OF-OUTPUT"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf '\\377\\376abc'"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "t5",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 5,
+        "last_output_contains": "[non-UTF-8 output, base64 encoded]"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_lines": [
+          "building greet",
+          "~\\~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+          "queue: done; 1 Build(s), 1 landed, 0 not"
+        ]
+      }
+    },
+    {
+      "assert": {
+        "fake_requests": [
+          {
+            "select": {
+              "step": "t2"
+            },
+            "match": {
+              "body": {
+                "input": {
+                  "$contains": [
+                    {
+                      "type": "function_call_output",
+                      "output": "~exit 3\n.*"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "select": {
+              "step": "t3"
+            },
+            "match": {
+              "body": {
+                "input": {
+                  "$contains": [
+                    {
+                      "type": "function_call_output",
+                      "output": "~timed out after 120 seconds\n.*"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "select": {
+              "step": "t4"
+            },
+            "match": {
+              "body": {
+                "input": {
+                  "$contains": [
+                    {
+                      "type": "function_call_output",
+                      "output": "~(?s)(?=.{8000}\\Z)(?=.*\\[truncated/range: [0-9]+ bytes; shown byte ranges [^;]+; retrieve with tool_output handle=[0-9a-f]{64}, output_offset and output_limit\\]).*END-OF-OUTPUT.*"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "select": {
+              "step": "t5"
+            },
+            "match": {
+              "body": {
+                "input": {
+                  "$contains": [
+                    {
+                      "type": "function_call_output",
+                      "output": "~\\A\\[non-UTF-8 output, base64 encoded\\]\\n//5hYmM=\\nexit 0\\n\\Z"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "notes": "The default 2,000-token budget caps model-visible results at 8,000 bytes and uses the v1.2 range notice; non-UTF-8 output encodes the whole payload (§4.7, §4.9.3). Builder completion uses finish alone with {}; text-only replies are progress (§3.6), and shell recipes expose shell, finish, and tool_output (§4.7)."
+}

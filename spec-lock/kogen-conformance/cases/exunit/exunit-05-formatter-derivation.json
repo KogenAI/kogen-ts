@@ -1,0 +1,105 @@
+{
+ "id": "exunit-05",
+ "profile": "exunit",
+ "fixture": "exunit-hello",
+ "fake": true,
+ "needs": [
+  "elixir"
+ ],
+ "acceptance_ext": "_test.exs",
+ "title": "Formatter derivation",
+ "spec": [
+  "§2.4.3",
+  "§3.2.3 step 4"
+ ],
+ "script": [
+  {
+   "id": "write",
+   "expect": {
+    "role": "shaper",
+    "turn": 1
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/intents/greet/intent.md",
+       "content": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange Hello.greet/0 so that it returns the greeting for Almir.\n\n## Acceptance\n- A1: Hello.greet/0 returns Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: change the return value of Hello.greet/0 in lib/hello.ex to the new greeting.\n"
+      }
+     },
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/acceptance/greet_test.exs",
+       "content": "defmodule GreetTest do\nuse ExUnit.Case\n  @tag intent: \"greet/A1\"\n test \"greets Almir\" do\n assert Hello.greet()==\"Hello, Almir!\"\n end\nend\n"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "done",
+   "expect": {
+    "role": "shaper",
+    "turn": 2
+   },
+   "reply": {
+    "text": "Both files are written."
+   }
+  },
+  {
+   "id": "ledger",
+   "expect": {
+    "role": "requirement_auditor"
+   },
+   "reply": {
+    "text": "{\"rows\": [{\"constraint\": \"Hello.greet/0 returns \\\"Hello, Almir!\\\"\", \"maps_to\": \"A1\"}]}"
+   }
+  },
+  {
+   "id": "audit",
+   "expect": {
+    "role": "test_auditor"
+   },
+   "reply": {
+    "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"ok\"}]}"
+   }
+  }
+ ],
+ "notes": "The formatter is derived from the `format` check (`mix format --check-formatted` minus the flag); it formats the .exs test and leaves intent.md alone.",
+ "steps": [
+  {
+   "write": {
+    "path": "{case}/request.md",
+    "text": "Make Hello.greet/0 return \"Hello, Almir!\" instead of \"Hello!\".\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "shape",
+    "greet",
+    "{case}/request.md"
+   ],
+   "timeout": 600,
+   "expect": {
+    "exit": 0,
+    "stdout_regex": "(?m)^Validated after 1 round\\(s\\)\\.$"
+   }
+  },
+  {
+   "assert": {
+    "files": {
+     ".kogen/acceptance/greet_test.exs": {
+      "text": "defmodule GreetTest do\n  use ExUnit.Case\n  @tag intent: \"greet/A1\"\n  test \"greets Almir\" do\n    assert Hello.greet() == \"Hello, Almir!\"\n  end\nend\n"
+     },
+     ".kogen/intents/greet/intent.md": {
+      "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange Hello.greet/0 so that it returns the greeting for Almir.\n\n## Acceptance\n- A1: Hello.greet/0 returns Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: change the return value of Hello.greet/0 in lib/hello.ex to the new greeting.\n\n## Request\nMake Hello.greet/0 return \"Hello, Almir!\" instead of \"Hello!\".\n"
+     }
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,7 @@
+{
+ "name": "02-hash-mismatch",
+ "about": "A wrong hash is a mismatch: exit 1, shows the real sha8, nothing run, nothing written.",
+ "steps": [
+  {"do": ["Approve", {"slug": "alpha", "given": "deadbeef", "prefixOk": false, "stableBeforeCas": true, "newSha8": "aaaa1111", "sha": "aaaa1111bbbb2222", "sha8": "aaaa1111", "by": "", "byBad": false, "ident": "Ann <ann@x.io>", "parseErr": false, "lintErr": false, "lintWarn": false, "missing": false, "setup": "ok", "cacheKey": "k1", "baseline": "green", "acceptance": "green", "witnessMode": false, "feas": "not checked", "commit": "c1", "baseSha": "b0"}], "expect": {"last": "intent/hash_mismatch", "exit": 1, "sha8": "aaaa1111", "ran": false, "checkRuns": 0, "approvals": {}}}
+ ]
+}

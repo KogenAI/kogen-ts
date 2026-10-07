@@ -1,0 +1,82 @@
+{
+ "id": "provider-04",
+ "profile": "provider",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Statelessness: the input chain and call_ids",
+ "spec": [
+  "§4.1",
+  "§4.2"
+ ],
+ "script": [
+  {
+   "include": "r1_happy"
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "fake_requests": [
+     {
+      "select": {
+       "step": "r1_happy.done",
+       "turn": 2
+      },
+      "match": {
+       "body": {
+        "input": {
+         "$subsequence": [
+          {
+           "role": "user"
+          },
+          {
+           "$exact": true,
+           "type": "function_call",
+           "id": "fc_r1_happy.edit_0",
+           "status": "completed",
+           "call_id": "call_r1_happy.edit_0",
+           "name": "shell",
+           "arguments": "{\"cmd\": \"printf 'Hello, Almir!\\\\n' > lib/greet.txt\"}"
+          },
+          {
+           "type": "function_call_output",
+           "call_id": "call_r1_happy.edit_0",
+           "output": "~exit 0\n.*"
+          }
+         ]
+        },
+        "previous_response_id": "$absent",
+        "tool_choice": "$absent",
+        "parallel_tool_calls": "$absent",
+        "max_output_tokens": "$absent",
+        "temperature": "$absent"
+       }
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "notes": "The fake gives turn 2 only to a request whose input extends the turn-1 input, so selecting turn 2 also proves the replay; raw items are replayed verbatim."
+}

@@ -1,0 +1,148 @@
+{
+ "name": "06-transport-malformed-never-switch",
+ "about": "transport and malformed are transient (backoff ladder) but never cause a model switch.",
+ "steps": [
+  {
+   "do": [
+    "Stage",
+    {
+     "name": "build",
+     "mode": "build",
+     "model": "luna",
+     "fallback": "sol",
+     "owned": true
+    }
+   ]
+  },
+  {
+   "do": [
+    "Request"
+   ]
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "transport",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "retry",
+     "delay_ms": 2000,
+     "reason": "transport",
+     "model": "luna"
+    },
+    "model": "luna",
+    "switched": false
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "malformed",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "retry",
+     "delay_ms": 4000,
+     "reason": "malformed",
+     "model": "luna"
+    },
+    "model": "luna",
+    "switched": false
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "transport",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "retry",
+     "delay_ms": 8000,
+     "reason": "transport",
+     "model": "luna"
+    },
+    "model": "luna",
+    "switched": false
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "malformed",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "retry",
+     "delay_ms": 16000,
+     "reason": "malformed",
+     "model": "luna"
+    },
+    "model": "luna",
+    "switched": false
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "transport",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "retry",
+     "delay_ms": 32000,
+     "reason": "transport",
+     "model": "luna"
+    },
+    "model": "luna",
+    "switched": false
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "ok",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "model": "luna"
+   }
+  }
+ ]
+}

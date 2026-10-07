@@ -1,0 +1,22 @@
+{
+ "exunit-01": {
+  "class": "ref-bug",
+  "note": "ledger rows keep the `test ` prefix (`test greets Almir`); journal has no spec verification event"
+ },
+ "exunit-02": {
+  "class": "ref-bug",
+  "note": "missing runner on the base gives `failed … environment/base_acceptance_failed` not `stopped … environment/tool_missing`; no plan request before the rung"
+ },
+ "exunit-03": {
+  "class": "ref-bug",
+  "note": "journal events differ from §2.8 (no verification/result); repair feedback names neither acceptance_compile_failed nor `acceptance A1:`"
+ },
+ "exunit-04": {
+  "class": "ref-bug",
+  "note": "approval.json baseline findings use the schema-1 shape (id/kind/tool) instead of path/rule/symbol/message"
+ },
+ "exunit-05": {
+  "class": "R-gap",
+  "note": "formatting matches the spec, but the pass ends on the first write and ledger/audit are not built; stderr progress is `shaper attempt=… ` not `shaper pass=<n> role=<role> <event>` (§3.2.6)"
+ }
+}

@@ -1,0 +1,92 @@
+{
+ "id": "cli-27",
+ "profile": "cli",
+ "title": "--watch prints frames only on change and returns 0 once idle",
+ "spec": [
+  "§1.7.5"
+ ],
+ "fixture": "kt",
+ "fake": true,
+ "script": [
+  {
+   "include": "r1_happy",
+   "override": {
+    "plan": {
+     "first_byte_ms": 40000
+    },
+    "edit": {
+     "first_byte_ms": 40000
+    },
+    "done": {
+     "first_byte_ms": 40000
+    }
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "background": "q"
+  },
+  {
+   "wait_until": {
+    "fake_requests": 1,
+    "timeout_s": 60
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "--watch"
+   ],
+   "timeout": 120,
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "watch_frames": {
+     "min": 2,
+     "distinct_consecutive": true,
+     "first_contains": "Building:",
+     "last_contains": [
+      "Queue: stopped",
+      "Landed (1):"
+     ]
+    }
+   }
+  },
+  {
+   "wait": {
+    "name": "q",
+    "expect": {
+     "exit": 0
+    }
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "--watch"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "watch_frames": {
+     "min": 1,
+     "max": 1
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,59 @@
+{
+ "id": "format-08",
+ "profile": "format",
+ "title": "Card warning wording",
+ "spec": [
+  "§1.7.2"
+ ],
+ "fixture": "kt",
+ "notes": "The base-red row prints the finding message; whether the GNU symbol prefix ('greet.txt: ') is part of <message> is the reading taken here.",
+ "steps": [
+  {
+   "write": {
+    "path": "lib/greet.txt",
+    "text": "Hello!\nTODO tidy this file\n"
+   }
+  },
+  {
+   "commit": {
+    "message": "Red base",
+    "push": true
+   }
+  },
+  {
+   "intent": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 5,
+    "stderr": "",
+    "stdout_lines": [
+     "Intent: greet — Greet Almir by name",
+     "SHA-256: {hash64:greet}",
+     "Approver: Kogen Test <test@kogen.invalid>",
+     "Base: main at {base_sha}",
+     "Feasibility: not checked",
+     "",
+     "Brief",
+     "  Change the greeting in lib/greet.txt so that it names Almir.",
+     "",
+     "Acceptance",
+     "  - [A1] lib/greet.txt contains the line Hello, Almir! (test)",
+     "",
+     "Warning: configured checks are already red on the base:",
+     "~  - lint: \\[lint/todo\\] lib/greet\\.txt:2: (greet\\.txt: )?TODO found",
+     "Hint: fix the base first, or scope the check, e.g. a changed-files format argv.",
+     "",
+     "Approve with:",
+     "  kogen intent approve greet {hash8:greet}"
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "18-shaping-cap-before-login-refresh",
+  "about": "The eighth shaping send consumes the per-request cap even when its result is login; it cannot refresh and send a ninth attempt.",
+  "steps": [
+    {"do":["Stage",{"name":"shape","mode":"shaping","model":"luna","fallback":"sol","owned":true}]},
+    {"do":["Request"]},
+    {"do":["Attempt",{"result":"malformed","retry_after_ms":-1,"elapsed_ms":1000,"first_byte_ms":500,"max_gap_ms":0}],"expect":{"attempts":1}},
+    {"do":["Attempt",{"result":"malformed","retry_after_ms":-1,"elapsed_ms":1000,"first_byte_ms":500,"max_gap_ms":0}],"expect":{"attempts":2}},
+    {"do":["Attempt",{"result":"malformed","retry_after_ms":-1,"elapsed_ms":1000,"first_byte_ms":500,"max_gap_ms":0}],"expect":{"attempts":3}},
+    {"do":["Attempt",{"result":"malformed","retry_after_ms":-1,"elapsed_ms":1000,"first_byte_ms":500,"max_gap_ms":0}],"expect":{"attempts":4}},
+    {"do":["Attempt",{"result":"malformed","retry_after_ms":-1,"elapsed_ms":1000,"first_byte_ms":500,"max_gap_ms":0}],"expect":{"attempts":5}},
+    {"do":["Attempt",{"result":"malformed","retry_after_ms":-1,"elapsed_ms":1000,"first_byte_ms":500,"max_gap_ms":0}],"expect":{"attempts":6}},
+    {"do":["Attempt",{"result":"malformed","retry_after_ms":-1,"elapsed_ms":1000,"first_byte_ms":500,"max_gap_ms":0}],"expect":{"attempts":7}},
+    {"do":["Attempt",{"result":"login","retry_after_ms":-1,"elapsed_ms":1000,"first_byte_ms":500,"max_gap_ms":0}],"expect":{"attempts":8,"phase":"stopped","exit":4,"decision":{"kind":"stop","reason":"provider/login"}}}
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "15-start-recovers-first",
+  "about": "queue start runs recovery before claiming, so a dead claim does not block the queue.",
+  "steps": [
+    {"do": ["Approve", {"slug": "alpha", "time": 1}]},
+    {"do": ["Approve", {"slug": "bravo", "time": 2}]},
+    {"do": ["Start", "r1"]},
+    {"do": ["Gate", true]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Crash"]},
+    {"do": ["Start", "r2"], "expect": {"last": "ok", "claim": "r2", "incoming": [], "runs": {"r1": {"status": "failed"}, "r2": {"slug": "bravo"}}}}
+  ]
+}

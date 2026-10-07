@@ -1,0 +1,15 @@
+{
+  "name": "13-crash-before-finish",
+  "about": "Crash after the incoming ref is deleted but before the run is finished: reconciled.",
+  "steps": [
+    {"do": ["Approve", {"slug": "alpha", "time": 1}]},
+    {"do": ["Start", "r1"]},
+    {"do": ["Gate", true]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Crash"], "expect": {"claim": "r1"}},
+    {"do": ["Recover"], "expect": {"runs": {"r1": {"status": "landed", "reason": "reconciled"}}, "claim": ""}}
+  ]
+}

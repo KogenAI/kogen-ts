@@ -1,0 +1,15 @@
+{
+  "name": "03-checkpoint-epoch",
+  "about": "Rung defaults to the attempt. A checkpoint epoch exists only when the continuation prefix matches, and the same checkpoint keeps the key.",
+  "steps": [
+    {"do": ["Bind", {"stage": "plan", "attempt": "fresh-1", "rung": ""}],
+     "expect": {"stage": "plan", "attempt": "fresh-1", "rung": "fresh-1", "epoch": "initial", "epochClass": "initial", "keyChanged": false}},
+    {"do": ["Accept", {"ok": false}],
+     "expect": {"last": "no_epoch", "epoch": "initial", "epochClass": "initial", "keyChanged": false}},
+    {"do": ["Accept", {"ok": true}],
+     "expect": {"last": "ok", "epoch": "digest", "epochClass": "checkpoint", "keyChanged": true, "stage": "plan"}},
+    {"do": ["Accept", {"ok": true}],
+     "expect": {"epoch": "digest", "keyChanged": false, "epochClass": "checkpoint"}},
+    {"do": ["Repair"], "expect": {"keyChanged": false, "epoch": "digest"}}
+  ]
+}

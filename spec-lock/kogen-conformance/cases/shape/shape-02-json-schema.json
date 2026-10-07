@@ -1,0 +1,127 @@
+{
+ "id": "shape-02",
+ "profile": "shape",
+ "fixture": "kt",
+ "fake": true,
+ "title": "--json schema",
+ "spec": [
+  "§1.7.1"
+ ],
+ "script": [
+  {
+   "id": "write",
+   "expect": {
+    "role": "shaper",
+    "turn": 1,
+    "tools": [
+     "read",
+     "search",
+     "write"
+    ]
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/intents/greet/intent.md",
+       "content": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: replace the single line in lib/greet.txt with the new greeting text.\n"
+      }
+     },
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/acceptance/greet.t.sh",
+       "content": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "done",
+   "expect": {
+    "role": "shaper",
+    "turn": 2
+   },
+   "reply": {
+    "text": "Both files are written."
+   }
+  },
+  {
+   "id": "ledger",
+   "expect": {
+    "role": "requirement_auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"rows\": [{\"constraint\": \"The greeting in lib/greet.txt says Hello, Almir!\", \"maps_to\": \"A1\"}]}"
+   }
+  },
+  {
+   "id": "audit",
+   "expect": {
+    "role": "test_auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test checks the requested line.\"}]}"
+   }
+  }
+ ],
+ "steps": [
+  {
+   "write": {
+    "path": "{case}/request.md",
+    "text": "Make the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "shape",
+    "greet",
+    "{case}/request.md",
+    "--json"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_json": {
+     "$exact": true,
+     "slug": "greet",
+     "status": "valid",
+     "rounds": 1,
+     "feasibility": "not checked",
+     "intent_path": "~({checkout}/)?\\.kogen/intents/greet/intent\\.md",
+     "acceptance_path": "~({checkout}/)?\\.kogen/acceptance/greet\\.t\\.sh",
+     "transcript_path": "~.+/transcript\\.jsonl",
+     "warnings": [],
+     "usage": {
+      "$len": 4,
+      "$each": {
+       "stage": "shape",
+       "role": {
+        "$any_of": [
+         "shaper",
+         "auditor"
+        ]
+       },
+       "model": "$str",
+       "effort": "$str",
+       "tokens": {
+        "input": 100,
+        "cached_input": 20,
+        "cache_write": "$int",
+        "output": 30,
+        "reasoning": 10
+       },
+       "wall_ms": "$int"
+      }
+     }
+    }
+   }
+  }
+ ],
+ "notes": "Whether intent_path/acceptance_path are absolute (as in the text output) is not stated for --json; both forms are accepted."
+}

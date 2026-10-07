@@ -1,0 +1,9 @@
+{
+  "name": "01-second-start",
+  "about": "A live drain makes a second start a no-op. The build in flight stays the current one.",
+  "steps": [
+    {"do": ["Enqueue", {"slug": "alpha", "time": 1, "priority": 0}]},
+    {"do": ["Start"], "expect": {"line": "building", "held": true, "current": "alpha", "phase": "building"}},
+    {"do": ["Start"], "expect": {"line": "already_running", "exit": 0, "current": "alpha", "phase": "building"}}
+  ]
+}

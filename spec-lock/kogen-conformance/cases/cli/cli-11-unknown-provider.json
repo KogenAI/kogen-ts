@@ -1,0 +1,51 @@
+{
+ "id": "cli-11",
+ "profile": "cli",
+ "fixture": "none",
+ "title": "Unknown provider",
+ "spec": [
+  "§1.3.3.6"
+ ],
+ "rows": [
+  {
+   "label": "login github",
+   "verb": "login",
+   "prov": "github"
+  },
+  {
+   "label": "logout openai",
+   "verb": "logout",
+   "prov": "openai"
+  },
+  {
+   "label": "use claude",
+   "verb": "use",
+   "prov": "claude"
+  },
+  {
+   "label": "login ChatGPT",
+   "verb": "login",
+   "prov": "ChatGPT"
+  }
+ ],
+ "steps": [
+  {
+   "run": [
+    "kogen",
+    "provider",
+    "{row.verb}",
+    "{row.prov}"
+   ],
+   "expect": {
+    "exit": 2,
+    "stdout": [
+     "kogen provider {row.verb}: unknown provider '{row.prov}' (supported: chatgpt)\n\n",
+     {
+      "data": "help/kogen-provider-{row.verb}.txt"
+     }
+    ],
+    "stderr": ""
+   }
+  }
+ ]
+}

@@ -1,0 +1,37 @@
+DRY_RUN: 66 packages; MAX=4; gpt-6-luna / max
+Repo: /Users/almirsarajcic/Areas/Kogen/kogen-ts
+Worktrees: /Users/almirsarajcic/Areas/Kogen/kogen-ts-wt/<pkg>; branches: kts/<pkg>
+Worker: /Users/almirsarajcic/cx/run.sh KTS-<pkg> <worktree> <promptfile> gpt-6-luna max
+Integration: locked rebase -> GIT_CONFIG_GLOBAL=/dev/null make check -> ff-only; one fix worker on failure
+Integration gates require coordinator receipts; this simulation assumes each gate is accepted when eligible.
+  batch 01: 00
+  batch 02: 01 02 09 27
+  batch 03: 03 10 28
+  batch 04: 04 11
+  batch 05: 05 13 23
+  batch 06: 06 29
+  batch 07: 07 08 15
+  batch 08: 12 16
+  batch 09: 14 17 24 30
+  batch 10: 18 33 34
+  batch 11: 19 35 37 51
+  gate I0: coordinator integration
+  batch 12: 20 31 36 52
+  batch 13: 21 32 46 53
+  batch 14: 22 25 40 54
+  gate I1: coordinator integration
+  batch 15: 26 38 55 57
+  batch 16: 39 58 60
+  batch 17: 41 42 56
+  gate I2: coordinator integration
+  batch 18: 43 47 59
+  gate I3: coordinator integration
+  batch 19: 44 45 48 64
+  gate I4: coordinator integration
+  batch 20: 49 50 61 65
+  gate I5: coordinator integration
+  gate I6: coordinator integration
+  batch 21: 62
+  batch 22: 63
+  gate I7: final coordinator release integration (no release claim from package merges)
+No workers started; no worktrees or dispatch state changed.

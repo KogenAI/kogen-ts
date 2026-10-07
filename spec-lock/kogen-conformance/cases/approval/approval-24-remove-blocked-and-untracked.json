@@ -1,0 +1,114 @@
+{
+ "id": "approval-24",
+ "profile": "approval",
+ "fixture": "kt",
+ "title": "remove during a Build gives remove_blocked; an untracked Intent gives remove_requires_commit",
+ "spec": [
+  "§1.7.3"
+ ],
+ "fake": true,
+ "allow_remaining": true,
+ "script": [
+  {
+   "id": "stall",
+   "expect": {
+    "role": "planner"
+   },
+   "repeat": "always",
+   "first_byte_ms": 900000,
+   "reply": {
+    "text": "Difficulty: easy\n"
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": {
+    "slug": "loose",
+    "intent_text": "---\ntitle: Loose Intent\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+    "test_text": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n",
+    "commit": false
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "remove",
+    "loose"
+   ],
+   "expect": {
+    "exit": 2,
+    "stderr": "",
+    "stdout": "intent/remove_requires_commit: Intent files must be tracked to record their removal\n"
+   }
+  },
+  {
+   "assert": {
+    "files": {
+     ".kogen/intents/loose/intent.md": true
+    }
+   }
+  },
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "background": "q"
+  },
+  {
+   "wait_until": {
+    "fake_requests": 1,
+    "timeout_s": 60
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "remove",
+    "greet",
+    "--force"
+   ],
+   "expect": {
+    "exit": 2,
+    "stderr": "",
+    "stdout": "intent/remove_blocked: Intent is in an active Build and cannot be removed\n"
+   }
+  },
+  {
+   "assert": {
+    "files": {
+     ".kogen/intents/greet/intent.md": true
+    },
+    "refs": {
+     "refs/kogen/intents/greet": true
+    }
+   }
+  },
+  {
+   "signal": {
+    "name": "q",
+    "sig": "TERM",
+    "after_s": 0
+   }
+  },
+  {
+   "wait": {
+    "name": "q",
+    "expect": {
+     "exit": 143,
+     "stderr_any": true
+    }
+   }
+  }
+ ]
+}

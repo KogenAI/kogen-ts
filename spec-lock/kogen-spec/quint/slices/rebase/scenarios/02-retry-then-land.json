@@ -1,0 +1,16 @@
+{
+  "name": "02-retry-then-land",
+  "about": "A lost CAS waits 1s and retries. The same Landing record is used. The next CAS lands.",
+  "steps": [
+    {"do": ["Record"], "expect": {"recorded": true}},
+    {"do": ["Head", {"kind": "ok"}]},
+    {"do": ["Push"], "expect": {"incoming": true}},
+    {"do": ["Cas", {"won": false}], "expect": {"line": "landing_retry", "delay": 1000, "tries": 1, "incoming": false, "phase": "retrying", "claim": true}},
+    {"do": ["Again"], "expect": {"phase": "recorded", "recorded": true}},
+    {"do": ["Head", {"kind": "ok"}]},
+    {"do": ["Push"]},
+    {"do": ["Cas", {"won": true}], "expect": {"onBase": true, "recorded": true}},
+    {"do": ["Worktree", {"dirty": false}]},
+    {"do": ["Drop", {"ok": true}], "expect": {"status": "landed", "exit": 0}}
+  ]
+}

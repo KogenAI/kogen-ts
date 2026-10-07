@@ -1,0 +1,68 @@
+{
+ "id": "build-15",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "A base-red check with the same identities is excused; the Build lands",
+ "spec": [
+  "§3.7.2",
+  "§2.4.4"
+ ],
+ "script": [
+  {
+   "include": "r1_happy"
+  }
+ ],
+ "fixture_files": {
+  "lib/old.txt": "TODO from long ago\n"
+ },
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build {id8:greet}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "contains": [
+      {
+       "event": "verification",
+       "result": "green",
+       "checks": {
+        "$contains": [
+         {
+          "name": "lint",
+          "status": "red",
+          "excused": true
+         }
+        ]
+       }
+      }
+     ],
+     "absent": [
+      "repair"
+     ]
+    }
+   }
+  }
+ ]
+}

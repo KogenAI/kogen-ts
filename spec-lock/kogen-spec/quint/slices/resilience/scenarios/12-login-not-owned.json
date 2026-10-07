@@ -1,0 +1,44 @@
+{
+ "name": "12-login-not-owned",
+ "about": "Without owned mode no refresh is possible: login stops the Build at once.",
+ "steps": [
+  {
+   "do": [
+    "Stage",
+    {
+     "name": "build",
+     "mode": "build",
+     "model": "luna",
+     "fallback": "sol",
+     "owned": false
+    }
+   ]
+  },
+  {
+   "do": [
+    "Request"
+   ]
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "login",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "stop",
+     "delay_ms": 0,
+     "reason": "provider/login"
+    },
+    "phase": "stopped",
+    "exit": 4
+   }
+  }
+ ]
+}

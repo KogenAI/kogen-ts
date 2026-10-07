@@ -1,0 +1,46 @@
+{
+ "id": "provider-05",
+ "profile": "provider",
+ "fixture": "kt",
+ "fake": true,
+ "title": "prompt_cache_key formula",
+ "spec": [
+  "§4.1"
+ ],
+ "script": [
+  {
+   "include": "r1_happy"
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "prompt_cache_keys": {
+     "slug": "greet"
+    }
+   }
+  }
+ ],
+ "notes": "Every request's key must equal sha256(\"kogen:responses:v1\\0\" + run dir + \"\\0\" + stage) for a stage named in the run's model_stage events. SPEC AMBIGUITY: stage names are not enumerated, so the journal is the only source."
+}

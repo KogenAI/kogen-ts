@@ -1,0 +1,12 @@
+{
+  "name": "07-run-affinity",
+  "about": "Stages and rungs change thread identity while cache affinity stays with the run; a new run changes affinity.",
+  "steps": [
+    {"do": ["Bind", {"stage": "develop", "attempt": "", "rung": ""}], "expect": {"runName": "run-1", "affinityChanged": false}},
+    {"do": ["Stage", {"name": "plan"}], "expect": {"keyChanged": true, "affinityChanged": false}},
+    {"do": ["Rung", {"name": "2"}], "expect": {"keyChanged": true, "affinityChanged": false}},
+    {"do": ["NewRun", {"name": "run-2"}], "expect": {"runName": "run-2", "affinityChanged": true, "version": ""}},
+    {"do": ["Bind", {"stage": "develop", "attempt": "", "rung": ""}], "expect": {"runName": "run-2", "affinityChanged": false}},
+    {"do": ["NewRun", {"name": "run-1"}], "expect": {"runName": "run-1", "affinityChanged": true, "version": ""}}
+  ]
+}

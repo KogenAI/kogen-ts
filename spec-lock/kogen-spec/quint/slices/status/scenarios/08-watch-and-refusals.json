@@ -1,0 +1,15 @@
+{
+  "name": "08-watch-and-refusals",
+  "about": "Overview watch exits when idle, slug watch exits 0 only when landed, and unknown or absent slugs use exit 2.",
+  "steps": [
+    {"do":["Watch",{"slug":""}],"expect":{"exit":0}},
+    {"do":["Agents",{"busy":1}]},
+    {"do":["Watch",{"slug":""}],"expect":{"exit":-1}},
+    {"do":["Agents",{"busy":0}]},
+    {"do":["Watch",{"slug":"ghost"}],"expect":{"exit":2,"watchStatus":"not_found","watchPosition":-1}},
+    {"do":["Watch",{"slug":"alpha"}],"expect":{"exit":2,"watchStatus":"not_found"}},
+    {"do":["Row",{"slug":"alpha","status":"draft","priority":0,"at":0,"blocks":"","sched":"","started":0,"index":0}]},
+    {"do":["Watch",{"slug":"alpha"}],"expect":{"exit":1,"watchStatus":"draft","watchQueueSize":0}},
+    {"do":["Row",{"slug":"unknown","status":"draft","priority":0,"at":0,"blocks":"","sched":"","started":0,"index":0}],"expect":{"last":"bad_slug"}}
+  ]
+}

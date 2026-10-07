@@ -1,0 +1,8 @@
+{
+ "name": "07-tool-missing",
+ "about": "Acceptance command not runnable (126/127) is an environment error: exit 3.",
+ "steps": [
+  {"do": ["Approve", {"slug": "alpha", "given": "", "prefixOk": true, "stableBeforeCas": true, "newSha8": "aaaa1111", "sha": "aaaa1111bbbb2222", "sha8": "aaaa1111", "by": "", "byBad": false, "ident": "Ann <ann@x.io>", "parseErr": false, "lintErr": false, "lintWarn": false, "missing": false, "setup": "ok", "cacheKey": "k1", "baseline": "green", "acceptance": "tool_missing", "witnessMode": false, "feas": "not checked", "commit": "c1", "baseSha": "b0"}], "expect": {"last": "environment/tool_missing", "exit": 3, "approvals": {}}},
+  {"do": ["Approve", {"slug": "alpha", "given": "aaaa1111", "prefixOk": true, "stableBeforeCas": true, "newSha8": "aaaa1111", "sha": "aaaa1111bbbb2222", "sha8": "aaaa1111", "by": "", "byBad": false, "ident": "Ann <ann@x.io>", "parseErr": false, "lintErr": false, "lintWarn": false, "missing": false, "setup": "ok", "cacheKey": "k1", "baseline": "green", "acceptance": "tool_missing", "witnessMode": false, "feas": "not checked", "commit": "c1", "baseSha": "b0"}], "expect": {"last": "environment/tool_missing", "exit": 3, "approvals": {}}}
+ ]
+}

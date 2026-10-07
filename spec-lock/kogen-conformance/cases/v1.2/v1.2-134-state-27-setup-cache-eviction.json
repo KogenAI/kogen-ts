@@ -1,0 +1,324 @@
+{
+  "id": "v1.2-134-state-27",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "title": "v1.2 replacement for state-27: setup cache keeps at most three entries",
+  "spec": [
+    "§2.9",
+    "§3.6",
+    "§4.2",
+    "§4.7"
+  ],
+  "fake": true,
+  "script": [
+    {
+      "id": "greet.plan",
+      "expect": {
+        "role": "planner",
+        "input_contains": "Greet Almir by name",
+        "tools": [
+          "finish",
+          "shell",
+          "tool_output"
+        ]
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "greet.edit",
+      "expect": {
+        "role": "builder",
+        "turn": 1,
+        "input_contains": "Greet Almir by name",
+        "tools": [
+          "finish",
+          "shell",
+          "tool_output"
+        ]
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "greet.done",
+      "expect": {
+        "role": "builder",
+        "turn": 2,
+        "input_contains": "Greet Almir by name",
+        "tools": [
+          "finish",
+          "shell",
+          "tool_output"
+        ]
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "farewell.plan",
+      "expect": {
+        "role": "planner",
+        "input_contains": "Add a farewell line",
+        "tools": [
+          "finish",
+          "shell",
+          "tool_output"
+        ]
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "farewell.edit",
+      "expect": {
+        "role": "builder",
+        "turn": 1,
+        "input_contains": "Add a farewell line",
+        "tools": [
+          "finish",
+          "shell",
+          "tool_output"
+        ]
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Bye, Almir!\\n' > lib/bye.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "farewell.done",
+      "expect": {
+        "role": "builder",
+        "turn": 2,
+        "input_contains": "Add a farewell line",
+        "tools": [
+          "finish",
+          "shell",
+          "tool_output"
+        ]
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "cee.plan",
+      "expect": {
+        "role": "planner",
+        "input_contains": "Add file cee",
+        "tools": [
+          "finish",
+          "shell",
+          "tool_output"
+        ]
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "cee.edit",
+      "expect": {
+        "role": "builder",
+        "turn": 1,
+        "input_contains": "Add file cee",
+        "tools": [
+          "finish",
+          "shell",
+          "tool_output"
+        ]
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Cee\\n' > lib/cee.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "cee.done",
+      "expect": {
+        "role": "builder",
+        "turn": 2,
+        "input_contains": "Add file cee",
+        "tools": [
+          "finish",
+          "shell",
+          "tool_output"
+        ]
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "dee.plan",
+      "expect": {
+        "role": "planner",
+        "input_contains": "Add file dee",
+        "tools": [
+          "finish",
+          "shell",
+          "tool_output"
+        ]
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "dee.edit",
+      "expect": {
+        "role": "builder",
+        "turn": 1,
+        "input_contains": "Add file dee",
+        "tools": [
+          "finish",
+          "shell",
+          "tool_output"
+        ]
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Dee\\n' > lib/dee.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "dee.done",
+      "expect": {
+        "role": "builder",
+        "turn": 2,
+        "input_contains": "Add file dee",
+        "tools": [
+          "finish",
+          "shell",
+          "tool_output"
+        ]
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "intent": "farewell"
+    },
+    {
+      "intent": {
+        "slug": "cee",
+        "intent_text": "---\ntitle: Add file cee\nsize: small\ndomains: [app]\n---\nAdd lib/cee.txt with one line.\n\n## Acceptance\n- A1: lib/cee.txt contains the line Cee\n\n## Verify\n- A1: test\n\n## Request\nAdd lib/cee.txt.\n",
+        "test_text": "t_A1() { grep -qx 'Cee' lib/cee.txt; }\n",
+        "commit": true
+      }
+    },
+    {
+      "intent": {
+        "slug": "dee",
+        "intent_text": "---\ntitle: Add file dee\nsize: small\ndomains: [app]\n---\nAdd lib/dee.txt with one line.\n\n## Acceptance\n- A1: lib/dee.txt contains the line Dee\n\n## Verify\n- A1: test\n\n## Request\nAdd lib/dee.txt.\n",
+        "test_text": "t_A1() { grep -qx 'Dee' lib/dee.txt; }\n",
+        "commit": true
+      }
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "sleep": 1.1
+    },
+    {
+      "approve": "farewell"
+    },
+    {
+      "sleep": 1.1
+    },
+    {
+      "approve": "cee"
+    },
+    {
+      "sleep": 1.1
+    },
+    {
+      "approve": "dee"
+    },
+    {
+      "sleep": 1.1
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_regex": "queue: done; 4 Build\\(s\\), 4 landed, 0 not\n\\Z"
+      }
+    },
+    {
+      "assert": {
+        "glob_count": {
+          "{state_root}/setup-cache/*/complete": {
+            "$any_of": [
+              1,
+              2,
+              3
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "notes": "The v1.1 fixture expected tool-less planner requests to omit the shared schemas and used text as builder completion. v1.2 uses the shared schemas and finish alone with {} (§3.6, §4.2, §4.7)."
+}

@@ -1,0 +1,10 @@
+{
+  "name": "03-ledger",
+  "about": "Ledger failures: no rows, a missing runner, a mutated tree, and a failing row.",
+  "steps": [
+    {"do": ["Rows", {"id": "A1", "kind": "change", "report": "empty", "runnerDown": false, "exit0": true, "mutated": false, "failed": 0, "rows": 0}], "expect": {"ledger": "no_tagged_tests"}},
+    {"do": ["Rows", {"id": "A1", "kind": "change", "report": "missing", "runnerDown": true, "exit0": false, "mutated": false, "failed": 0, "rows": 0}], "expect": {"ledger": "tool_missing"}},
+    {"do": ["Rows", {"id": "A2", "kind": "keep", "report": "ok", "runnerDown": false, "exit0": true, "mutated": true, "failed": 0, "rows": 1}], "expect": {"ledger": "tree_mutated"}},
+    {"do": ["Rows", {"id": "A1", "kind": "change", "report": "ok", "runnerDown": false, "exit0": true, "mutated": false, "failed": 1, "rows": 1}], "expect": {"ledger": "fail", "items": {"A1": {"passed": false}}}}
+  ]
+}

@@ -1,0 +1,227 @@
+{
+  "id": "v1.2-124-build-31",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for build-31: Queue order; each Intent is built once per drain",
+  "spec": [
+    "§3.11",
+    "§3.6",
+    "§4.7",
+    "§3.8.2",
+    "§4.2"
+  ],
+  "project": {
+    "build": {
+      "ladder": {
+        "max_rungs": 1
+      }
+    }
+  },
+  "notes": "greet is re-approved by a side effect during its own Build; it is queued again but was already attempted in this drain. v1.2 replacement for build-31. Text-only builder replies are progress; completion requires finish alone with {} (§3.6), and shell-recipe builders expose shell, finish, and tool_output (§4.7). The greet acceptance-only red rung receives the required auditor response before repair (§3.8.2); tool-less Build roles retain the shared schemas (§4.2).",
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "intent": "farewell"
+    },
+    {
+      "approve": "farewell"
+    },
+    {
+      "sleep": 1.1
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "fake": {
+        "script": [
+          {
+            "id": "far.plan",
+            "expect": {
+              "role": "planner",
+              "turn": 1,
+              "input_contains": "Add a farewell line"
+            },
+            "reply": {
+              "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/bye.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/bye.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/bye.txt.\n"
+            }
+          },
+          {
+            "id": "far.edit",
+            "expect": {
+              "role": "builder",
+              "turn": 1,
+              "input_contains": "Add a farewell line"
+            },
+            "reply": {
+              "calls": [
+                {
+                  "name": "shell",
+                  "arguments": {
+                    "cmd": "printf 'Bye, Almir!\\n' > lib/bye.txt"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "far.done",
+            "expect": {
+              "role": "builder",
+              "turn": 2,
+              "input_contains": "Add a farewell line",
+              "last_output_contains": "exit 0"
+            },
+            "reply": {
+              "calls": [
+                {
+                  "name": "finish",
+                  "arguments": {}
+                }
+              ]
+            }
+          },
+          {
+            "id": "g.plan",
+            "expect": {
+              "role": "planner",
+              "input_contains": "Greet Almir by name"
+            },
+            "reply": {
+              "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+            },
+            "side_effect_sh": "cd \"$CHECKOUT\" && \"{kogen}\" intent approve greet {hash8:greet} --by side-effect >/dev/null"
+          },
+          {
+            "id": "g.claim1",
+            "expect": {
+              "role": "builder",
+              "turn": 1,
+              "input_contains": "Greet Almir by name"
+            },
+            "reply": {
+              "calls": [
+                {
+                  "name": "finish",
+                  "arguments": {}
+                }
+              ]
+            }
+          },
+          {
+            "id": "g.claim2",
+            "expect": {
+              "role": "builder",
+              "turn": 2,
+              "input_contains": "Greet Almir by name",
+              "last_output_contains": "Kogen found no changed files"
+            },
+            "reply": {
+              "calls": [
+                {
+                  "name": "finish",
+                  "arguments": {}
+                }
+              ]
+            }
+          },
+          {
+            "id": "g.audit",
+            "expect": {
+              "role": "test_auditor",
+              "turn": 1,
+              "tools": [
+                "finish",
+                "shell",
+                "tool_output"
+              ]
+            },
+            "reply": {
+              "text": "{\"items\":[{\"id\":\"A1\",\"verdict\":\"valid\",\"reason\":\"The test follows the Request.\"}]}"
+            }
+          },
+          {
+            "id": "g.claim3",
+            "expect": {
+              "role": "builder",
+              "turn": 3,
+              "input_contains": "Greet Almir by name",
+              "last_user_contains": "Kogen's controller reported this failure."
+            },
+            "reply": {
+              "calls": [
+                {
+                  "name": "finish",
+                  "arguments": {}
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 1,
+        "stderr": "",
+        "stdout_lines": [
+          "building farewell",
+          "~\\~landed farewell [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+          "building greet",
+          "~failed greet: \\S+; best candidate \\S+ at refs/kogen/parked/[0-9a-f]{32} \\(Build [0-9a-f]{8}\\)",
+          "queue: done; 2 Build(s), 1 landed, 1 not"
+        ]
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "status",
+        "greet"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout": "greet: queued, 1 of 1\n"
+      }
+    },
+    {
+      "assert": {
+        "runs_count": {
+          "greet": 1,
+          "farewell": 1
+        },
+        "fake_request_count": {
+          "test_auditor": 1
+        },
+        "events": {
+          "slug": "greet",
+          "contains": [
+            {
+              "event": "audit",
+              "items": [
+                {
+                  "id": "A1",
+                  "verdict": "valid",
+                  "reason": "$any"
+                }
+              ]
+            },
+            {
+              "event": "acceptance_upheld",
+              "id": "A1",
+              "verdict": "valid"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

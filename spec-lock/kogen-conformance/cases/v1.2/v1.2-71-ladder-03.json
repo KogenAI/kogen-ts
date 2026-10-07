@@ -1,0 +1,263 @@
+{
+  "id": "v1.2-71-ladder-03",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for ladder-03: Hard starts R1 and R2 in parallel; R2 lands green",
+  "spec": [
+    "§3.1",
+    "§3.6",
+    "§4.7",
+    "§3.8.2",
+    "§4.2"
+  ],
+  "script": [
+    {
+      "id": "plan",
+      "expect": {
+        "role": "planner"
+      },
+      "reply": {
+        "text": "Difficulty: hard\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "r1.edit",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 1,
+        "tools": [
+          "shell",
+          "finish",
+          "tool_output"
+        ],
+        "input_contains": "Implementation plan:",
+        "input_not_contains": "Earlier attempts:"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Hello, Almr!\\n' > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r1.no_progress",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 3,
+        "tools": [
+          "finish",
+          "shell",
+          "tool_output"
+        ],
+        "last_user_contains": "Kogen's controller reported this failure."
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "r2.edit",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "turn": 1,
+        "tools": [
+          "shell",
+          "finish",
+          "tool_output"
+        ],
+        "input_contains": "Implementation plan:"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r1.done",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 2,
+        "last_output_contains": "exit 0"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "audit",
+      "expect": {
+        "role": "test_auditor",
+        "turn": 1,
+        "tools": [
+          "finish",
+          "shell",
+          "tool_output"
+        ]
+      },
+      "reply": {
+        "text": "{\"items\":[{\"id\":\"A1\",\"verdict\":\"valid\",\"reason\":\"The test follows the Request.\"}]}"
+      }
+    },
+    {
+      "id": "r2.done",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "turn": 2,
+        "last_output_contains": "exit 0"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_lines": [
+          "building greet",
+          "~\\~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+          "queue: done; 1 Build(s), 1 landed, 0 not"
+        ]
+      }
+    },
+    {
+      "assert": {
+        "fake_requests": [
+          {
+            "select": {
+              "step": "r1.edit"
+            },
+            "input_contains": [
+              "Implementation plan:",
+              "## Technical approach"
+            ],
+            "input_not_contains": "Earlier attempts:"
+          },
+          {
+            "select": {
+              "step": "r2.edit"
+            },
+            "input_contains": [
+              "Implementation plan:",
+              "## Technical approach"
+            ],
+            "input_not_contains": "Earlier attempts:"
+          }
+        ],
+        "fake_request_count": {
+          "planner": 1,
+          "test_auditor": 1
+        },
+        "events": {
+          "slug": "greet",
+          "count": {
+            "rung_started": 2
+          },
+          "contains": [
+            {
+              "event": "plan",
+              "difficulty": "hard"
+            },
+            {
+              "event": "parallel_started",
+              "attempts": 2
+            },
+            {
+              "event": "rung_started",
+              "rung": "R1",
+              "model": "gpt-6-luna",
+              "effort": "max"
+            },
+            {
+              "event": "rung_started",
+              "rung": "R2",
+              "model": "gpt-6.1-sol",
+              "effort": "medium"
+            },
+            {
+              "event": "verification",
+              "rung": "R1",
+              "result": "red"
+            },
+            {
+              "event": "verification",
+              "rung": "R2",
+              "result": "green"
+            },
+            {
+              "event": "audit",
+              "items": [
+                {
+                  "id": "A1",
+                  "verdict": "valid",
+                  "reason": "$any"
+                }
+              ]
+            },
+            {
+              "event": "acceptance_upheld",
+              "id": "A1",
+              "verdict": "valid"
+            }
+          ],
+          "last": {
+            "event": "finished",
+            "status": "landed",
+            "rung": "R2"
+          }
+        }
+      }
+    }
+  ],
+  "notes": "The v1.1 case expects hard difficulty to start only R2. In v1.2, §3.1 starts R1 and R2 together; this replacement makes R1 red and R2 green, then expects the green rung to land. Builder completion uses finish alone with {} (§3.6), with the shell-recipe tools (§4.7). The red acceptance-only rung receives its required test-auditor response before repair (§3.8.2); tool-less Build roles retain the shared schemas (§4.2). Text-only builder replies are progress; completion requires finish alone with {} (§3.6).",
+  "allow_remaining": true
+}

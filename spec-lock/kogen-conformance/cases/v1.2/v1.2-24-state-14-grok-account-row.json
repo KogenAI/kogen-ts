@@ -1,0 +1,76 @@
+{
+  "id": "v1.2-24-state-14-grok-account-row",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "title": "v1.2 replacement for state-14: Empty accounts list includes both providers",
+  "spec": [
+    "§1.7.6",
+    "§2.7",
+    "§4.10"
+  ],
+  "notes": "With no saved login, provider list prints the ChatGPT and Grok rows even when accounts.yaml has an empty ChatGPT map (§1.7.6, §2.7, §4.10).",
+  "rows": [
+    {
+      "label": "empty map",
+      "doc": "# Kogen accounts on this machine, written by kogen provider use.\nchatgpt: {}\n"
+    },
+    {
+      "label": "rows",
+      "doc": "# Kogen accounts on this machine, written by kogen provider use.\nchatgpt:\n  default: work\n  projects:\n    - path: \"{checkout}\"\n      account: work\n"
+    }
+  ],
+  "steps": [
+    {
+      "write": {
+        "path": "{home}/.kogen/accounts.yaml",
+        "text": "{row.doc}"
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "provider",
+        "list"
+      ],
+      "expect": {
+        "exit": 0,
+        "stderr": "",
+        "stdout": "chatgpt: not signed in\ngrok: not signed in\n"
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "status"
+      ],
+      "expect": {
+        "exit": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "write": {
+        "path": "{home}/.kogen/accounts.yaml",
+        "text": "chatgpt:\n\tdefault: x\n"
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "provider",
+        "use",
+        "chatgpt",
+        "--as",
+        "work"
+      ],
+      "expect": {
+        "exit": [
+          3,
+          4
+        ],
+        "stderr": "",
+        "stdout_regex": "\\A(environment/invalid_accounts_file: {home}/\\.kogen/accounts\\.yaml is not valid; fix or delete it|provider/login: chatgpt:work has no saved login; run kogen provider login chatgpt --as work)\n\\Z"
+      }
+    }
+  ]
+}

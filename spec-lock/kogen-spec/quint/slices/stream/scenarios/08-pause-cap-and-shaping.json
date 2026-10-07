@@ -1,0 +1,20 @@
+{
+  "name": "08-pause-cap-and-shaping",
+  "about": "A usage-limit pause that lands on 24 h is allowed; the next one stops the Build. Shaping never pauses.",
+  "steps": [
+    {"do": ["SetWaited", {"ms": 86100000}], "expect": {"waited": 86100000, "last": "ok"}},
+    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+     "expect": {"waited": 86100000, "phase": "open", "refreshed": false}},
+    {"do": ["Result", {"kind": "usage_limit", "items": false}],
+     "expect": {"decision": "pause", "delay": 300000, "waited": 86400000, "attempt": 1, "exit": 0, "phase": "idle"}},
+    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+     "expect": {"phase": "open", "refreshed": false, "waited": 86400000, "exit": 0}},
+    {"do": ["Result", {"kind": "usage_limit", "items": false}],
+     "expect": {"decision": "stop", "exit": 4, "reason": "provider/usage_limit", "queued": true, "failed": false, "phase": "stopped", "delay": 0}},
+    {"do": ["SetWaited", {"ms": 0}], "expect": {"waited": 0}},
+    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "shape"}],
+     "expect": {"mode": "shape", "phase": "open", "refreshed": false, "exit": 0}},
+    {"do": ["Result", {"kind": "usage_limit", "items": false}],
+     "expect": {"decision": "stop", "exit": 4, "reason": "provider/usage_limit", "waited": 0, "delay": 0, "queued": true, "failed": false, "phase": "stopped"}}
+  ]
+}

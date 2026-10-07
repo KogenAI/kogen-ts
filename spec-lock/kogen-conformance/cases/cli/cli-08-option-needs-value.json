@@ -1,0 +1,86 @@
+{
+ "id": "cli-08",
+ "profile": "cli",
+ "fixture": "none",
+ "title": "Option that needs a value",
+ "spec": [
+  "§1.3.3.4"
+ ],
+ "rows": [
+  {
+   "label": "--by",
+   "argv": [
+    "intent",
+    "approve",
+    "greet",
+    "--by"
+   ],
+   "path": "intent approve",
+   "opt": "--by",
+   "page": "kogen-intent-approve"
+  },
+  {
+   "label": "--project",
+   "argv": [
+    "status",
+    "--project"
+   ],
+   "path": "status",
+   "opt": "--project",
+   "page": "kogen-status"
+  },
+  {
+   "label": "--origin",
+   "argv": [
+    "queue",
+    "stop",
+    "--origin"
+   ],
+   "path": "queue stop",
+   "opt": "--origin",
+   "page": "kogen-queue-stop"
+  },
+  {
+   "label": "--base",
+   "argv": [
+    "intent",
+    "remove",
+    "greet",
+    "--base"
+   ],
+   "path": "intent remove",
+   "opt": "--base",
+   "page": "kogen-intent-remove"
+  },
+  {
+   "label": "--as",
+   "argv": [
+    "provider",
+    "login",
+    "chatgpt",
+    "--as"
+   ],
+   "path": "provider login",
+   "opt": "--as",
+   "page": "kogen-provider-login"
+  }
+ ],
+ "steps": [
+  {
+   "run": [
+    "kogen",
+    "{*row.argv}"
+   ],
+   "expect": {
+    "exit": 2,
+    "stdout": [
+     "kogen {row.path}: {row.opt} needs a value\n\n",
+     {
+      "data": "help/{row.page}.txt"
+     }
+    ],
+    "stderr": ""
+   }
+  }
+ ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "04-reapprove-and-cas",
+  "about": "Re-approval writes a new commit. One lost CAS retries and commits. Two losses leave the old ref.",
+  "steps": [
+    {"do": ["Shape", {"slug": "alpha", "result": "valid"}]},
+    {"do": ["Approve", {"slug": "alpha", "mode": "commit", "hash": "abcd1234", "prefixOk": true, "race": "none"}]},
+    {"do": ["Approve", {"slug": "alpha", "mode": "commit", "hash": "bbbb2222", "prefixOk": true, "race": "once"}], "expect": {"casTries": 2, "refs": {"alpha": {"n": 2, "hash": "bbbb2222"}}}},
+    {"do": ["Approve", {"slug": "alpha", "mode": "commit", "hash": "cccc3333", "prefixOk": true, "race": "twice"}], "expect": {"last": "controller/approval_cas_lost", "exit": 70, "casTries": 2, "refs": {"alpha": {"n": 2, "hash": "bbbb2222"}}}}
+  ]
+}

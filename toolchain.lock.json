@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "platform": "darwin-arm64",
+  "mise": "2026.9.14 macos-arm64 (2026-09-25)",
+  "tools": {
+    "bun": {
+      "version": "1.4.2",
+      "selected_binary": "/Users/almirsarajcic/.local/share/mise/installs/bun/1.4.2/bin/bun",
+      "resolved_binary": "/Users/almirsarajcic/.local/share/mise/installs/bun/1.4.2/bin/bun",
+      "binary_sha256": "35d20dd0263e5c950194434b925454fdfa9ba6e4467da960410fa05b08a7a5b5",
+      "install_path": "/Users/almirsarajcic/.local/share/mise/installs/bun/1.4.2"
+    },
+    "git": {
+      "version": "git version 2.54.0",
+      "selected_binary": "/Users/almirsarajcic/.local/share/mise/installs/git/2.54.0/bin/git",
+      "resolved_binary": "/Users/almirsarajcic/.local/share/mise/installs/git/2.54.0/bin/git",
+      "binary_sha256": "fac7ac4a7904a05639f3ab74eb1436c4db149c1aad8984197b42c40280dbc1a8",
+      "install_path": "/Users/almirsarajcic/.local/share/mise/installs/git/2.54.0"
+    },
+    "node": {
+      "version": "v24.21.0",
+      "selected_binary": "/Users/almirsarajcic/.local/share/mise/installs/node/24.21.0/bin/node",
+      "resolved_binary": "/Users/almirsarajcic/.local/share/mise/installs/node/24.21.0/bin/node",
+      "binary_sha256": "e4b5a3af0e05c75de2eae013904145f40fe7fc2a6e6f17510128bf45cca4e79b",
+      "install_path": "/Users/almirsarajcic/.local/share/mise/installs/node/24.21.0"
+    },
+    "python": {
+      "version": "Python 3.14.7",
+      "selected_binary": "/Users/almirsarajcic/.local/share/mise/installs/python/3.14.7/bin/python3",
+      "resolved_binary": "/Users/almirsarajcic/.local/share/mise/installs/python/3.14.7/bin/python3.14",
+      "binary_sha256": "a888791502b2c5c9c3d2c1c3a28293b5fa794574d24bd47c7a7d094e693d8fb9",
+      "install_path": "/Users/almirsarajcic/.local/share/mise/installs/python/3.14.7"
+    },
+    "npm:@informalsystems/quint": {
+      "version": "0.33.0",
+      "selected_binary": "/Users/almirsarajcic/.local/share/mise/installs/npm-informalsystems-quint/0.33.0/node_modules/.bin/quint",
+      "resolved_binary": "/Users/almirsarajcic/.local/share/mise/installs/npm-informalsystems-quint/0.33.0/node_modules/.bin/quint",
+      "binary_sha256": "bd6e9400f6358a8a69d80eb636eb62f59f993039868a7be9719f76ba74191b4e",
+      "install_path": "/Users/almirsarajcic/.local/share/mise/installs/npm-informalsystems-quint/0.33.0"
+    },
+    "/bin/bash": {
+      "version": "GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)\nCopyright (C) 2007 Free Software Foundation, Inc."
+    },
+    "/usr/bin/clang": {
+      "version": "Apple clang version 21.0.0 (clang-2100.1.1.101)\nTarget: arm64-apple-darwin25.6.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+    },
+    "/usr/bin/make": {
+      "version": "GNU Make 3.81\nCopyright (C) 2006  Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.\nThere is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A\nPARTICULAR PURPOSE.\n\nThis program built for i386-apple-darwin11.3.0"
+    },
+    "/usr/bin/xcrun": {
+      "version": "26.5"
+    },
+    "/usr/bin/sw_vers": {
+      "version": "ProductName:\t\tmacOS\nProductVersion:\t\t26.7.1\nBuildVersion:\t\t25G241"
+    }
+  },
+  "npm_pins": {
+    "typescript": "5.9.3",
+    "@biomejs/biome": "2.3.11",
+    "@types/bun": "1.4.2",
+    "bun-types": "1.4.2",
+    "@types/node": "24.10.1",
+    "undici-types": "7.16.0"
+  },
+  "npm_archive_integrities": "bun.lock contains exact SHA-512 integrity for all npm archives/native Biome variants",
+  "runtime_archive_hashes": {
+    "git_official_release_reference": {
+      "url": "https://www.kernel.org/pub/software/scm/git/git-2.54.0.tar.xz",
+      "sha256": "f689162364c10de79ef89aa8dbf48731eb057e34edbbd20aca510ce0154681a3"
+    },
+    "other_runtime_archives": "Not retained by existing mise installations; verified installed binary hashes above. Do not interpret them as archive hashes."
+  },
+  "host": {
+    "cpu": "10",
+    "memory_bytes": "34359738368",
+    "free_disk_at_bootstrap": "Filesystem      Size    Used   Avail Capacity iused ifree %iused  Mounted on\n/dev/disk3s5   460Gi   416Gi    24Gi    95%     14M  249M    5%   /System/Volumes/Data"
+  },
+  "reference_deviations": [
+    "Owner explicitly permits Bash 3; /bin/bash 3.2.57 used instead of reference Bash 5.2.37",
+    "Studio actual macOS 26.7.1 build 25G241, Apple clang 21.0.0 clang-2100.1.1.101, SDK 26.5 differ from planning host",
+    "Optional ExUnit/Rails and Linux tools remain packet/integration prerequisites"
+  ],
+  "mise_git_plugin": {
+    "url": "https://gitlab.com/jcaigitlab/asdf-git.git",
+    "commit": "0bfd42e8029dfeef369fb0693981c95d454bb10e"
+  }
+}

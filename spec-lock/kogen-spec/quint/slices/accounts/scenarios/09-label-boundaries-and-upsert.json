@@ -1,0 +1,11 @@
+{
+  "name": "09-label-boundaries-and-upsert",
+  "about": "Valid label forms include uppercase, dots, dashes, and underscores; login replaces the existing default profile without duplicating it.",
+  "steps": [
+    {"do":["Seed",{"provider":"chatgpt","label":"default","present":true,"saved":true,"signedIn":true,"email":"old@example.test","expires":100,"hasExpiry":true,"notice":false,"remoteRevoked":false}]},
+    {"do":["Login",{"provider":"chatgpt","success":true,"email":"new@example.test","expires":0,"hasExpiry":false,"notice":false}],"expect":{"rows":[{"provider":"chatgpt","label":"default","isDefault":true,"signedIn":true,"email":"new@example.test","expires":0}]}},
+    {"do":["Seed",{"provider":"chatgpt","label":"A1","present":true,"saved":true,"signedIn":true,"email":"a@example.test","expires":0,"hasExpiry":false,"notice":false,"remoteRevoked":false}]},
+    {"do":["Use",{"provider":"chatgpt","label":"A1","project":"","projectExists":true}],"expect":{"last":"ok","chatDefault":"A1"}},
+    {"do":["Use",{"provider":"chatgpt","label":"_bad","project":"","projectExists":true}],"expect":{"last":"invalid_label","exit":2}}
+  ]
+}

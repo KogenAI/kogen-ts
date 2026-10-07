@@ -1,0 +1,236 @@
+{
+ "id": "ladder-14",
+ "profile": "ladder",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Selector: more passing items wins",
+ "spec": [
+  "§3.8.3"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "tools": []
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+   }
+  },
+  {
+   "id": "r1.start",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "turn": 1
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt; n=$(cat lib/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > lib/n; printf 'a\\nb\\nc\\nd\\n' > lib/pad.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r1.again",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "last_item_type": "message"
+   },
+   "repeat": "always",
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt; n=$(cat lib/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > lib/n; printf 'a\\nb\\nc\\nd\\n' > lib/pad.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r1.claim",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "last_item_type": "function_call_output"
+   },
+   "repeat": "always",
+   "reply": {
+    "text": "Done."
+   }
+  },
+  {
+   "id": "audit",
+   "expect": {
+    "role": "auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test follows the Request.\"}, {\"id\": \"A2\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test follows the Request.\"}]}"
+   },
+   "repeat": "always"
+  },
+  {
+   "id": "r2.start",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6.1-sol",
+    "effort": "medium",
+    "turn": 1
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "echo x > lib/n"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r2.again",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6.1-sol",
+    "effort": "medium",
+    "last_item_type": "message"
+   },
+   "repeat": "always",
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "echo x > lib/n"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r2.claim",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6.1-sol",
+    "effort": "medium",
+    "last_item_type": "function_call_output"
+   },
+   "repeat": "always",
+   "reply": {
+    "text": "Done."
+   }
+  },
+  {
+   "id": "r3.start",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "turn": 1
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "echo y > lib/n"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r3.again",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "last_item_type": "message"
+   },
+   "repeat": "always",
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "echo y > lib/n"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r3.claim",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "last_item_type": "function_call_output"
+   },
+   "repeat": "always",
+   "reply": {
+    "text": "Done."
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": {
+    "slug": "greet",
+    "intent_text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n- A2: lib/bye.txt contains the line Bye, Almir!\n\n## Verify\n- A1: test\n- A2: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+    "test_text": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\nt_A2() { grep -qx 'Bye, Almir!' lib/bye.txt; }\n",
+    "commit": true
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 1,
+    "stdout_lines": [
+     "building greet",
+     "~failed greet: [a-z_/]+; best candidate unverified at refs/kogen/parked/[0-9a-f]{32} \\(Build [0-9a-f]{8}\\)",
+     "queue: done; 1 Build(s), 0 landed, 1 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "contains": [
+      {
+       "event": "selection",
+       "winner_rung": "R1"
+      }
+     ]
+    },
+    "files": {
+     "{run_dir:greet}/candidate.diff": {
+      "same_as": "{run_dir:greet}/candidate-R1.diff"
+     }
+    }
+   }
+  }
+ ],
+ "notes": "R2/R3 write the same bytes on every repair, so they may end 'unchanged' rather than at the repair cap; either is fine."
+}

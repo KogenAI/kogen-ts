@@ -1,0 +1,917 @@
+[
+  {
+    "id": "00",
+    "name": "00-scaffold-and-input-freeze",
+    "title": "Scaffold and input freeze",
+    "minutes": 60,
+    "deps": [],
+    "owned": "Root manifests/config/Makefile; spec-lock/**; packages/*/package.json; packages/core/src/contracts/{ports,events,errors,clock}.ts; tools/{check,freeze,dispatch}.ts",
+    "goal": "Freeze e19dd1c draft plus working-tree content hashes and CHANGES-v1.3; pin tools/lock; hermetic runner; typed ports. Adapt the Rust dispatch method to a DAG/receipt-aware local dispatcher with dry-run, no automatic push or failed-worktree deletion; integration hooks are completed by the rounds. No behavior stubs may be counted as accepted.",
+    "acceptance": "Version/blank-HOME/no-network check smoke; source-hash receipt."
+  },
+  {
+    "id": "01",
+    "name": "01-public-cli-grammar-and-output-data",
+    "title": "Public CLI grammar and output data",
+    "minutes": 90,
+    "deps": [
+      "00"
+    ],
+    "owned": "packages/cli/src/{argv,output}.ts; packages/cli/data/**; tests/cli-boundary/**",
+    "goal": "Fixed moved/tree/options/positional/value precedence, exact help and exits; both provider names. Public parser does not prevalidate slugs.",
+    "acceptance": "B01; grammar table and byte-exact help."
+  },
+  {
+    "id": "02",
+    "name": "02-host-bridge-feasibility-and-protocol",
+    "title": "Host bridge feasibility and protocol",
+    "minutes": 90,
+    "deps": [
+      "00"
+    ],
+    "owned": "native/{main.c,protocol.c,protocol.h,host.h}; packages/core/src/process/host.ts; tests/host-bridge/**",
+    "goal": "Prove bounded binary frames, private pipes/control EOF, fd inheritance, compiled helper lookup on macOS and Linux. Spike parent-kill group cleanup before committing architecture. Shared registration edits transfer to integrator after merge.",
+    "acceptance": "Kill/pipe/framing spike on both OS; fail design gate if unavailable."
+  },
+  {
+    "id": "03",
+    "name": "03-anchored-filesystem-reads-and-traversal",
+    "title": "Anchored filesystem reads and traversal",
+    "minutes": 90,
+    "deps": [
+      "02"
+    ],
+    "owned": "native/{paths.c,paths.h,read.c}; packages/core/src/fs/read.ts; tests/fs-read/**",
+    "goal": "Directory-fd traversal, no-follow controller paths, bounded in-root tool link resolution, byte paths; enumerate links as links.",
+    "acceptance": "Parent-link swap, outside link, nonregular handle, invalid UTF-8 path fixtures."
+  },
+  {
+    "id": "04",
+    "name": "04-safe-publication-restore-and-removal",
+    "title": "Safe publication, restore and removal",
+    "minutes": 90,
+    "deps": [
+      "03"
+    ],
+    "owned": "native/{publish.c,publish.h}; packages/core/src/fs/{publish,restore}.ts; tests/fs-publish/**",
+    "goal": "Exclusive temps, mode 0600/0700, append, rename+fsync ordering, no-follow restore/removal; preserve executable and link types.",
+    "acceptance": "Symlink parents/finals and rename crash matrix; external sentinel unchanged."
+  },
+  {
+    "id": "05",
+    "name": "05-native-process-custody",
+    "title": "Native process custody",
+    "minutes": 90,
+    "deps": [
+      "02",
+      "04"
+    ],
+    "owned": "native/{supervisor.c,supervisor.h}; packages/core/src/process/supervise.ts; tests/custody/**",
+    "goal": "Session/group exec, output pumps/tail, monotonic wall deadline, TERM/200ms/KILL, normal-exit grandchildren, parent-death control pipe. Linux subreaper and macOS process identity.",
+    "acceptance": "B05; real chatty/TERM/grandchild/SIGKILL tests, no argv element >4KiB."
+  },
+  {
+    "id": "06",
+    "name": "06-child-environment-and-script-transport",
+    "title": "Child environment and script transport",
+    "minutes": 75,
+    "deps": [
+      "05"
+    ],
+    "owned": "packages/core/src/process/{environment,script}.ts; tests/environment/**",
+    "goal": "Allowlisted base environment, exact project override/PATH, mise env timeout and isolated state/cache, private shell scripts and stdin.",
+    "acceptance": "Host secrets/runtime paths absent; project timeout unscaled; large script bytes preserved."
+  },
+  {
+    "id": "07",
+    "name": "07-macos-confinement",
+    "title": "macOS confinement",
+    "minutes": 90,
+    "deps": [
+      "06"
+    ],
+    "owned": "packages/core/src/sandbox/{policy,macos}.ts; tests/sandbox-macos/**",
+    "goal": "SBPL generation and capability probe; hide secrets, checkout/origin write denial, allowed network/cache paths; warning/off/already-confined semantics.",
+    "acceptance": "B07 on macOS; real confinement and forced-unavailable integrity fixtures."
+  },
+  {
+    "id": "08",
+    "name": "08-linux-confinement",
+    "title": "Linux confinement",
+    "minutes": 90,
+    "deps": [
+      "06"
+    ],
+    "owned": "packages/core/src/sandbox/linux.ts; tests/sandbox-linux/**",
+    "goal": "bwrap namespace/mount plan, secrets hidden, network allowed, capability probe and equivalent observable fallback.",
+    "acceptance": "Recheck B07 on Linux; mount and missing-user-namespace tests. No macOS-only acceptance."
+  },
+  {
+    "id": "09",
+    "name": "09-yaml-lexical-checks",
+    "title": "YAML lexical checks",
+    "minutes": 90,
+    "deps": [
+      "00"
+    ],
+    "owned": "packages/core/src/yaml/{lex,preflight}.ts; tests/yaml-lex/**",
+    "goal": "Byte cap/UTF-8/BOM/tabs/directives/markers; scalar quoting/comment/escape rules, line and normative error ordering.",
+    "acceptance": "Normative yaml-errors lexical rows; input-byte boundary tests; B11 closed later."
+  },
+  {
+    "id": "10",
+    "name": "10-yaml-block-structure",
+    "title": "YAML block structure",
+    "minutes": 90,
+    "deps": [
+      "09"
+    ],
+    "owned": "packages/core/src/yaml/block.ts; tests/yaml-block/**",
+    "goal": "Maps, deeper block sequences, indentation, duplicate/merge/empty values, scalar strings and depth limit.",
+    "acceptance": "Block/depth/duplicate fixtures; B11 closed by flow/schema integration."
+  },
+  {
+    "id": "11",
+    "name": "11-yaml-flow-collections-and-parser-facade",
+    "title": "YAML flow collections and parser facade",
+    "minutes": 90,
+    "deps": [
+      "09",
+      "10"
+    ],
+    "owned": "packages/core/src/yaml/{flow,parse}.ts; tests/yaml-flow/**",
+    "goal": "Multiline flow maps/lists with quote/comment boundaries; unify earliest error selection and full subset parser.",
+    "acceptance": "B11; no general YAML acceptance beyond \u00a72.6."
+  },
+  {
+    "id": "12",
+    "name": "12-project-resolution-schema-and-every-role",
+    "title": "Project resolution, schema and every role",
+    "minutes": 90,
+    "deps": [
+      "11",
+      "15"
+    ],
+    "owned": "packages/core/src/project/{resolve,schema,roles}.ts; tests/project/**",
+    "goal": "Canonical checkout/origin/base; closed schema, field-wise role precedence/provider resolution and draft fallback rules; named-role table and config diagnostics.",
+    "acceptance": "B12; all used roles override/default/provider tests; fallback_shaper remains unknown; cross-provider model refused; auditor_demotion true refused with `build.auditor_demotion has no admitted calibration`."
+  },
+  {
+    "id": "13",
+    "name": "13-intent-parser-and-exact-byte-hashes",
+    "title": "Intent parser and exact-byte hashes",
+    "minutes": 90,
+    "deps": [
+      "11"
+    ],
+    "owned": "packages/core/src/intent/{parse,hash}.ts; tests/intent-parse/**",
+    "goal": "Required frontmatter/section grammar, Verify forms, slug/lint boundary; preserve raw Request/CRLF/non-UTF8 bytes and Intent-NUL-test SHA256.",
+    "acceptance": "B13; actual rejected syn-06/syn-20 frontmatter fixtures."
+  },
+  {
+    "id": "14",
+    "name": "14-lint-normalization-and-schema-rich-prompts",
+    "title": "Lint, normalization and schema-rich prompts",
+    "minutes": 90,
+    "deps": [
+      "12",
+      "13"
+    ],
+    "owned": "packages/core/src/intent/{lint,normalize}.ts; packages/core/src/shape/prompts.ts; tests/intent-lint/**",
+    "goal": "Normative lint word lists/style thresholds; Notes normalization/Request append; required title/size/domains template, optional keys and A<n>/tag examples.",
+    "acceptance": "B14; prompt schema fixture parses; no Request lint/normalization damage."
+  },
+  {
+    "id": "15",
+    "name": "15-supervised-git-port-and-trusted-metadata",
+    "title": "Supervised Git port and trusted metadata",
+    "minutes": 90,
+    "deps": [
+      "05",
+      "06"
+    ],
+    "owned": "packages/core/src/git/{command,repository,identity}.ts; tests/git-port/**",
+    "goal": "Bound every Git call and output; explicit argv/stdin; private object-format-aware metadata; suppress hooks/filters/fsmonitor/textconv/config redirection. Separate public identity/signing.",
+    "acceptance": "B15; SHA1/SHA256, hanging Git/signing child, hostile config smoke."
+  },
+  {
+    "id": "16",
+    "name": "16-base-relative-trees-and-git-ignore-semantics",
+    "title": "Base-relative trees and Git ignore semantics",
+    "minutes": 90,
+    "deps": [
+      "03",
+      "04",
+      "15"
+    ],
+    "owned": "packages/core/src/workspace/{snapshot,ignore,clone}.ts; tests/workspace/**",
+    "goal": "Fresh local no-hardlink clone; snapshot saved base paths regardless of builder HEAD; nested ignore/negation engine through trusted Git, raw index entries and link/mode/deletion handling.",
+    "acceptance": "B16; tracked-ignored retained, untracked-ignored omitted; non-ignored edits retained."
+  },
+  {
+    "id": "17",
+    "name": "17-command-adapter-and-acceptance-ledger",
+    "title": "Command adapter and acceptance ledger",
+    "minutes": 90,
+    "deps": [
+      "05",
+      "06",
+      "16"
+    ],
+    "owned": "packages/core/src/adapters/{interface,command}.ts; packages/core/src/gate/ledger.ts; tests/ledger/**",
+    "goal": "Source/candidate paths, staging, JSONL rows/tags/items, unavailable/compile/empty/malformed/timeout classifications and tree mutation detection.",
+    "acceptance": "Ledger exit/report matrix; B18/B20 exercise production callers later."
+  },
+  {
+    "id": "18",
+    "name": "18-checks-findings-and-gate-feedback",
+    "title": "Checks, findings and gate feedback",
+    "minutes": 90,
+    "deps": [
+      "17"
+    ],
+    "owned": "packages/core/src/gate/{checks,findings,verify,feedback}.ts; tests/gate/**",
+    "goal": "Fix once, checks+acceptance, base-relative excuses and stable identity count; full raw logs/findings and exact clipped feedback. Use frozen policy for contradictory baseline rules.",
+    "acceptance": "B18; new test symbol, mutating base restoration, unavailable-on-base/current."
+  },
+  {
+    "id": "19",
+    "name": "19-protected-manifests-and-restorers",
+    "title": "Protected manifests and restorers",
+    "minutes": 90,
+    "deps": [
+      "12",
+      "14",
+      "16",
+      "18"
+    ],
+    "owned": "packages/core/src/gate/{manifest,protect,scope}.ts; tests/protection/**",
+    "goal": "Effective gate program paths/globs/absent literals, stale checkout, changes_gate; restore after batches and guard before verify/commit; scope advice only.",
+    "acceptance": "B19; hostile symlink/type replacements and 4th-restore rule."
+  },
+  {
+    "id": "20",
+    "name": "20-approval-preflight-and-card",
+    "title": "Approval preflight and card",
+    "minutes": 90,
+    "deps": [
+      "14",
+      "17",
+      "18",
+      "19",
+      "23"
+    ],
+    "owned": "packages/core/src/approval/{preflight,card}.ts; tests/approval-preflight/**",
+    "goal": "Hash-first refusal, stage/setup/check/baseline/card, warnings, red acceptance refusal and always restore scratch. Cache port binds checked tree, using scratch exact-base checks when checkout differs.",
+    "acceptance": "B20; no check on mismatch and no checkout mutation."
+  },
+  {
+    "id": "21",
+    "name": "21-immutable-approval-commit-and-cas",
+    "title": "Immutable approval commit and CAS",
+    "minutes": 90,
+    "deps": [
+      "20",
+      "15"
+    ],
+    "owned": "packages/core/src/approval/{commit,transition}.ts; tests/approval-ref/**",
+    "goal": "Byte snapshot/manifest/schema2/trailers, identity, late re-read, one lost-CAS retry and parent chain. Production transition exposed for xspec.",
+    "acceptance": "B21; late Intent/test mutation and two concurrent approvers."
+  },
+  {
+    "id": "22",
+    "name": "22-remove-lifecycle",
+    "title": "Remove lifecycle",
+    "minutes": 75,
+    "deps": [
+      "21",
+      "24"
+    ],
+    "owned": "packages/core/src/approval/remove.ts; tests/remove/**",
+    "goal": "Draft commit of own paths; force/ref CAS/active-build/untracked checks; preserve unrelated user changes and normal identity.",
+    "acceptance": "B22; active-build case closes after queue integration."
+  },
+  {
+    "id": "23",
+    "name": "23-durable-run-and-request-journal",
+    "title": "Durable run and request journal",
+    "minutes": 90,
+    "deps": [
+      "04"
+    ],
+    "owned": "packages/core/src/run/{store,journal,transcript}.ts; tests/run-store/**",
+    "goal": "Schema2 plus draft recovery/cleanup-pending fields, append-before-snapshot persistence, landing record ordering, safe logs/diffs, null tokens, per-attempt redacted metadata and timestamp units.",
+    "acceptance": "B23 after I2; append/rename crash fixtures and redaction checks now."
+  },
+  {
+    "id": "24",
+    "name": "24-queue-scheduler-claim-and-ownership",
+    "title": "Queue scheduler, claim and ownership",
+    "minutes": 90,
+    "deps": [
+      "12",
+      "15",
+      "23"
+    ],
+    "owned": "packages/core/src/queue/{transition,claim,lock}.ts; tests/queue-policy/**",
+    "goal": "Priority/time/slug, dependencies/cycles, per-origin claim, owner PID/start identity, stale locks, once-per-drain and stopped semantics.",
+    "acceptance": "B24 after I2; deterministic transition and real claim-race smoke now."
+  },
+  {
+    "id": "25",
+    "name": "25-status-derivation-and-renderers",
+    "title": "Status derivation and renderers",
+    "minutes": 90,
+    "deps": [
+      "13",
+      "21",
+      "23",
+      "24"
+    ],
+    "owned": "packages/core/src/status/{derive,report,render,watch}.ts; tests/status/**",
+    "goal": "Reachable landed precedence, current approval runs, blocked/next/interrupted, all JSON fields/nulls, five-history window, streaming watch. Resolve slug reuse from frozen version.",
+    "acceptance": "B25; synthetic status and 50-intent/200-run timing now; live watch after I2."
+  },
+  {
+    "id": "26",
+    "name": "26-recovery-preservation-before-cleanup",
+    "title": "Recovery preservation before cleanup",
+    "minutes": 90,
+    "deps": [
+      "16",
+      "23",
+      "24",
+      "40"
+    ],
+    "owned": "packages/core/src/recovery/{transition,recover}.ts; tests/recovery/**",
+    "goal": "Dead-owner/start-time check; preserve all unsnapshotted workspace trees as create-only unverified recovery refs/archive before removal; persist recovery_preserved/run.json.recovery, adopt complete prior publication, retain differing progress separately, retry terminal cleanup_pending and owner-only release.",
+    "acceptance": "B26; draft D3 matrix, preservation failure retains workspace."
+  },
+  {
+    "id": "27",
+    "name": "27-sse-byte-framing",
+    "title": "SSE byte framing",
+    "minutes": 75,
+    "deps": [
+      "00"
+    ],
+    "owned": "packages/core/src/provider/sse/framing.ts; tests/sse-framing/**",
+    "goal": "Chunked CRLF/CR/data lines/comments/DONE/EOF; bounded 16MiB byte accounting and incremental decode.",
+    "acceptance": "Boundary-split framing corpus; B28 closes assembly behavior later."
+  },
+  {
+    "id": "28",
+    "name": "28-responses-assembly-and-nullable-usage",
+    "title": "Responses assembly and nullable usage",
+    "minutes": 90,
+    "deps": [
+      "27"
+    ],
+    "owned": "packages/core/src/provider/sse/{assemble,usage}.ts; tests/sse-assembly/**",
+    "goal": "Completed precedence, duplicate/error/incomplete/malformed handling; retain raw partial items; validate function arguments, usage counts and no incomplete execution.",
+    "acceptance": "B28; complete/failure/partial precedence matrix."
+  },
+  {
+    "id": "29",
+    "name": "29-http-deadline-and-sticky-routing-port",
+    "title": "HTTP, deadline and sticky routing port",
+    "minutes": 90,
+    "deps": [
+      "23",
+      "28"
+    ],
+    "owned": "packages/core/src/provider/http/{transport,deadline,routing}.ts; tests/http/**",
+    "goal": "Streaming fetch, cancellation, first-body-byte starts before auth/connect, idle/total bounds, bounded error bodies, endpoint seams and sticky headers in persistent context.",
+    "acceptance": "Fake slow headers/body/comment/stall/abort; routing continuity; B33 later."
+  },
+  {
+    "id": "30",
+    "name": "30-canonical-sessions-and-wire-shapes",
+    "title": "Canonical sessions and wire shapes",
+    "minutes": 90,
+    "deps": [
+      "12",
+      "23",
+      "29"
+    ],
+    "owned": "packages/core/src/provider/session/{transition,history,wire,keys,prefix}.ts; tests/session/**",
+    "goal": "Persist run affinity/distinct threads; canonical static controls/input-last immutable items, full schemas+role authorization, owned/injected controls, model-switch reasoning removal, cross-run static prefix.",
+    "acceptance": "B30; three-turn raw-byte prefix, identical retry, independent Shape/Build prefixes."
+  },
+  {
+    "id": "31",
+    "name": "31-read-search-write-edit-tool-boundary",
+    "title": "Read/search/write/edit tool boundary",
+    "minutes": 90,
+    "deps": [
+      "03",
+      "04",
+      "19",
+      "30"
+    ],
+    "owned": "packages/core/src/provider/tools/{schema,files,dispatch}.ts; tests/file-tools/**",
+    "goal": "Canonical schema union; role allowlists; read lines/search/write limits, approved-path errors and safe in-root links; unknown tools and schema guard.",
+    "acceptance": "B31; incomplete/partial proposals cannot dispatch."
+  },
+  {
+    "id": "32",
+    "name": "32-shell-finish-and-tool-output-budgets",
+    "title": "Shell, finish and tool-output budgets",
+    "minutes": 90,
+    "deps": [
+      "06",
+      "23",
+      "31"
+    ],
+    "owned": "packages/core/src/provider/tools/{shell,finish,output}.ts; tests/shell-tools/**",
+    "goal": "Private script supervision; UTF8-aware head/tail/ranges/nonUTF8 base64, SHA256 regular-file handles; finish-alone {}, text continuation/first empty finish.",
+    "acceptance": "B32; 300KiB heredoc, exact notices and full bytes on disk."
+  },
+  {
+    "id": "33",
+    "name": "33-retry-wait-and-stream-continuation-policy",
+    "title": "Retry/wait and stream-continuation policy",
+    "minutes": 90,
+    "deps": [
+      "28",
+      "29",
+      "30"
+    ],
+    "owned": "packages/core/src/provider/retry/{transition,respond}.ts; tests/retries/**",
+    "goal": "One versioned retry table, jitter/overload streak/attempt caps/no planner fallback/provider-specific switch; partial progress appended, paused budgets and stopped results.",
+    "acceptance": "B33; fake-clock matrix and no partial-call execution; public cases close I2/I4/I5."
+  },
+  {
+    "id": "34",
+    "name": "34-accounts-selection-and-file-credentials",
+    "title": "Accounts, selection and file credentials",
+    "minutes": 90,
+    "deps": [
+      "04",
+      "11",
+      "12"
+    ],
+    "owned": "packages/core/src/provider/accounts/{select,format,profiles}.ts; packages/core/src/provider/auth/{store,injected}.ts; tests/accounts/**",
+    "goal": "Provider/account precedence, profiles/host UUID, strict accounts YAML atomic serialization; Kogen-only private file store, injected JWT expiry and reread/no refresh.",
+    "acceptance": "B34; empty both-provider rows, no source-repo credentials."
+  },
+  {
+    "id": "35",
+    "name": "35-chatgpt-pkce-login-and-callback",
+    "title": "ChatGPT PKCE login and callback",
+    "minutes": 90,
+    "deps": [
+      "29",
+      "34"
+    ],
+    "owned": "packages/core/src/provider/auth/chatgpt/{login,jwks,callback}.ts; tests/chatgpt-login/**",
+    "goal": "Discovery, dynamic registration, PKCE/state/nonce, loopback1455 reuse, scopes/resource, JWKS RS256/issuer/aud/expiry/sub, fresh-registration repair.",
+    "acceptance": "B35; fake OAuth only; failed callback and back-to-back login."
+  },
+  {
+    "id": "36",
+    "name": "36-refresh-locks-logout-and-auth-errors",
+    "title": "Refresh locks, logout and auth errors",
+    "minutes": 90,
+    "deps": [
+      "33",
+      "35"
+    ],
+    "owned": "packages/core/src/provider/auth/chatgpt/{refresh,logout}.ts; tests/chatgpt-refresh/**",
+    "goal": "Cross-process owner lock/re-read/one refresh/replay, provider-only login outcomes, token rotation, unreadable saved-credential recovery and owned/injected headers.",
+    "acceptance": "B36; concurrent refresh, injected401 no refresh and bound auth hangs."
+  },
+  {
+    "id": "37",
+    "name": "37-macos-credential-vault",
+    "title": "macOS credential vault",
+    "minutes": 90,
+    "deps": [
+      "02",
+      "04",
+      "34"
+    ],
+    "owned": "native/{keychain.c,keychain.h}; packages/core/src/provider/auth/vault.ts; tests/vault/**",
+    "goal": "Security.framework pipe-only key operations and AES256GCM envelope; provider-specific key account; never Keychain under file seam.",
+    "acceptance": "Mock vault encryption/integrity and seam test in make check; isolated explicit OS-keychain fixture at I6."
+  },
+  {
+    "id": "38",
+    "name": "38-public-build-skeleton-and-planner",
+    "title": "Public Build skeleton and planner",
+    "minutes": 90,
+    "deps": [
+      "20",
+      "21",
+      "24",
+      "29",
+      "30",
+      "32",
+      "33",
+      "34"
+    ],
+    "owned": "packages/core/src/build/{controller,planner,load}.ts; tests/build-entry/**",
+    "goal": "Wire B0 approval integrity/claim before provider, run/base/setup/base acceptance, one plan/difficulty and roles, happy-path B0-B10 with injected rung/landing ports.",
+    "acceptance": "B38; real public command binding at I2; tampered approval sends no model request."
+  },
+  {
+    "id": "39",
+    "name": "39-develop-verify-repair-rung-machine",
+    "title": "Develop/verify/repair rung machine",
+    "minutes": 90,
+    "deps": [
+      "18",
+      "19",
+      "32",
+      "38"
+    ],
+    "owned": "packages/core/src/build/{rung,develop,repair}.ts; tests/rung/**",
+    "goal": "Persistent conversation, finish/text/empty semantics, six repairs/count progress/unchanged/protected restores, final verify/snapshot on turn/wall/budget cap.",
+    "acceptance": "B39; verified tree identity survives model commits and controller notes."
+  },
+  {
+    "id": "40",
+    "name": "40-guarded-commit-and-landing-cas",
+    "title": "Guarded commit and landing CAS",
+    "minutes": 90,
+    "deps": [
+      "15",
+      "16",
+      "19",
+      "21",
+      "23"
+    ],
+    "owned": "packages/core/src/build/landing/{transition,commit,publish,sync}.ts; tests/landing-cas/**",
+    "goal": "Squash sole parent/verified tree; public signing; durable landing record then incoming/ref CAS; clean checkout race-safe update, dirty warning, nonfatal cleanup.",
+    "acceptance": "B40; exact parent/tree/record ordering and SHA256 repo crash points."
+  },
+  {
+    "id": "41",
+    "name": "41-moved-base-landing-repairs",
+    "title": "Moved-base landing repairs",
+    "minutes": 90,
+    "deps": [
+      "33",
+      "39",
+      "40"
+    ],
+    "owned": "packages/core/src/build/landing/{rebase,retry}.ts; tests/landing-rebase/**",
+    "goal": "Lost CAS/.lock backoff, moved-base rebase/full gate, same winning conversation repairs and separate landing allowance; preserve best if parked.",
+    "acceptance": "B41; conflicting move, red re-gate and late checkout edit."
+  },
+  {
+    "id": "42",
+    "name": "42-queue-public-handlers-detach-and-signals",
+    "title": "Queue public handlers, detach and signals",
+    "minutes": 90,
+    "deps": [
+      "01",
+      "24",
+      "25",
+      "38",
+      "39",
+      "40"
+    ],
+    "owned": "packages/core/src/queue/drain.ts; packages/cli/src/handlers/{queue,signals}.ts; tests/queue-command/**",
+    "goal": "Bind public start/stop to Build, buffered/streaming output/exits, handshake detach, stop marker, SIGINT/TERM custody and counts. Never mark a reducer-only queue complete.",
+    "acceptance": "B42; runnable happy Build, signal status and two-checkout ownership."
+  },
+  {
+    "id": "43",
+    "name": "43-serial-ladder-and-repeated-attempts",
+    "title": "Serial ladder and repeated attempts",
+    "minutes": 90,
+    "deps": [
+      "12",
+      "39",
+      "41",
+      "42"
+    ],
+    "owned": "packages/core/src/build/{ladder,attempts}.ts; tests/ladder/**",
+    "goal": "Recipe/rung defaults and config, fresh workspace per rung, shared plan/earlier summaries, escalation/repeats, max_rungs/R4 admission, per-rung repair resets.",
+    "acceptance": "B43; freeze experimental R4/repeat contradictions before tests."
+  },
+  {
+    "id": "44",
+    "name": "44-parallel-hard-rungs-and-budgets",
+    "title": "Parallel hard rungs and budgets",
+    "minutes": 90,
+    "deps": [
+      "43"
+    ],
+    "owned": "packages/core/src/build/{parallel,budget}.ts; tests/parallel/**",
+    "goal": "Hard R1/R2 truly concurrent, independent workspaces/conversations, green winner/cancel loser, active wall versus pauses, final snapshot on cancellation.",
+    "acceptance": "B44; barrier-proven overlap, deterministic ties and stopped member cleanup."
+  },
+  {
+    "id": "45",
+    "name": "45-observational-audits-and-deterministic-selector",
+    "title": "Observational audits and deterministic selector",
+    "minutes": 90,
+    "deps": [
+      "18",
+      "30",
+      "33",
+      "43"
+    ],
+    "owned": "packages/core/src/build/{audit,select}.ts; tests/audit-policy/**",
+    "goal": "Default audit cannot demote/score/land; score real item results and retain best unverified diff. Default land green and legacy green-or-advisory identical; auditor_demotion true refused without calibration; no fake mode or enabled legacy toggle.",
+    "acceptance": "B45 historical/version conflicts; D1 default safety fixture and experiment-off tests."
+  },
+  {
+    "id": "46",
+    "name": "46-separate-setup-and-approval-baseline-caches",
+    "title": "Separate setup and approval-baseline caches",
+    "minutes": 90,
+    "deps": [
+      "04",
+      "12",
+      "16",
+      "18",
+      "20"
+    ],
+    "owned": "packages/core/src/cache/{setup,baseline,keys}.ts; tests/cache/**",
+    "goal": "Canonical setup products, input stability, CoW/LRU3/atomic complete/no failed hits; v3 baseline `{v,checked_base_tree,setup_key,checks,child_env,toolchain,os,arch,adapter_version}`; unknown identities prohibit reuse, old keys miss.",
+    "acceptance": "B46; D2 source-only base change reuses setup but reruns checks."
+  },
+  {
+    "id": "47",
+    "name": "47-shape-conversation-loop-and-accounting",
+    "title": "Shape conversation loop and accounting",
+    "minutes": 90,
+    "deps": [
+      "14",
+      "17",
+      "30",
+      "31",
+      "33",
+      "34",
+      "46"
+    ],
+    "owned": "packages/core/src/shape/{controller,conversation,counters}.ts; tests/shape-loop/**",
+    "goal": "One primary RequestContext and one fallback context; shape-v1.3 counter rules (3passes/60turns/2style each), turn OR pass exhaustion starts fallback once, last-turn success, alias effective shaper/provider; schema1 shape-accounting.json on success/failure with separate auditor/HTTP/unknown-usage totals.",
+    "acceptance": "B47; primary+fallback prefix continuity, no loss of interrupted/controller input."
+  },
+  {
+    "id": "48",
+    "name": "48-shape-validation-ledger-and-audits",
+    "title": "Shape validation, ledger and audits",
+    "minutes": 90,
+    "deps": [
+      "18",
+      "19",
+      "35",
+      "47"
+    ],
+    "owned": "packages/core/src/shape/{validate,ledger,audit,artifacts}.ts; tests/shape-validation/**",
+    "goal": "Normalize/parse/lint/gate/formatter/staged checks/base red-reclassification; requirement ledger+test audit every eligible pass, coverage repair/warning order and safe artifacts.",
+    "acceptance": "B48; configured adapter; ledger gap must not suppress test audit; exact feedback journals."
+  },
+  {
+    "id": "49",
+    "name": "49-assumptions-and-shared-contract-recheck",
+    "title": "Assumptions and shared-contract recheck",
+    "minutes": 75,
+    "deps": [
+      "12",
+      "21",
+      "38",
+      "48"
+    ],
+    "owned": "packages/core/src/intent/predicates.ts; packages/core/src/build/prestart.ts; tests/predicates/**",
+    "goal": "Validate base predicates on approval; blocks_on landed before Build; observable stale status/recheck event; skip empty predicates and never re-Shape started Build.",
+    "acceptance": "Local P11/predicate tests; new frozen draft pre-start/status rule, no invented public flag."
+  },
+  {
+    "id": "50",
+    "name": "50-optional-witness-proof-and-reuse",
+    "title": "Optional witness proof and reuse",
+    "minutes": 90,
+    "deps": [
+      "39",
+      "44",
+      "45",
+      "48"
+    ],
+    "owned": "packages/core/src/shape/witness.ts; packages/core/src/build/witness.ts; tests/witness/**",
+    "goal": "Throwaway R1/hardR2 real gate with no demotion, bounded adjudication/test-vs-witness repair; immutable witness/ref/diff bind; reverify on current base before zero-model landing.",
+    "acceptance": "B50; proof refused when unproven; stale witness runs normal ladder; narrow to two packets if 90min exceeded."
+  },
+  {
+    "id": "51",
+    "name": "51-exunit-adapter",
+    "title": "ExUnit adapter",
+    "minutes": 90,
+    "deps": [
+      "17",
+      "18"
+    ],
+    "owned": "packages/core/src/adapters/exunit/**; tests/exunit-adapter/**",
+    "goal": "Source/staging paths, external ledger formatter, mise invocation, failure parsers, formatter selection and unavailable first20-lines rule.",
+    "acceptance": "Six optional exunit-tier cases plus exact argv/finding fixtures; report separately from236."
+  },
+  {
+    "id": "52",
+    "name": "52-rails-adapter",
+    "title": "Rails adapter",
+    "minutes": 90,
+    "deps": [
+      "17",
+      "18"
+    ],
+    "owned": "packages/core/src/adapters/rails/**; tests/rails-adapter/**",
+    "goal": "Two-file detection, command+ledger bridge, ruby syntax/standard/rubocop, offline setup seeds/env/gate paths and Minitest findings.",
+    "acceptance": "Local P12 and fake argv/ledger fixtures; optional actual Rails fixture receipt."
+  },
+  {
+    "id": "53",
+    "name": "53-grok-device-oauth-and-refresh",
+    "title": "Grok device OAuth and refresh",
+    "minutes": 90,
+    "deps": [
+      "29",
+      "34",
+      "36"
+    ],
+    "owned": "packages/core/src/provider/auth/grok/**; tests/grok-auth/**",
+    "goal": "Discovery/endpoint validation, code prompt, first poll delay/pending/slow_down/expiry, stale refresh locks/rotation and local-only logout.",
+    "acceptance": "Local P10 device/auth fixtures, no borrowed Grok credentials."
+  },
+  {
+    "id": "54",
+    "name": "54-grok-request-selection-integration",
+    "title": "Grok request/selection integration",
+    "minutes": 90,
+    "deps": [
+      "12",
+      "30",
+      "33",
+      "53"
+    ],
+    "owned": "packages/core/src/provider/grok/**; tests/grok-wire/**",
+    "goal": "Exact wire/headers/new requestUUID, provider-aware roles/fallback stays Grok, error sentence mapping, same append/usage policy.",
+    "acceptance": "Local P10 and Grok-pass4; accounts diagnostic at 61; no ChatGPT endpoint fallback."
+  },
+  {
+    "id": "55",
+    "name": "55-lite-adapter-and-endpoint-capability-checks",
+    "title": "Lite adapter and endpoint capability checks",
+    "minutes": 90,
+    "deps": [
+      "30",
+      "34"
+    ],
+    "owned": "packages/core/src/provider/lite/**; tests/lite/**",
+    "goal": "Injected Luna-only shape/id/header/schema order, owned/cap incompatibilities and rejection before credential load; unchanged affinity vs protocol session ID.",
+    "acceptance": "Local P6 and unknown endpoint cap fixtures; replay does not infer unsupported capabilities."
+  },
+  {
+    "id": "56",
+    "name": "56-opt-in-context-checkpoints",
+    "title": "Opt-in context checkpoints",
+    "minutes": 90,
+    "deps": [
+      "30",
+      "33",
+      "39"
+    ],
+    "owned": "packages/core/src/build/checkpoint.ts; tests/checkpoint/**",
+    "goal": "No-tool summarizer epoch, validated continuation marker/size, retained approved bytes/plan/worktree/caps, new checkpoint digest epoch and unchanged affinity.",
+    "acceptance": "Local P13 and corrupt/empty/oversized stop; no silent turn/budget reset."
+  },
+  {
+    "id": "57",
+    "name": "57-xspec-approval-and-intent-effects",
+    "title": "xspec approval and Intent effects",
+    "minutes": 90,
+    "deps": [
+      "21",
+      "22",
+      "30"
+    ],
+    "owned": "packages/xspec/src/{protocol,main}.ts; packages/xspec/src/slices/{approve,intent}.ts; packages/test-support/src/approval-fixture.ts; tests/xspec-approval/**",
+    "goal": "Long-lived reset/apply/error protocol, real source-byte/hash/CAS fixture driver and full observations; document symbolic fixture identities.",
+    "acceptance": "Mandatory approve+intent hand and seed matrix at I3; late-mutation/no-write real-Git tests."
+  },
+  {
+    "id": "58",
+    "name": "58-xspec-queue-and-status",
+    "title": "xspec queue and status",
+    "minutes": 75,
+    "deps": [
+      "24",
+      "25",
+      "57"
+    ],
+    "owned": "packages/xspec/src/slices/{queue,status}.ts; tests/xspec-queue-status/**",
+    "goal": "Decode events, inject owner/build/ref observations into shared scheduler/deriver; full ordered results, no observation projection.",
+    "acceptance": "Mandatory queue+status hand/seeds; malformed/unknown protocol nonzero."
+  },
+  {
+    "id": "59",
+    "name": "59-xspec-rebase-and-recovery",
+    "title": "xspec rebase and recovery",
+    "minutes": 90,
+    "deps": [
+      "26",
+      "41",
+      "57"
+    ],
+    "owned": "packages/xspec/src/slices/{rebase,recovery}.ts; packages/test-support/src/landing-fixture.ts; tests/xspec-landing/**",
+    "goal": "Shared controllers, explicit CAS effects plus temp origins, durable crash/preservation effect observations; regenerate draft models externally first.",
+    "acceptance": "Mandatory rebase+recovery hand/seeds; matches public crash-phase tests."
+  },
+  {
+    "id": "60",
+    "name": "60-xspec-stream-and-session",
+    "title": "xspec stream and session",
+    "minutes": 75,
+    "deps": [
+      "30",
+      "33",
+      "57"
+    ],
+    "owned": "packages/xspec/src/slices/{stream,session}.ts; tests/xspec-provider/**",
+    "goal": "Production retry/session steps, fake clock/outcomes, complete observations plus real wire bytes/headers/nullable usage and fallback reasoning removal.",
+    "acceptance": "Mandatory stream+session hand/seeds, three-turn/retry/model-switch wire checks."
+  },
+  {
+    "id": "61",
+    "name": "61-diagnostic-replay-adapters",
+    "title": "Diagnostic replay adapters",
+    "minutes": 90,
+    "deps": [
+      "45",
+      "46",
+      "54",
+      "57"
+    ],
+    "owned": "packages/xspec/src/slices/{accounts,gate,orchestration,setup-cache}.ts; tests/xspec-diagnostics/**",
+    "goal": "Thin maps to production policies/effects; current L/E classifications printed into receipts; no legacy resilience/prototype release pass.",
+    "acceptance": "Diagnostic full observations; unsupported fields explicitly fail; never augment mandatory count."
+  },
+  {
+    "id": "62",
+    "name": "62-compiled-artifacts-and-operator-docs",
+    "title": "Compiled artifacts and operator docs",
+    "minutes": 75,
+    "deps": [
+      "37",
+      "42",
+      "50",
+      "51",
+      "52",
+      "54",
+      "55",
+      "56",
+      "61",
+      "64",
+      "65"
+    ],
+    "owned": "tools/{build,artifact}.ts; docs/{INSTALL,ARCHITECTURE}.md; tests/compiled/**",
+    "goal": "Native per-OS CLI/xspec/helper builds, helper hash/location manifest, no runtime resolver/download; compiled signals/detach/version and install instructions.",
+    "acceptance": "Source/compiled equivalent smoke; artifact hashes and clean host prerequisite receipt."
+  },
+  {
+    "id": "63",
+    "name": "63-comparison-fixtures-and-measurement-tools",
+    "title": "Comparison fixtures and measurement tools",
+    "minutes": 90,
+    "deps": [
+      "62"
+    ],
+    "owned": "tools/{measure,compare,receipt}.ts; docs/COMPARISON.md; tests/comparison/**",
+    "goal": "Frozen task/role/prompt/protocol receipts, fake startup/serialize/Git/CPU/RSS metrics, cache eligible-prefix/raw usage accounting, worker-effort totals. No live dispatch in this packet.",
+    "acceptance": "Deterministic mock three-arm report; missing usage/infra retained; no invented USD/live gate."
+  },
+  {
+    "id": "64",
+    "name": "64-direct-staged-recipe-variants",
+    "title": "Direct/staged recipe variants",
+    "minutes": 90,
+    "deps": [
+      "31",
+      "32",
+      "38",
+      "39",
+      "43"
+    ],
+    "owned": "packages/core/src/build/recipes/{direct,staged}.ts; tests/recipe-variants/**",
+    "goal": "Explicit no-plan/direct tools and unique edit/200-line write, context+review stages/roles and shell recipe variants; same gate/claim/landing machinery.",
+    "acceptance": "Local all-admitted-recipe config/role/fake-task tests; no change to frozen public tree."
+  },
+  {
+    "id": "65",
+    "name": "65-optional-edge-generation",
+    "title": "Optional edge generation",
+    "minutes": 90,
+    "deps": [
+      "44",
+      "45",
+      "64"
+    ],
+    "owned": "packages/core/src/build/edge.ts; tests/edge/**",
+    "goal": "Request-derived optional tests; failure blocks landing; parallel candidates run each other\u2019s edge tests before deterministic selection. Defaults remain off.",
+    "acceptance": "Local opt-in edge/cross-test fake fixtures; report experimental scope separately."
+  }
+]

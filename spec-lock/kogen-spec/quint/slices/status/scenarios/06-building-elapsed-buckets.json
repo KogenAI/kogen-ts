@@ -1,0 +1,10 @@
+{
+  "name": "06-building-elapsed-buckets",
+  "about": "Building elapsed display changes at the second, minute and hour boundaries using started_at.",
+  "steps": [
+    {"do":["Row",{"slug":"alpha","status":"building","priority":0,"at":0,"blocks":"","sched":"","started":1,"index":0}]},
+    {"do":["Now",{"t":59}],"expect":{"elapsed":"s"}},
+    {"do":["Now",{"t":61}],"expect":{"elapsed":"m"}},
+    {"do":["Now",{"t":3601}],"expect":{"elapsed":"h"}}
+  ]
+}

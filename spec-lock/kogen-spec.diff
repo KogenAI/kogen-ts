@@ -1,0 +1,1408 @@
+diff --git a/quint/.DS_Store b/quint/.DS_Store
+deleted file mode 100644
+index cb3a73d138daff8d3dbf9c00ffb39535f12dba16..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 6148
+zcmeHKy-ve05I%<rTCsFw^b;U;WD8YTV52X9`lA++DiMVNvH0=2@fb+3Ga|n8ohpYW
+zD*|*Uoj>P(Z0EC-%Mp<qKh8%)Ln7)!8M6U~7GXc@o@8oar;BS;^gvHk)1qANMVsL_
+zGQf8?z>VD#-(7NlqsgpV*YU{i^R+!{T@}T&tfuf{o$&H@wmt8PoF|cV`ra8?uaceP
+z_H;-aD(RMHw4hD7O#Io=B|;kh^i0p&yQ>e`>03;CnsD6~({c_ujg7{DF<=b*eFjjo
+zS^CF<HW~xQfHAORfWHqO%9tw#!T9OG5L*CX59TPCb1%U;UNKh;g783`qyi<?X^Y_`
+z9d@sAxndBMbaL8!INjN4hvMSySl`ERa=D<5#(*)<WZ*y^hg|<Jy8HiTl06v%#=yT~
+z!1anrF~%!tZQXl0uC*R|17+d3Ah=7xB$i^taw$H6MuFY)1ehxZL0BO6BM@n@!5H{a
+G2EG98SWjO7
+
+diff --git a/quint/prototype/harness/xspec.py b/quint/prototype/harness/xspec.py
+index 5d957cc..80e2259 100755
+--- a/quint/prototype/harness/xspec.py
++++ b/quint/prototype/harness/xspec.py
+@@ -16,12 +16,17 @@ binary stays in the prototype's node_modules.
+ import json, os, re, subprocess, sys, glob, select, time
+ 
+ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
++
++def load_json(path):
++    with open(path) as source:
++        return json.load(source)
++
+ # A slice directory holds xspec.json, spec/ and scenarios/. Default is the prototype.
+ SLICE = os.path.abspath(os.environ.get("XSPEC_SLICE", ROOT))
+-CFG = json.load(open(os.path.join(SLICE, "xspec.json")))
++CFG = load_json(os.path.join(SLICE, "xspec.json"))
+ CFG["spec"] = os.environ.get("XSPEC_SPEC", CFG["spec"])  # e.g. a spec mutant
+ QUINT = [os.path.join(ROOT, "node_modules", ".bin", "quint")]
+-BUILD = os.path.join(SLICE, "build")
++BUILD = os.path.abspath(os.environ.get("XSPEC_BUILD", os.path.join(SLICE, "build")))
+ GOLD = os.environ.get("XSPEC_GOLDEN", os.path.join(SLICE, "golden"))
+ 
+ 
+@@ -71,7 +76,10 @@ def diff(want, got, path="", subset=False):
+     """Differences as 'path: want X, got Y'. subset=True ignores keys absent from want."""
+     out = []
+     if isinstance(want, dict) and isinstance(got, dict):
+-        keys = want.keys() if subset else want.keys() | got.keys()
++        # An empty expected object is an explicit assertion that the object is
++        # empty. Treating it as a vacuous subset lets missing-map regressions
++        # pass hand scenarios such as `refs: {}`.
++        keys = (want.keys() if want else want.keys() | got.keys()) if subset else want.keys() | got.keys()
+         for k in sorted(keys):
+             p = f"{path}.{k}" if path else k
+             if k not in got: out.append(f"{p}: want {json.dumps(want[k])}, got nothing")
+@@ -84,13 +92,20 @@ def diff(want, got, path="", subset=False):
+ 
+ # ---------- spec stage ----------
+ def load_scenarios():
+-    return [json.load(open(p)) for p in sorted(glob.glob(os.path.join(SLICE, "scenarios", "*.json")))]
++    return [load_json(p) for p in sorted(glob.glob(os.path.join(SLICE, "scenarios", "*.json")))]
+ 
+ def tname(name): return "s_" + re.sub(r"\W", "_", name) + "Test"
+ 
+ def cmd_spec(_args):
+-    os.makedirs(os.path.join(BUILD, "itf"), exist_ok=True)
+     scen = load_scenarios()
++    if not scen:
++        print("spec: no scenarios; refusing to publish an empty hand corpus")
++        return 1
++    names = [s.get("name") for s in scen]
++    if any(not isinstance(name, str) or not name for name in names) or len(set(names)) != len(names):
++        print("spec: scenario names must be non-empty and unique")
++        return 1
++    os.makedirs(os.path.join(BUILD, "itf"), exist_ok=True)
+     rel = os.path.relpath(os.path.join(SLICE, CFG["spec"]), BUILD)[:-4]
+     inv, fire = CFG["invariant"], CFG["fire"]
+     lines = [f"module scenarios_test {{", f'  import {CFG["module"]}.* from "{rel}"']
+@@ -100,43 +115,78 @@ def cmd_spec(_args):
+         lines.append(f"  run {tname(s['name'])} = {chain}")
+     lines.append("}")
+     test_file = os.path.join(BUILD, "scenarios_test.qnt")
+-    open(test_file, "w").write("\n".join(lines) + "\n")
++    with open(test_file, "w") as output:
++        output.write("\n".join(lines) + "\n")
+     for f in glob.glob(os.path.join(BUILD, "itf", "*.itf.json")): os.remove(f)
+     t0 = time.time()
+     r = subprocess.run(QUINT + ["test", test_file, "--main", "scenarios_test", "--match", "Test$",
+                                 "--out-itf", os.path.join(BUILD, "itf", "{test}.itf.json")],
+                        capture_output=True, text=True)
+     quint_ms = int((time.time() - t0) * 1000)
+-    failed_runs = set(re.findall(r"\d+\) (\w+):", r.stdout + r.stderr))
+-    os.makedirs(os.path.join(GOLD, "hand"), exist_ok=True)
++    quint_output = r.stdout + "\n" + r.stderr
++    reported_tests = {
++        name for name in (tname(s["name"]) for s in scen)
++        if re.search(r"(?<![A-Za-z0-9_])" + re.escape(name) + r"(?![A-Za-z0-9_])", quint_output)
++    }
++    failed_runs = set(re.findall(r"\d+\)\s+([A-Za-z_]\w*):", quint_output))
++    reported_tests.update(failed_runs)
++    goldens = []
+     bad = 0
+     for s in scen:
+         problems = []
+         path = os.path.join(BUILD, "itf", tname(s["name"]) + ".itf.json")
++        test_name = tname(s["name"])
++        if r.returncode and (test_name in reported_tests or not reported_tests):
++            problems.append("Quint reported this scenario as failed" if reported_tests else
++                            f"Quint exited {r.returncode} without identifying a failed scenario")
+         if not os.path.exists(path):
+-            problems.append("no trace (quint error?)")
++            problems.append("no trace (Quint error or failed test)")
+         else:
+-            tr = json.load(open(path)); sets = set()
++            tr = load_json(path); sets = set()
+             obs = [itf(st[CFG["obs_var"]], (), sets) for st in tr["states"]]
+-            if len(obs) < len(s["steps"]) + 1:  # quint stops a run at the first failing expect
++            if len(obs) != len(s["steps"]) + 1:
+                 k = len(obs) - 1
+-                problems.append(f"invariant violated after step {k} {json.dumps(s['steps'][k - 1]['do']) if k else 'init'}")
++                problems.append(f"incomplete trace: expected {len(s['steps']) + 1} states, got {len(obs)}")
++                if len(obs) < len(s["steps"]) + 1:
++                    problems.append(f"invariant violated or test stopped after step {k} {json.dumps(s['steps'][k - 1]['do']) if k else 'init'}")
+             for i, st in enumerate(s["steps"][:len(obs) - 1]):
+-                for d in diff(st.get("expect", {}), obs[i + 1], subset=True):
+-                    problems.append(f"step {i + 1} {json.dumps(st['do'])}: {d}")
++                if "expect" in st:
++                    for d in diff(st["expect"], obs[i + 1], subset=True):
++                        problems.append(f"step {i + 1} {json.dumps(st['do'])}: {d}")
+             gold = {"name": s["name"], "source": "hand", "sets": sorted(map(list, sets)),
+                     "events": [wire(st["do"]) for st in s["steps"]], "obs": obs}
+-            json.dump(gold, open(os.path.join(GOLD, "hand", s["name"] + ".json"), "w"))
++            goldens.append((s["name"], gold))
+         bad += bool(problems)
+         print(("FAIL " if problems else "ok   ") + s["name"])
+         for p in problems: print("     " + p)
+-    if r.returncode and not failed_runs: print(r.stdout[-3000:], r.stderr[-3000:])
++    if r.returncode:
++        print(f"Quint exited {r.returncode}; failed scenario tests: " +
++              (", ".join(sorted(reported_tests)) if reported_tests else "unattributed"))
++        print(quint_output[-6000:])
+     print(f"spec: {len(scen) - bad}/{len(scen)} scenarios agree with the spec (quint {quint_ms} ms)")
++    if bad or r.returncode or len(goldens) != len(scen):
++        print("spec: no hand goldens published")
++        return 1
++
++    # Goldens are published only after Quint, every trace, every hand
++    # expectation, and the requested scenario count have all passed.
++    hand_dir = os.path.join(GOLD, "hand")
++    os.makedirs(hand_dir, exist_ok=True)
++    expected_files = {name + ".json" for name, _ in goldens}
++    for path in glob.glob(os.path.join(hand_dir, "*.json")):
++        if os.path.basename(path) not in expected_files:
++            os.remove(path)
++    for name, gold in goldens:
++        with open(os.path.join(hand_dir, name + ".json"), "w") as output:
++            json.dump(gold, output)
+     return 1 if bad else 0
+ 
+ 
+ def cmd_gen(args):
+     n, steps, seed = int(args.get("--traces", 100)), int(args.get("--steps", 30)), args.get("--seed", "1")
++    if n <= 0 or steps <= 0:
++        print("gen: traces and steps must both be positive")
++        return 2
+     out = os.path.join(BUILD, "gen"); os.makedirs(out, exist_ok=True)
+     for f in glob.glob(os.path.join(out, "*.itf.json")): os.remove(f)
+     t0 = time.time()
+@@ -146,21 +196,45 @@ def cmd_gen(args):
+                                 "--out-itf", os.path.join(out, "t{seq}.itf.json")],
+                        capture_output=True, text=True)
+     if r.returncode:
+-        print("the spec violates an invariant during generation:\n" + r.stdout[-4000:]); return 1
+-    gdir = os.path.join(GOLD, "gen"); os.makedirs(gdir, exist_ok=True)
+-    for f in glob.glob(os.path.join(gdir, "*.json")): os.remove(f)
++        print(f"Quint exited {r.returncode}; generation rejected:\n" + (r.stdout + "\n" + r.stderr)[-6000:]); return 1
++    traces = sorted(glob.glob(os.path.join(out, "*.itf.json")))
++    if len(traces) != n:
++        print(f"gen: requested {n} traces, Quint emitted {len(traces)}; refusing an incomplete corpus")
++        return 1
++    generated = []
+     ok_events = 0; total = 0; cov = {}
+-    for p in sorted(glob.glob(os.path.join(out, "*.itf.json"))):
+-        tr = json.load(open(p)); sets = set()
++    for p in traces:
++        tr = load_json(p); sets = set()
++        if not isinstance(tr.get("states"), list) or not tr["states"]:
++            print(f"gen: invalid or empty trace {os.path.basename(p)}; refusing an incomplete corpus")
++            return 1
+         evs = [itf(st[CFG["ev_var"]]) for st in tr["states"]][1:]
+         obs = [itf(st[CFG["obs_var"]], (), sets) for st in tr["states"]]
++        if len(obs) != len(evs) + 1 or any(not isinstance(o, dict) for o in obs):
++            print(f"gen: incomplete observation/event trace {os.path.basename(p)}")
++            return 1
+         total += len(evs); ok_events += sum(o["last"] == "ok" for o in obs[1:])
+         for path in CFG.get("coverage", []):
+             for o in obs: cov.setdefault(path, {}).update({v: cov.get(path, {}).get(v, 0) + 1 for v in pick(o, path)})
+         name = "g" + re.search(r"t(\d+)", os.path.basename(p)).group(1).zfill(4)
+-        json.dump({"name": name, "source": f"gen seed={seed}", "sets": sorted(map(list, sets)),
+-                   "events": evs, "obs": obs}, open(os.path.join(gdir, name + ".json"), "w"))
+-    print(f"gen: {len(glob.glob(os.path.join(gdir, '*.json')))} traces, {total} events "
++        generated.append((name, {"name": name, "source": f"gen seed={seed}", "sets": sorted(map(list, sets)),
++                                "events": evs, "obs": obs}))
++    if len(generated) != n:
++        print(f"gen: expected {n} complete traces, built {len(generated)}; refusing to publish")
++        return 1
++    gdir = os.path.join(GOLD, "gen"); os.makedirs(gdir, exist_ok=True)
++    expected_files = {name + ".json" for name, _ in generated}
++    for path in glob.glob(os.path.join(gdir, "*.json")):
++        if os.path.basename(path) not in expected_files and os.path.basename(path) != "manifest.json":
++            os.remove(path)
++    for name, gold in generated:
++        with open(os.path.join(gdir, name + ".json"), "w") as output:
++            json.dump(gold, output)
++    manifest = {"source": "gen", "seed": str(seed), "requested_traces": n,
++                "steps": steps, "trace_names": [name for name, _ in generated]}
++    with open(os.path.join(gdir, "manifest.json"), "w") as output:
++        json.dump(manifest, output, sort_keys=True)
++    print(f"gen: {len(generated)} traces, {total} events "
+           f"({ok_events} accepted, {total - ok_events} refused), invariants hold "
+           f"({int((time.time() - t0) * 1000)} ms)")
+     for path, seen in cov.items():
+@@ -188,12 +262,25 @@ class Adapter:
+         line = self.p.stdout.readline() if ready else ""
+         if not line:
+             err = ""
++            try:
++                self.p.wait(timeout=1)
++            except subprocess.TimeoutExpired:
++                pass
+             if self.p.poll() is not None: err = self.p.stderr.read()[-1500:]
+             raise RuntimeError(f"adapter gave no answer to {json.dumps(req)} {err}")
+         return json.loads(line)
+     def close(self):
+-        try: self.p.stdin.close(); self.p.wait(5)
+-        except Exception: self.p.kill()
++        try:
++            if self.p.stdin and not self.p.stdin.closed:
++                self.p.stdin.close()
++            self.p.wait(5)
++        except Exception:
++            self.p.kill()
++            self.p.wait()
++        finally:
++            for pipe in (self.p.stdout, self.p.stderr):
++                if pipe and not pipe.closed:
++                    pipe.close()
+ 
+ def prune(v, paths, cur=""):
+     """Keep only the dotted paths in `paths` (prefix match).
+@@ -217,13 +304,61 @@ def cmd_conform(args, cmd):
+     proj = set(args["--project"].split(",")) if args.get("--project") else None
+     if proj:
+         print("DIAGNOSTIC PROJECTION ONLY: projected results are not conformance passes")
++    sources = ["hand", "gen"] if not args.get("--only") else [args["--only"]]
++    if any(source not in ("hand", "gen") for source in sources):
++        print("conform: --only must be hand or gen")
++        return 2
+     files = []
+-    for src in (["hand", "gen"] if not args.get("--only") else [args["--only"]]):
+-        files += sorted(glob.glob(os.path.join(GOLD, src, "*.json")))
++    corpus_errors = []
++    for src in sources:
++        directory = os.path.join(GOLD, src)
++        selected = sorted(glob.glob(os.path.join(directory, "*.json")))
++        selected = [path for path in selected if os.path.basename(path) != "manifest.json"]
++        if not selected:
++            corpus_errors.append(f"{src} corpus is empty or missing at {directory}")
++            continue
++        if src == "hand":
++            expected = {s.get("name") + ".json" for s in load_scenarios() if isinstance(s.get("name"), str)}
++            actual = {os.path.basename(path) for path in selected}
++            if actual != expected:
++                missing = sorted(expected - actual)
++                extra = sorted(actual - expected)
++                corpus_errors.append(f"hand corpus is incomplete (missing={missing}, extra={extra})")
++        else:
++            manifest_path = os.path.join(directory, "manifest.json")
++            try:
++                manifest = load_json(manifest_path)
++                actual_names = sorted(os.path.splitext(os.path.basename(path))[0] for path in selected)
++                expected_names = manifest["trace_names"]
++                if (not isinstance(manifest, dict) or manifest.get("source") != "gen"
++                        or not isinstance(expected_names, list)
++                        or manifest.get("requested_traces") != len(expected_names)
++                        or sorted(expected_names) != actual_names or not expected_names):
++                    corpus_errors.append("generated corpus does not match its complete manifest")
++            except (OSError, ValueError, KeyError, TypeError) as error:
++                corpus_errors.append(f"generated corpus has no valid completeness manifest: {error}")
++        for path in selected:
++            try:
++                gold = load_json(path)
++                if (not isinstance(gold, dict) or not isinstance(gold.get("events"), list)
++                        or not isinstance(gold.get("obs"), list)
++                        or len(gold["obs"]) != len(gold["events"]) + 1
++                        or any(not isinstance(event, dict) or not isinstance(event.get("tag"), str)
++                               for event in gold["events"])
++                        or any(not isinstance(obs, dict) for obs in gold["obs"])):
++                    corpus_errors.append(f"incomplete trace {path}")
++            except (OSError, ValueError, TypeError, AttributeError) as error:
++                corpus_errors.append(f"invalid trace {path}: {error}")
++        files += selected
++    if corpus_errors:
++        for error in corpus_errors:
++            print("conform: " + error)
++        print("conform: refusing to replay an empty or incomplete corpus")
++        return 2
+     ad = Adapter(cmd); t0 = time.time()
+     fails, sigs, steps = [], {}, 0
+     for f in files:
+-        g = json.load(open(f)); sets = {tuple(p) for p in g["sets"]}
++        g = load_json(f); sets = {tuple(p) for p in g["sets"]}
+         i = 0
+         try:
+             got = canon(ad.ask({"op": "reset"}), sets)
+@@ -236,7 +371,7 @@ def cmd_conform(args, cmd):
+                 want = prune(g["obs"][i + 1], proj) if proj else g["obs"][i + 1]
+                 d = diff(want, got); i += 1
+         except Exception as ex:
+-            d = [f"adapter error: {str(ex)[:300]}"]; ad.close(); ad = Adapter(cmd)
++            d = [f"adapter error: {str(ex)[-1500:]}"]; ad.close(); ad = Adapter(cmd)
+         if d:
+             ev = g["events"][i - 1]["tag"] if i else "reset"
+             sig = f"{ev} -> " + ", ".join(sorted({re.sub(r'\.(r|x)\d+', '.<id>', x.split(':')[0]) for x in d}))
+diff --git a/quint/slices/approve/golden/hand/13-by-invalid.json b/quint/slices/approve/golden/hand/13-by-invalid.json
+index dcb0183..c411c3a 100644
+--- a/quint/slices/approve/golden/hand/13-by-invalid.json
++++ b/quint/slices/approve/golden/hand/13-by-invalid.json
+@@ -1 +1 @@
+-{"name": "13-by-invalid", "source": "hand", "sets": [], "events": [{"tag": "Approve", "value": {"slug": "alpha", "given": "", "prefixOk": true, "stableBeforeCas": true, "newSha8": "aaaa1111", "sha": "aaaa1111bbbb2222", "sha8": "aaaa1111", "by": "", "byBad": true, "ident": "Ann <ann@x.io>", "parseErr": false, "lintErr": false, "lintWarn": false, "missing": false, "setup": "ok", "cacheKey": "k1", "baseline": "green", "acceptance": "green", "witnessMode": false, "feas": "not checked", "commit": "c1", "baseSha": "b0"}}], "obs": [{"approvals": {}, "approver": "", "bwarn": false, "cache": "", "checkRuns": 0, "exit": 0, "feas": "", "last": "ok", "lwarn": false, "ran": false, "sha8": ""}, {"approvals": {}, "approver": "", "bwarn": false, "cache": "", "checkRuns": 0, "exit": 2, "feas": "", "last": "usage", "lwarn": false, "ran": false, "sha8": ""}]}
+\ No newline at end of file
++{"name": "13-by-invalid", "source": "hand", "sets": [], "events": [{"tag": "Approve", "value": {"slug": "alpha", "given": "", "prefixOk": true, "stableBeforeCas": true, "newSha8": "aaaa1111", "sha": "aaaa1111bbbb2222", "sha8": "aaaa1111", "by": "", "byBad": true, "ident": "Ann <ann@x.io>", "parseErr": false, "lintErr": false, "lintWarn": false, "missing": false, "setup": "ok", "cacheKey": "k1", "baseline": "green", "acceptance": "green", "witnessMode": false, "feas": "not checked", "commit": "c1", "baseSha": "b0"}}], "obs": [{"approvals": {}, "approver": "", "bwarn": false, "cache": "", "checkRuns": 0, "exit": 0, "feas": "", "last": "ok", "lwarn": false, "ran": false, "sha8": ""}, {"approvals": {}, "approver": "", "bwarn": false, "cache": "", "checkRuns": 0, "exit": 2, "feas": "", "last": "intent/approval_by_invalid", "lwarn": false, "ran": false, "sha8": ""}]}
+\ No newline at end of file
+diff --git a/quint/slices/approve/scenarios/13-by-invalid.json b/quint/slices/approve/scenarios/13-by-invalid.json
+index 9a04ebd..eb6cca7 100644
+--- a/quint/slices/approve/scenarios/13-by-invalid.json
++++ b/quint/slices/approve/scenarios/13-by-invalid.json
+@@ -1,7 +1,7 @@
+ {
+  "name": "13-by-invalid",
+- "about": "--by that is blank or multi-line is a usage error: exit 2, nothing run.",
++ "about": "A multi-line --by uses the public approval command reason and exits 2 before checks.",
+  "steps": [
+-  {"do": ["Approve", {"slug": "alpha", "given": "", "prefixOk": true, "stableBeforeCas": true, "newSha8": "aaaa1111", "sha": "aaaa1111bbbb2222", "sha8": "aaaa1111", "by": "", "byBad": true, "ident": "Ann <ann@x.io>", "parseErr": false, "lintErr": false, "lintWarn": false, "missing": false, "setup": "ok", "cacheKey": "k1", "baseline": "green", "acceptance": "green", "witnessMode": false, "feas": "not checked", "commit": "c1", "baseSha": "b0"}], "expect": {"last": "usage", "exit": 2, "ran": false, "checkRuns": 0, "approvals": {}}}
++  {"do": ["Approve", {"slug": "alpha", "given": "", "prefixOk": true, "stableBeforeCas": true, "newSha8": "aaaa1111", "sha": "aaaa1111bbbb2222", "sha8": "aaaa1111", "by": "", "byBad": true, "ident": "Ann <ann@x.io>", "parseErr": false, "lintErr": false, "lintWarn": false, "missing": false, "setup": "ok", "cacheKey": "k1", "baseline": "green", "acceptance": "green", "witnessMode": false, "feas": "not checked", "commit": "c1", "baseSha": "b0"}], "expect": {"last": "intent/approval_by_invalid", "exit": 2, "ran": false, "checkRuns": 0, "approvals": {}}}
+  ]
+ }
+diff --git a/quint/slices/approve/spec/approve.qnt b/quint/slices/approve/spec/approve.qnt
+index 05e2b89..4d65fda 100644
+--- a/quint/slices/approve/spec/approve.qnt
++++ b/quint/slices/approve/spec/approve.qnt
+@@ -4,17 +4,20 @@
+ // reading files) arrives as fields of the Approve event. One event = one CLI call.
+ module approve {
+   type Approval = { n: int, sha: str, by: str, commit: str, base: str, feas: str }
+-  type Cache = { key: (str, str), status: str }   // baseline cache: key = (checked tree, opaque setup/check/env/toolchain/adapter context)
+-
+   type State = {
+     approvals: str -> Approval,   // current approval per slug (n counts approval commits written)
+-    cache: Cache,
++    caches: (str, str) -> str,           // production keeps one baseline result per key
++    lastCache: (str, str),               // key whose baseline rows were used by the last call
+     checkRuns: int,               // times the configured checks were really run (cache misses)
+     last: str,                    // outcome code of the last call
+     exit: int,
+     sha8: str, approver: str, feas: str,   // card / message fields of the last call ("" when none)
+     bwarn: bool, lwarn: bool,     // red-baseline warning / lint style warnings shown
+     ran: bool,                    // this call ran the configured checks
++    priorApprovals: str -> Approval,
++    priorCaches: (str, str) -> str,
++    priorCacheRuns: int,
++    priorLastCache: (str, str),
+   }
+ 
+   type Event =
+@@ -30,7 +33,7 @@ module approve {
+         parseErr: bool, lintErr: bool, lintWarn: bool,
+         missing: bool,     // acceptance source file does not exist
+         setup: str,        // "ok" | "failed"
+-        baseTree: str, cacheKey: str,     // context identity; checked base tree binds independently
++        baseTree: str, cacheKey: str,     // context identity (setup, checks, env/toolchain, adapter); tree binds separately
+         baseline: str,     // what running the configured checks would give: green|red|unavailable|timeout|mutating
+         acceptance: str,   // acceptance check result: green | red | timeout | tool_missing
+         witnessMode: bool, feas: str,   // feas: PROVEN | PROVEN with concerns | UNPROVEN | not checked
+@@ -44,8 +47,10 @@ module approve {
+   }
+ 
+   pure val INITIAL: State = {
+-    approvals: Map(), cache: { key: ("", ""), status: "" }, checkRuns: 0, last: "ok", exit: 0,
++    approvals: Map(), caches: Map(), lastCache: ("", ""), checkRuns: 0, last: "ok", exit: 0,
+     sha8: "", approver: "", feas: "", bwarn: false, lwarn: false, ran: false,
++    priorApprovals: Map(),
++    priorCaches: Map(), priorCacheRuns: 0, priorLastCache: ("", ""),
+   }
+ 
+   pure def exitOf(code: str): int =
+@@ -54,7 +59,7 @@ module approve {
+     else if (Set("intent/parse", "intent/lint", "intent/hash_mismatch", "intent/unproven",
+                  "check/acceptance_check_failed").contains(code)) 1
+     else if (Set("usage", "intent/acceptance_missing",
+-                 "intent/approval_identity_unavailable").contains(code)) 2
++                 "intent/approval_identity_unavailable", "intent/approval_by_invalid").contains(code)) 2
+     else 3   // environment/tool_missing, environment/setup_failed
+ 
+   // refusal: nothing printed except the error; `ran` says whether checks ran before it
+@@ -69,7 +74,7 @@ module approve {
+     val hashed = a.given != ""
+     val approver = if (a.by != "") a.by else a.ident
+     val proven = a.feas == "PROVEN" or a.feas == "PROVEN with concerns"
+-    if (a.byBad) stop(s, "usage", false)
++    if (a.byBad) stop(s, "intent/approval_by_invalid", false)
+     // with a hash, the hash is computed first (needs both files), mismatch runs nothing
+     else if (hashed and a.missing) stop(s, "intent/acceptance_missing", false)
+     else if (hashed and not(a.prefixOk)) { ...stop(s, "intent/hash_mismatch", false), sha8: a.sha8 }
+@@ -77,13 +82,17 @@ module approve {
+     else if (a.lintErr) stop(s, "intent/lint", false)
+     else if (a.missing) stop(s, "intent/acceptance_missing", false)
+     else if (approver == "") stop(s, "intent/approval_identity_unavailable", false)
+-    else if (a.setup != "ok") stop(s, "environment/setup_failed", false)
+     else
+-      // baseline: run once per cache key; a cache hit reuses the stored status
+-      val hit = s.cache.key == (a.baseTree, a.cacheKey)
+-      val bstatus = if (hit) s.cache.status else a.baseline
++      // Context identity is supplied by the I/O adapter; checked tree is bound
++      // independently so narrowed setup_inputs cannot reuse a stale baseline.
++      val hit = s.caches.keys().contains((a.baseTree, a.cacheKey))
++      if (not(hit) and a.setup != "ok") stop(s, "environment/setup_failed", false)
++      else
++      val bstatus = if (hit) s.caches.get((a.baseTree, a.cacheKey)) else a.baseline
+       val ran = not(hit)
+-      val s1 = { ...s, cache: { key: (a.baseTree, a.cacheKey), status: bstatus },
++      val s1 = { ...s,
++                 caches: if (hit) s.caches else s.caches.put((a.baseTree, a.cacheKey), bstatus),
++                 lastCache: (a.baseTree, a.cacheKey),
+                  checkRuns: s.checkRuns + (if (hit) 0 else 1) }
+       if (a.acceptance == "tool_missing") stop(s1, "environment/tool_missing", ran)
+       else if (a.acceptance != "green") stop(s1, "check/acceptance_check_failed", ran)
+@@ -106,10 +115,45 @@ module approve {
+ 
+   pure def observe(s: State): Obs = {
+     last: s.last, exit: s.exit, sha8: s.sha8, approver: s.approver, feas: s.feas,
+-    bwarn: s.bwarn, lwarn: s.lwarn, ran: s.ran, checkRuns: s.checkRuns, cache: s.cache.key,
++    bwarn: s.bwarn, lwarn: s.lwarn, ran: s.ran, checkRuns: s.checkRuns, cache: s.lastCache,
+     approvals: s.approvals,
+   }
+ 
++  pure def safeApprovalUpdate(s: State, a: {
++    slug: str, given: str, prefixOk: bool, stableBeforeCas: bool, newSha8: str, sha: str, sha8: str,
++    by: str, byBad: bool, ident: str, parseErr: bool, lintErr: bool, lintWarn: bool,
++    missing: bool, setup: str, baseTree: str, cacheKey: str, baseline: str, acceptance: str,
++    witnessMode: bool, feas: str, commit: str, baseSha: str
++  }): bool =
++    if (s.last != "ok" or a.given == "") s.approvals == s.priorApprovals
++    else
++      s.approvals.keys().contains(a.slug) and
++      s.approvals.get(a.slug).n == (if (s.priorApprovals.keys().contains(a.slug)) s.priorApprovals.get(a.slug).n else 0) + 1 and
++      s.approvals.get(a.slug).sha == a.sha and
++      s.approvals.get(a.slug).commit == a.commit and
++      s.approvals.get(a.slug).base == a.baseSha and
++      s.approvals.keys().filter(k => k != a.slug).mapBy(k => s.approvals.get(k)) ==
++      s.priorApprovals.keys().filter(k => k != a.slug).mapBy(k => s.priorApprovals.get(k))
++
++  pure def safeCacheUpdate(s: State, a: {
++    slug: str, given: str, prefixOk: bool, stableBeforeCas: bool, newSha8: str, sha: str, sha8: str,
++    by: str, byBad: bool, ident: str, parseErr: bool, lintErr: bool, lintWarn: bool,
++    missing: bool, setup: str, baseTree: str, cacheKey: str, baseline: str, acceptance: str,
++    witnessMode: bool, feas: str, commit: str, baseSha: str
++  }): bool = and {
++    s.checkRuns == s.caches.keys().size(),
++    if (a.byBad or (a.given != "" and a.missing) or
++        (a.given != "" and not(a.prefixOk)) or a.parseErr or a.lintErr or a.missing or
++        (a.by == "" and a.ident == ""))
++      s.caches == s.priorCaches and s.checkRuns == s.priorCacheRuns and s.lastCache == s.priorLastCache
++    else if (s.priorCaches.keys().contains((a.baseTree, a.cacheKey)))
++      s.caches == s.priorCaches and s.checkRuns == s.priorCacheRuns and s.lastCache == (a.baseTree, a.cacheKey)
++    else if (a.setup == "ok")
++      s.caches == s.priorCaches.put((a.baseTree, a.cacheKey), s.caches.get((a.baseTree, a.cacheKey))) and
++         s.checkRuns == s.priorCacheRuns + 1 and s.lastCache == (a.baseTree, a.cacheKey)
++    else s.caches == s.priorCaches and s.checkRuns == s.priorCacheRuns and s.lastCache == s.priorLastCache,
++  }
++
+   // ---------- state machine ----------
+   var st: State
+   var ev: Event
+@@ -117,7 +161,8 @@ module approve {
+ 
+   action fire(e: Event): bool = {
+     val n = apply(st, e)
+-    all { st' = n, ev' = e, obs' = observe(n) }
++    all { st' = { ...n, priorApprovals: st.approvals, priorCaches: st.caches,
++                  priorCacheRuns: st.checkRuns, priorLastCache: st.lastCache }, ev' = e, obs' = observe(n) }
+   }
+   action init = all { st' = INITIAL, ev' = Init, obs' = observe(INITIAL) }
+ 
+@@ -142,7 +187,9 @@ module approve {
+       parseErr: flags == 14, lintErr: flags == 13, lintWarn: flags % 2 == 1,
+       missing: flags == 12, setup: if (flags == 11) "failed" else "ok",
+       baseTree: baseTree, cacheKey: cacheKey, baseline: baseline, acceptance: acceptance,
+-      witnessMode: flags >= 8 and flags <= 10, feas: feas, commit: commit, baseSha: "b0",
++      witnessMode: flags >= 8 and flags <= 10,
++      feas: if (flags >= 8 and flags <= 10) feas else "not checked",
++      commit: commit, baseSha: "b0",
+     }))
+   }
+ 
+@@ -158,6 +205,8 @@ module approve {
+       | Init => true
+       | Approve(a) =>
+         and {
++          safeApprovalUpdate(s, a),
++          safeCacheUpdate(s, a),
+           s.last == "needs_decision" implies a.given == "",
+           (s.last == "intent/hash_mismatch" and not(a.prefixOk)) implies not(s.ran),
+           s.last == "ok" implies (a.given != "" and a.prefixOk and a.stableBeforeCas and a.acceptance == "green"
+diff --git a/quint/slices/intent/golden/hand/05-remove.json b/quint/slices/intent/golden/hand/05-remove.json
+index 7feb1b3..38e2516 100644
+--- a/quint/slices/intent/golden/hand/05-remove.json
++++ b/quint/slices/intent/golden/hand/05-remove.json
+@@ -1 +1 @@
+-{"name": "05-remove", "source": "hand", "sets": [], "events": [{"tag": "Shape", "value": {"slug": "alpha", "result": "valid"}}, {"tag": "Remove", "value": {"slug": "alpha", "force": false}}, {"tag": "Shape", "value": {"slug": "alpha", "result": "valid"}}, {"tag": "Approve", "value": {"slug": "alpha", "mode": "commit", "hash": "abcd1234", "prefixOk": true, "race": "none"}}, {"tag": "Remove", "value": {"slug": "alpha", "force": false}}, {"tag": "Remove", "value": {"slug": "alpha", "force": true}}, {"tag": "Shape", "value": {"slug": "bravo", "result": "valid"}}, {"tag": "Approve", "value": {"slug": "bravo", "mode": "commit", "hash": "abcd1234", "prefixOk": true, "race": "none"}}, {"tag": "Adopt", "value": {"slug": "bravo", "status": "building"}}, {"tag": "Remove", "value": {"slug": "bravo", "force": true}}, {"tag": "Adopt", "value": {"slug": "bravo", "status": "failed"}}, {"tag": "Remove", "value": {"slug": "bravo", "force": false}}, {"tag": "Remove", "value": {"slug": "bravo", "force": true}}], "obs": [{"casTries": 0, "did": "", "exit": 0, "last": "ok", "life": {}, "refs": {}, "shown": ""}, {"casTries": 0, "did": "shaped", "exit": 0, "last": "ok", "life": {"alpha": "shaped"}, "refs": {}, "shown": ""}, {"casTries": 0, "did": "removed", "exit": 0, "last": "ok", "life": {}, "refs": {}, "shown": ""}, {"casTries": 0, "did": "shaped", "exit": 0, "last": "ok", "life": {"alpha": "shaped"}, "refs": {}, "shown": ""}, {"casTries": 1, "did": "approved", "exit": 0, "last": "ok", "life": {"alpha": "approved"}, "refs": {"alpha": {"hash": "abcd1234", "n": 1}}, "shown": "abcd1234"}, {"casTries": 1, "did": "", "exit": 2, "last": "intent/remove_requires_force", "life": {"alpha": "approved"}, "refs": {"alpha": {"hash": "abcd1234", "n": 1}}, "shown": ""}, {"casTries": 0, "did": "removed", "exit": 0, "last": "ok", "life": {}, "refs": {}, "shown": ""}, {"casTries": 0, "did": "shaped", "exit": 0, "last": "ok", "life": {"bravo": "shaped"}, "refs": {}, "shown": ""}, {"casTries": 1, "did": "approved", "exit": 0, "last": "ok", "life": {"bravo": "approved"}, "refs": {"bravo": {"hash": "abcd1234", "n": 1}}, "shown": "abcd1234"}, {"casTries": 1, "did": "adopted", "exit": 0, "last": "ok", "life": {"bravo": "building"}, "refs": {"bravo": {"hash": "abcd1234", "n": 1}}, "shown": ""}, {"casTries": 1, "did": "", "exit": 2, "last": "intent/remove_blocked", "life": {"bravo": "building"}, "refs": {"bravo": {"hash": "abcd1234", "n": 1}}, "shown": ""}, {"casTries": 1, "did": "adopted", "exit": 0, "last": "ok", "life": {"bravo": "failed"}, "refs": {"bravo": {"hash": "abcd1234", "n": 1}}, "shown": ""}, {"casTries": 1, "did": "", "exit": 2, "last": "intent/remove_requires_force", "life": {"bravo": "failed"}, "refs": {"bravo": {"hash": "abcd1234", "n": 1}}, "shown": ""}, {"casTries": 0, "did": "removed", "exit": 0, "last": "ok", "life": {}, "refs": {}, "shown": ""}]}
+\ No newline at end of file
++{"name": "05-remove", "source": "hand", "sets": [], "events": [{"tag": "Shape", "value": {"slug": "alpha", "result": "valid"}}, {"tag": "Remove", "value": {"slug": "alpha", "force": false}}, {"tag": "Shape", "value": {"slug": "alpha", "result": "valid"}}, {"tag": "Approve", "value": {"slug": "alpha", "mode": "commit", "hash": "abcd1234", "prefixOk": true, "race": "none"}}, {"tag": "Remove", "value": {"slug": "alpha", "force": false}}, {"tag": "Remove", "value": {"slug": "alpha", "force": true}}, {"tag": "Shape", "value": {"slug": "bravo", "result": "valid"}}, {"tag": "Approve", "value": {"slug": "bravo", "mode": "commit", "hash": "abcd1234", "prefixOk": true, "race": "none"}}, {"tag": "Adopt", "value": {"slug": "bravo", "status": "building"}}, {"tag": "Shape", "value": {"slug": "bravo", "result": "valid"}}, {"tag": "Approve", "value": {"slug": "bravo", "mode": "card", "hash": "abcd1234", "prefixOk": true, "race": "none"}}, {"tag": "Remove", "value": {"slug": "bravo", "force": true}}, {"tag": "Adopt", "value": {"slug": "bravo", "status": "failed"}}, {"tag": "Remove", "value": {"slug": "bravo", "force": false}}, {"tag": "Remove", "value": {"slug": "bravo", "force": true}}], "obs": [{"casTries": 0, "did": "", "exit": 0, "last": "ok", "life": {}, "refs": {}, "shown": ""}, {"casTries": 0, "did": "shaped", "exit": 0, "last": "ok", "life": {"alpha": "shaped"}, "refs": {}, "shown": ""}, {"casTries": 0, "did": "removed", "exit": 0, "last": "ok", "life": {}, "refs": {}, "shown": ""}, {"casTries": 0, "did": "shaped", "exit": 0, "last": "ok", "life": {"alpha": "shaped"}, "refs": {}, "shown": ""}, {"casTries": 1, "did": "approved", "exit": 0, "last": "ok", "life": {"alpha": "approved"}, "refs": {"alpha": {"hash": "abcd1234", "n": 1}}, "shown": "abcd1234"}, {"casTries": 1, "did": "", "exit": 2, "last": "intent/remove_requires_force", "life": {"alpha": "approved"}, "refs": {"alpha": {"hash": "abcd1234", "n": 1}}, "shown": ""}, {"casTries": 0, "did": "removed", "exit": 0, "last": "ok", "life": {}, "refs": {}, "shown": ""}, {"casTries": 0, "did": "shaped", "exit": 0, "last": "ok", "life": {"bravo": "shaped"}, "refs": {}, "shown": ""}, {"casTries": 1, "did": "approved", "exit": 0, "last": "ok", "life": {"bravo": "approved"}, "refs": {"bravo": {"hash": "abcd1234", "n": 1}}, "shown": "abcd1234"}, {"casTries": 1, "did": "adopted", "exit": 0, "last": "ok", "life": {"bravo": "building"}, "refs": {"bravo": {"hash": "abcd1234", "n": 1}}, "shown": ""}, {"casTries": 1, "did": "shaped", "exit": 0, "last": "ok", "life": {"bravo": "building"}, "refs": {"bravo": {"hash": "abcd1234", "n": 1}}, "shown": ""}, {"casTries": 0, "did": "card", "exit": 5, "last": "needs_decision", "life": {"bravo": "building"}, "refs": {"bravo": {"hash": "abcd1234", "n": 1}}, "shown": "abcd1234"}, {"casTries": 0, "did": "", "exit": 2, "last": "intent/remove_blocked", "life": {"bravo": "building"}, "refs": {"bravo": {"hash": "abcd1234", "n": 1}}, "shown": ""}, {"casTries": 0, "did": "adopted", "exit": 0, "last": "ok", "life": {"bravo": "failed"}, "refs": {"bravo": {"hash": "abcd1234", "n": 1}}, "shown": ""}, {"casTries": 0, "did": "", "exit": 2, "last": "intent/remove_requires_force", "life": {"bravo": "failed"}, "refs": {"bravo": {"hash": "abcd1234", "n": 1}}, "shown": ""}, {"casTries": 0, "did": "removed", "exit": 0, "last": "ok", "life": {}, "refs": {}, "shown": ""}]}
+\ No newline at end of file
+diff --git a/quint/slices/intent/scenarios/05-remove.json b/quint/slices/intent/scenarios/05-remove.json
+index d1e0ec6..ffda887 100644
+--- a/quint/slices/intent/scenarios/05-remove.json
++++ b/quint/slices/intent/scenarios/05-remove.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "05-remove",
+-  "about": "Drafts and landed Intents remove without --force. Approved and failed need --force. Building is blocked even with --force.",
++  "about": "Drafts and landed Intents remove without --force. Approved and failed need --force. An active Build blocks removal, while shaping and approval still follow their production commands.",
+   "steps": [
+     {"do": ["Shape", {"slug": "alpha", "result": "valid"}]},
+     {"do": ["Remove", {"slug": "alpha", "force": false}], "expect": {"last": "ok", "did": "removed", "life": {}, "refs": {}}},
+@@ -11,6 +11,8 @@
+     {"do": ["Shape", {"slug": "bravo", "result": "valid"}]},
+     {"do": ["Approve", {"slug": "bravo", "mode": "commit", "hash": "abcd1234", "prefixOk": true, "race": "none"}]},
+     {"do": ["Adopt", {"slug": "bravo", "status": "building"}]},
++    {"do": ["Shape", {"slug": "bravo", "result": "valid"}], "expect": {"did": "shaped", "life": {"bravo": "building"}, "refs": {"bravo": {"n": 1, "hash": "abcd1234"}}}},
++    {"do": ["Approve", {"slug": "bravo", "mode": "card", "hash": "abcd1234", "prefixOk": true, "race": "none"}], "expect": {"last": "needs_decision", "did": "card", "life": {"bravo": "building"}, "refs": {"bravo": {"n": 1, "hash": "abcd1234"}}}},
+     {"do": ["Remove", {"slug": "bravo", "force": true}], "expect": {"last": "intent/remove_blocked", "exit": 2, "life": {"bravo": "building"}}},
+     {"do": ["Adopt", {"slug": "bravo", "status": "failed"}]},
+     {"do": ["Remove", {"slug": "bravo", "force": false}], "expect": {"last": "intent/remove_requires_force"}},
+diff --git a/quint/slices/intent/spec/intent.qnt b/quint/slices/intent/spec/intent.qnt
+index f59d342..a79f0d3 100644
+--- a/quint/slices/intent/spec/intent.qnt
++++ b/quint/slices/intent/spec/intent.qnt
+@@ -9,11 +9,21 @@ module intent {
+   type State = {
+     life: str -> str,     // shaped | approved | building | failed | parked | interrupted | landed
+     refs: str -> Ref,     // refs/kogen/intents/<slug>
++    activeBuilds: Set[str],
++    forceRequired: Set[str],
++    danglingRefs: Set[str],
++    landedSources: Set[str], // files currently present on the shared base ref
+     shown: str,
+     casTries: int,
+     did: str,
+     last: str,
+     exit: int,
++    priorRefs: str -> Ref,
++    priorLife: str -> str,
++    priorActiveBuilds: Set[str],
++    priorForceRequired: Set[str],
++    priorDanglingRefs: Set[str],
++    priorLandedSources: Set[str],
+   }
+   type Event =
+     | Init
+@@ -29,6 +39,9 @@ module intent {
+ 
+   pure val INITIAL: State = {
+     life: Map(), refs: Map(), shown: "", casTries: 0, did: "", last: "ok", exit: 0,
++    activeBuilds: Set(), forceRequired: Set(), danglingRefs: Set(), landedSources: Set(),
++    priorRefs: Map(), priorLife: Map(), priorActiveBuilds: Set(), priorForceRequired: Set(),
++    priorDanglingRefs: Set(), priorLandedSources: Set(),
+   }
+ 
+   pure def rank(slug: str): int =
+@@ -39,7 +52,7 @@ module intent {
+       if (code == "needs_decision") 5 else 0
+     else if (Set("candidate/repair_limit", "intent/hash_mismatch").contains(code)) 1
+     else if (Set("intent/not_found", "intent/request_unavailable", "intent/remove_blocked",
+-                 "intent/remove_requires_force", "intent_building", "unknown_slug").contains(code)) 2
++                 "intent/remove_requires_force", "unknown_slug").contains(code)) 2
+     else if (code == "provider/overload") 4
+     else 70
+ 
+@@ -52,13 +65,17 @@ module intent {
+     s.life.keys().filter(k => k != slug).mapBy(k => s.life.get(k))
+   pure def dropRef(s: State, slug: str): str -> Ref =
+     s.refs.keys().filter(k => k != slug).mapBy(k => s.refs.get(k))
++  pure def refsWithout(refs: str -> Ref, slug: str): str -> Ref =
++    refs.keys().filter(k => k != slug).mapBy(k => refs.get(k))
++  pure def lifeWithout(life: str -> str, slug: str): str -> str =
++    life.keys().filter(k => k != slug).mapBy(k => life.get(k))
++  pure def withoutSlug(values: Set[str], slug: str): Set[str] = values.filter(k => k != slug)
+ 
+   pure def bound(life: str): bool =
+     Set("approved", "building", "failed", "parked", "interrupted", "landed").contains(life)
+ 
+   pure def shape(s: State, slug: str, result: str): State =
+     if (rank(slug) < 0) stop(s, "unknown_slug")
+-    else if (lifeOf(s, slug) == "building") stop(s, "intent_building")
+     else if (result == "empty") stop(s, "intent/request_unavailable")
+     else if (result == "provider") stop(s, "provider/overload")
+     else if (result == "failed") { ...stop(s, "candidate/repair_limit"), did: "shape_failed" }
+@@ -72,14 +89,19 @@ module intent {
+   pure def approve(s: State, a: { slug: str, mode: str, hash: str, prefixOk: bool, race: str }): State =
+     if (rank(a.slug) < 0) stop(s, "unknown_slug")
+     else if (not(has(s, a.slug))) stop(s, "intent/not_found")
+-    else if (lifeOf(s, a.slug) == "building") stop(s, "intent_building")
+     else if (a.mode == "card")
+       { ...s, last: "needs_decision", exit: 5, did: "card", shown: a.hash, casTries: 0 }
+     else if (a.mode != "commit") stop(s, "unknown_mode")
+     else if (not(a.prefixOk))
+       { ...stop(s, "intent/hash_mismatch"), shown: a.hash, casTries: 0 }
+     else if (a.race == "twice")
+-      { ...stop(s, "controller/approval_cas_lost"), casTries: 2 }
++      {
++        ...stop(s, "controller/approval_cas_lost"),
++        life: if (s.refs.keys().contains(a.slug)) s.life.put(a.slug, "approved") else s.life,
++        danglingRefs: if (s.refs.keys().contains(a.slug)) s.danglingRefs
++                      else s.danglingRefs.union(Set(a.slug)),
++        casTries: 2,
++      }
+     else if (a.race != "none" and a.race != "once") stop(s, "unknown_race")
+     else
+       val prev = if (s.refs.keys().contains(a.slug)) s.refs.get(a.slug).n else 0
+@@ -88,6 +110,7 @@ module intent {
+                    "approved" else if (keep == "shaped") "approved" else "approved"
+       { ...s, life: s.life.put(a.slug, life),
+         refs: s.refs.put(a.slug, { n: prev + 1, hash: a.hash }),
++        danglingRefs: withoutSlug(s.danglingRefs, a.slug),
+         last: "ok", exit: 0, did: "approved", shown: a.hash,
+         casTries: if (a.race == "once") 2 else 1 }
+ 
+@@ -97,10 +120,13 @@ module intent {
+   pure def remove(s: State, slug: str, force: bool): State =
+     if (rank(slug) < 0) stop(s, "unknown_slug")
+     else if (not(has(s, slug))) stop(s, "intent/not_found")
+-    else if (lifeOf(s, slug) == "building") stop(s, "intent/remove_blocked")
+-    else if (needsForce(lifeOf(s, slug)) and not(force)) stop(s, "intent/remove_requires_force")
++    else if (s.activeBuilds.contains(slug)) stop(s, "intent/remove_blocked")
++    else if (not(force) and not(s.landedSources.contains(slug)) and lifeOf(s, slug) != "landed" and
++             (needsForce(lifeOf(s, slug)) or s.forceRequired.contains(slug) or s.danglingRefs.contains(slug)))
++      stop(s, "intent/remove_requires_force")
+     else
+       { ...s, life: dropLife(s, slug), refs: dropRef(s, slug),
++        danglingRefs: withoutSlug(s.danglingRefs, slug),
+         last: "ok", exit: 0, did: "removed", shown: "", casTries: 0 }
+ 
+   pure def adopt(s: State, slug: str, status: str): State =
+@@ -109,7 +135,16 @@ module intent {
+     else if (lifeOf(s, slug) != "approved" and not(lifeOf(s, slug) == "building" and status != "building"))
+       stop(s, "bad_adopt")
+     else
+-      { ...s, life: s.life.put(slug, status), last: "ok", exit: 0, did: "adopted", shown: "" }
++      {
++        ...s,
++        life: s.life.put(slug, status),
++        landedSources: if (status == "landed") s.life.keys() else s.landedSources,
++        activeBuilds: if (status == "building") s.activeBuilds.union(Set(slug))
++                      else withoutSlug(s.activeBuilds, slug),
++        forceRequired: if (Set("failed", "parked", "interrupted").contains(status))
++                         s.forceRequired.union(Set(slug)) else s.forceRequired,
++        last: "ok", exit: 0, did: "adopted", shown: "",
++      }
+ 
+   pure def apply(s: State, e: Event): State = match e {
+     | Init => INITIAL
+@@ -137,12 +172,85 @@ module intent {
+       if (lifeOf(s, k) == "shaped") not(s.refs.keys().contains(k))
+       else if (bound(lifeOf(s, k))) s.refs.keys().contains(k)
+       else false),
+-    // a refused hash or a twice-lost CAS does not install that hash
++    // Production run stores and refs have effects that can outlive the visible
++    // approval: a CAS competitor may leave a ref without an approval document,
++    // and an active claim still blocks removal after reapproval. These ghost
++    // histories make those effects explicit while the public observation stays
++    // limited to the CLI-visible lifecycle and valid approval documents.
+     match e {
+       | Approve(a) =>
+-          (s.last == "intent/hash_mismatch" or s.last == "controller/approval_cas_lost") implies
+-            not(s.refs.keys().contains(a.slug) and s.refs.get(a.slug).hash == a.hash and s.did == "approved")
+-      | Shape(_) => s.did != "approved"
++        and {
++          s.activeBuilds == s.priorActiveBuilds,
++          s.forceRequired == s.priorForceRequired,
++          s.landedSources == s.priorLandedSources,
++          s.did != "approved" implies s.refs == s.priorRefs,
++          s.did != "approved" and s.last == "controller/approval_cas_lost" and
++            s.priorRefs.keys().contains(a.slug) implies
++              s.life == s.priorLife.put(a.slug, "approved"),
++          s.did != "approved" and not(s.last == "controller/approval_cas_lost" and
++            s.priorRefs.keys().contains(a.slug)) implies s.life == s.priorLife,
++          s.did == "approved" implies s.life.get(a.slug) == "approved",
++          lifeWithout(s.life, a.slug) == lifeWithout(s.priorLife, a.slug),
++          s.danglingRefs == if (s.did == "approved") withoutSlug(s.priorDanglingRefs, a.slug)
++                            else if (s.last == "controller/approval_cas_lost" and
++                                     not(s.priorRefs.keys().contains(a.slug)))
++                              s.priorDanglingRefs.union(Set(a.slug))
++                            else s.priorDanglingRefs,
++          s.did == "approved" implies (
++            s.refs.keys().contains(a.slug) and s.refs.get(a.slug).hash == a.hash and
++            s.refs.get(a.slug).n == (if (s.priorRefs.keys().contains(a.slug)) s.priorRefs.get(a.slug).n else 0) + 1 and
++            refsWithout(s.refs, a.slug) == refsWithout(s.priorRefs, a.slug)
++          ),
++        }
++      | Shape(a) =>
++        and {
++          s.refs == s.priorRefs,
++          s.activeBuilds == s.priorActiveBuilds,
++          s.forceRequired == s.priorForceRequired,
++          s.landedSources == s.priorLandedSources,
++          s.danglingRefs == s.priorDanglingRefs,
++          if (s.did == "shaped" and
++              not(s.priorLife.keys().contains(a.slug) and bound(s.priorLife.get(a.slug))))
++            s.life == s.priorLife.put(a.slug, "shaped")
++          else s.life == s.priorLife,
++        }
++      | Remove(a) =>
++        and {
++          s.activeBuilds == s.priorActiveBuilds,
++          s.forceRequired == s.priorForceRequired,
++          s.landedSources == s.priorLandedSources,
++          if (s.did == "removed")
++            and {
++              s.life == lifeWithout(s.priorLife, a.slug),
++              s.refs == refsWithout(s.priorRefs, a.slug),
++              s.danglingRefs == withoutSlug(s.priorDanglingRefs, a.slug),
++            }
++          else and {
++            s.life == s.priorLife,
++            s.refs == s.priorRefs,
++            s.danglingRefs == s.priorDanglingRefs,
++          },
++        }
++      | Adopt(a) =>
++        and {
++          s.refs == s.priorRefs,
++          s.danglingRefs == s.priorDanglingRefs,
++          if (s.did == "adopted")
++            and {
++              s.life == s.priorLife.put(a.slug, a.status),
++              s.landedSources == if (a.status == "landed") s.priorLife.keys() else s.priorLandedSources,
++              s.activeBuilds == if (a.status == "building") s.priorActiveBuilds.union(Set(a.slug))
++                                else withoutSlug(s.priorActiveBuilds, a.slug),
++              s.forceRequired == if (Set("failed", "parked", "interrupted").contains(a.status))
++                                   s.priorForceRequired.union(Set(a.slug)) else s.priorForceRequired,
++            }
++          else and {
++            s.life == s.priorLife,
++            s.landedSources == s.priorLandedSources,
++            s.activeBuilds == s.priorActiveBuilds,
++            s.forceRequired == s.priorForceRequired,
++          },
++        }
+       | _ => true
+     },
+   }
+@@ -153,7 +261,15 @@ module intent {
+ 
+   action fire(e: Event): bool = {
+     val n = apply(st, e)
+-    all { st' = n, ev' = e, obs' = observe(n) }
++    all { st' = {
++      ...n,
++      priorRefs: st.refs,
++      priorLife: st.life,
++      priorActiveBuilds: st.activeBuilds,
++      priorForceRequired: st.forceRequired,
++      priorDanglingRefs: st.danglingRefs,
++      priorLandedSources: st.landedSources,
++    }, ev' = e, obs' = observe(n) }
+   }
+   action init = all { st' = INITIAL, ev' = Init, obs' = observe(INITIAL) }
+ 
+diff --git a/quint/slices/queue/spec/queue.qnt b/quint/slices/queue/spec/queue.qnt
+index 4bedf60..08c7ec9 100644
+--- a/quint/slices/queue/spec/queue.qnt
++++ b/quint/slices/queue/spec/queue.qnt
+@@ -18,6 +18,8 @@ module queue {
+     exit: int,
+     last: str,
+     line: str,
++    priorWaiting: str -> { time: int, priority: int },
++    priorCurrent: str,
+   }
+   type Event =
+     | Init
+@@ -36,6 +38,7 @@ module queue {
+   pure val INITIAL: State = {
+     held: false, alive: false, stop: false, phase: "idle", current: "",
+     waiting: Map(), attempted: Set(), built: 0, landed: 0, exit: 0, last: "ok", line: "",
++    priorWaiting: Map(), priorCurrent: "",
+   }
+ 
+   pure def rank(slug: str): int =
+@@ -143,8 +146,13 @@ module queue {
+     not(s.held) implies and { s.phase == "idle", s.current == "", not(s.alive) },
+     s.landed <= s.built,
+     s.landed >= 0 and s.built >= 0,
+-    // a provider stop does not drop the Intent from the queue
++    // A provider stop releases the drain but retains its current approval for a retry.
+     s.line == "stopped_because" implies and { not(s.held), s.exit == 3 or s.exit == 4 or s.exit == 70 },
++    s.line == "stopped_because" and s.exit == 4 implies and {
++      s.priorCurrent != "",
++      s.waiting == s.priorWaiting,
++      s.waiting.keys().contains(s.priorCurrent),
++    },
+     s.line == "already_running" implies and { s.held, s.alive },
+   }
+ 
+@@ -154,7 +162,7 @@ module queue {
+ 
+   action fire(e: Event): bool = {
+     val n = apply(st, e)
+-    all { st' = n, ev' = e, obs' = observe(n) }
++    all { st' = { ...n, priorWaiting: st.waiting, priorCurrent: st.current }, ev' = e, obs' = observe(n) }
+   }
+   action init = all { st' = INITIAL, ev' = Init, obs' = observe(INITIAL) }
+ 
+diff --git a/quint/slices/session/golden/hand/06-refusals.json b/quint/slices/session/golden/hand/06-refusals.json
+index 9ac1a75..734d172 100644
+--- a/quint/slices/session/golden/hand/06-refusals.json
++++ b/quint/slices/session/golden/hand/06-refusals.json
+@@ -1 +1 @@
+-{"name": "06-refusals", "source": "hand", "sets": [], "events": [{"tag": "Turn"}, {"tag": "Bind", "value": {"stage": "session", "attempt": "", "rung": ""}}, {"tag": "Bind", "value": {"stage": "develop", "attempt": "", "rung": ""}}, {"tag": "Epoch", "value": {"name": "nope"}}, {"tag": "Model", "value": {"name": "grok"}}, {"tag": "Init"}], "obs": [{"affinityChanged": false, "attempt": "", "epoch": "", "epochClass": "", "keyChanged": false, "last": "ok", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "", "stage": "", "version": ""}, {"affinityChanged": false, "attempt": "", "epoch": "", "epochClass": "", "keyChanged": false, "last": "not_bound", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "", "stage": "", "version": ""}, {"affinityChanged": false, "attempt": "", "epoch": "", "epochClass": "", "keyChanged": false, "last": "bad_bind", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "", "stage": "", "version": ""}, {"affinityChanged": false, "attempt": "builder", "epoch": "initial", "epochClass": "initial", "keyChanged": false, "last": "ok", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "builder", "stage": "develop", "version": "v2"}, {"affinityChanged": false, "attempt": "builder", "epoch": "initial", "epochClass": "initial", "keyChanged": false, "last": "bad_epoch", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "builder", "stage": "develop", "version": "v2"}, {"affinityChanged": false, "attempt": "builder", "epoch": "initial", "epochClass": "initial", "keyChanged": false, "last": "bad_model", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "builder", "stage": "develop", "version": "v2"}, {"affinityChanged": false, "attempt": "", "epoch": "", "epochClass": "", "keyChanged": false, "last": "ok", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "", "stage": "", "version": ""}]}
+\ No newline at end of file
++{"name": "06-refusals", "source": "hand", "sets": [], "events": [{"tag": "Turn"}, {"tag": "Bind", "value": {"stage": "session", "attempt": "", "rung": ""}}, {"tag": "Bind", "value": {"stage": "develop", "attempt": "", "rung": ""}}, {"tag": "Epoch", "value": {"name": "nope"}}, {"tag": "Model", "value": {"name": "grok"}}, {"tag": "Init"}, {"tag": "Lite"}], "obs": [{"affinityChanged": false, "attempt": "", "epoch": "", "epochClass": "", "keyChanged": false, "last": "ok", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "", "stage": "", "version": ""}, {"affinityChanged": false, "attempt": "", "epoch": "", "epochClass": "", "keyChanged": false, "last": "not_bound", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "", "stage": "", "version": ""}, {"affinityChanged": false, "attempt": "", "epoch": "", "epochClass": "", "keyChanged": false, "last": "bad_bind", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "", "stage": "", "version": ""}, {"affinityChanged": false, "attempt": "builder", "epoch": "initial", "epochClass": "initial", "keyChanged": false, "last": "ok", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "builder", "stage": "develop", "version": "v2"}, {"affinityChanged": false, "attempt": "builder", "epoch": "initial", "epochClass": "initial", "keyChanged": false, "last": "bad_epoch", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "builder", "stage": "develop", "version": "v2"}, {"affinityChanged": false, "attempt": "builder", "epoch": "initial", "epochClass": "initial", "keyChanged": false, "last": "bad_model", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "builder", "stage": "develop", "version": "v2"}, {"affinityChanged": false, "attempt": "", "epoch": "", "epochClass": "", "keyChanged": false, "last": "ok", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "", "stage": "", "version": ""}, {"affinityChanged": false, "attempt": "", "epoch": "", "epochClass": "", "keyChanged": false, "last": "not_bound", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "", "stage": "", "version": ""}]}
+\ No newline at end of file
+diff --git a/quint/slices/session/golden/hand/07-run-affinity.json b/quint/slices/session/golden/hand/07-run-affinity.json
+index b4d2c7e..9b86a03 100644
+--- a/quint/slices/session/golden/hand/07-run-affinity.json
++++ b/quint/slices/session/golden/hand/07-run-affinity.json
+@@ -1 +1 @@
+-{"name": "07-run-affinity", "source": "hand", "sets": [], "events": [{"tag": "Bind", "value": {"stage": "develop", "attempt": "", "rung": ""}}, {"tag": "Stage", "value": {"name": "plan"}}, {"tag": "Rung", "value": {"name": "2"}}, {"tag": "NewRun", "value": {"name": "run-2"}}, {"tag": "Bind", "value": {"stage": "develop", "attempt": "", "rung": ""}}], "obs": [{"affinityChanged": false, "attempt": "", "epoch": "", "epochClass": "", "keyChanged": false, "last": "ok", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "", "stage": "", "version": ""}, {"affinityChanged": false, "attempt": "builder", "epoch": "initial", "epochClass": "initial", "keyChanged": false, "last": "ok", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "builder", "stage": "develop", "version": "v2"}, {"affinityChanged": false, "attempt": "builder", "epoch": "initial", "epochClass": "initial", "keyChanged": true, "last": "ok", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "builder", "stage": "plan", "version": "v2"}, {"affinityChanged": false, "attempt": "builder", "epoch": "initial", "epochClass": "initial", "keyChanged": true, "last": "ok", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "2", "stage": "plan", "version": "v2"}, {"affinityChanged": true, "attempt": "", "epoch": "", "epochClass": "", "keyChanged": false, "last": "ok", "lite": "", "model": "", "previous": false, "runName": "run-2", "rung": "", "stage": "", "version": ""}, {"affinityChanged": false, "attempt": "builder", "epoch": "initial", "epochClass": "initial", "keyChanged": false, "last": "ok", "lite": "", "model": "", "previous": false, "runName": "run-2", "rung": "builder", "stage": "develop", "version": "v2"}]}
+\ No newline at end of file
++{"name": "07-run-affinity", "source": "hand", "sets": [], "events": [{"tag": "Bind", "value": {"stage": "develop", "attempt": "", "rung": ""}}, {"tag": "Stage", "value": {"name": "plan"}}, {"tag": "Rung", "value": {"name": "2"}}, {"tag": "NewRun", "value": {"name": "run-2"}}, {"tag": "Bind", "value": {"stage": "develop", "attempt": "", "rung": ""}}, {"tag": "NewRun", "value": {"name": "run-1"}}], "obs": [{"affinityChanged": false, "attempt": "", "epoch": "", "epochClass": "", "keyChanged": false, "last": "ok", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "", "stage": "", "version": ""}, {"affinityChanged": false, "attempt": "builder", "epoch": "initial", "epochClass": "initial", "keyChanged": false, "last": "ok", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "builder", "stage": "develop", "version": "v2"}, {"affinityChanged": false, "attempt": "builder", "epoch": "initial", "epochClass": "initial", "keyChanged": true, "last": "ok", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "builder", "stage": "plan", "version": "v2"}, {"affinityChanged": false, "attempt": "builder", "epoch": "initial", "epochClass": "initial", "keyChanged": true, "last": "ok", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "2", "stage": "plan", "version": "v2"}, {"affinityChanged": true, "attempt": "", "epoch": "", "epochClass": "", "keyChanged": false, "last": "ok", "lite": "", "model": "", "previous": false, "runName": "run-2", "rung": "", "stage": "", "version": ""}, {"affinityChanged": false, "attempt": "builder", "epoch": "initial", "epochClass": "initial", "keyChanged": false, "last": "ok", "lite": "", "model": "", "previous": false, "runName": "run-2", "rung": "builder", "stage": "develop", "version": "v2"}, {"affinityChanged": true, "attempt": "", "epoch": "", "epochClass": "", "keyChanged": false, "last": "ok", "lite": "", "model": "", "previous": false, "runName": "run-1", "rung": "", "stage": "", "version": ""}]}
+\ No newline at end of file
+diff --git a/quint/slices/session/scenarios/06-refusals.json b/quint/slices/session/scenarios/06-refusals.json
+index 905245e..587f0a8 100644
+--- a/quint/slices/session/scenarios/06-refusals.json
++++ b/quint/slices/session/scenarios/06-refusals.json
+@@ -11,6 +11,7 @@
+      "expect": {"last": "bad_epoch", "epoch": "initial", "epochClass": "initial"}},
+     {"do": ["Model", {"name": "grok"}],
+      "expect": {"last": "bad_model", "model": ""}},
+-    {"do": ["Init"], "expect": {"last": "ok", "version": "", "lite": "", "previous": false, "keyChanged": false}}
++    {"do": ["Init"], "expect": {"last": "ok", "version": "", "lite": "", "previous": false, "keyChanged": false}},
++    {"do": ["Lite"], "expect": {"last": "not_bound", "version": "", "lite": ""}}
+   ]
+ }
+diff --git a/quint/slices/session/scenarios/07-run-affinity.json b/quint/slices/session/scenarios/07-run-affinity.json
+index c0ee21d..d89e1f8 100644
+--- a/quint/slices/session/scenarios/07-run-affinity.json
++++ b/quint/slices/session/scenarios/07-run-affinity.json
+@@ -6,6 +6,7 @@
+     {"do": ["Stage", {"name": "plan"}], "expect": {"keyChanged": true, "affinityChanged": false}},
+     {"do": ["Rung", {"name": "2"}], "expect": {"keyChanged": true, "affinityChanged": false}},
+     {"do": ["NewRun", {"name": "run-2"}], "expect": {"runName": "run-2", "affinityChanged": true, "version": ""}},
+-    {"do": ["Bind", {"stage": "develop", "attempt": "", "rung": ""}], "expect": {"runName": "run-2", "affinityChanged": false}}
++    {"do": ["Bind", {"stage": "develop", "attempt": "", "rung": ""}], "expect": {"runName": "run-2", "affinityChanged": false}},
++    {"do": ["NewRun", {"name": "run-1"}], "expect": {"runName": "run-1", "affinityChanged": true, "version": ""}}
+   ]
+ }
+diff --git a/quint/slices/session/spec/session.qnt b/quint/slices/session/spec/session.qnt
+index 8488d4b..9f9c437 100644
+--- a/quint/slices/session/spec/session.qnt
++++ b/quint/slices/session/spec/session.qnt
+@@ -21,6 +21,7 @@ module session {
+     epochClass: str,
+     model: str,
+     runName: str,
++    priorRunName: str,
+     sharedAffinity: bool, prefixes: (str, str, str, str) -> str,
+     affinityChanged: bool,
+     previous: bool,
+@@ -44,12 +45,16 @@ module session {
+     | NewRun(NameA)
+     | AffinityScope({ shared: bool })
+     | Prefix({ provider: str, model: str, adapter: str, prompt: str, bytes: str })
+-  type Obs = State
++  type Obs = {
++    version: str, stage: str, attempt: str, rung: str, epoch: str, epochClass: str,
++    model: str, runName: str, affinityChanged: bool, previous: bool, keyChanged: bool,
++    lite: str, last: str, sharedAffinity: bool, prefixes: (str, str, str, str) -> str,
++  }
+ 
+   pure val INITIAL: State = {
+     version: "", stage: "", attempt: "", rung: "", epoch: "", epochClass: "", model: "",
+     sharedAffinity: false, prefixes: Map(),
+-    previous: false, keyChanged: false, lite: "", last: "ok", runName: "run-1", affinityChanged: false,
++    previous: false, keyChanged: false, lite: "", last: "ok", runName: "run-1", priorRunName: "run-1", affinityChanged: false,
+   }
+ 
+   pure def err(s: State, code: str): State = { ...s, last: code }
+@@ -126,7 +131,9 @@ module session {
+     | Epoch(a) => setEpoch(s, a)
+     | Accept(a) => accept(s, a)
+     | Previous => err(s, "never_sent")
+-    | Lite => { ...s, lite: "v1", keyChanged: false, affinityChanged: false, last: "ok" }
++    | Lite =>
++      if (not(bound(s))) err(s, "not_bound")
++      else { ...s, lite: "v1", keyChanged: false, affinityChanged: false, last: "ok" }
+     | NewRun(a) =>
+       if (a.name == "" or a.name == s.runName) err(s, "bad_run")
+       else { ...INITIAL, runName: a.name, affinityChanged: not(s.sharedAffinity),
+@@ -141,9 +148,14 @@ module session {
+       else { ...s, prefixes: s.prefixes.put(ns, a.bytes), last: "ok" }
+   }
+ 
+-  pure def observe(s: State): Obs = s
++  pure def observe(s: State): Obs = {
++    version: s.version, stage: s.stage, attempt: s.attempt, rung: s.rung, epoch: s.epoch,
++    epochClass: s.epochClass, model: s.model, runName: s.runName,
++    affinityChanged: s.affinityChanged, previous: s.previous, keyChanged: s.keyChanged,
++    lite: s.lite, last: s.last, sharedAffinity: s.sharedAffinity, prefixes: s.prefixes,
++  }
+ 
+-  pure def safe(s: State): bool = and {
++  pure def safe(s: State, e: Event): bool = and {
+     s.previous == false,
+     s.version == "" or s.version == "v2",
+     s.lite == "" or s.lite == "v1",
+@@ -158,7 +170,11 @@ module session {
+     s.model == "" or s.model == "luna" or s.model == "sol",
+     s.keyChanged implies s.version == "v2",
+     s.runName != "",
+-    s.affinityChanged implies s.version == "",
++    match e {
++      | NewRun(_) => s.last != "ok" or
++          (s.affinityChanged == not(s.sharedAffinity) and s.version == "" and s.runName != s.priorRunName)
++      | _ => true
++    },
+   }
+ 
+   var st: State
+@@ -167,7 +183,7 @@ module session {
+ 
+   action fire(e: Event): bool = {
+     val n = apply(st, e)
+-    all { st' = n, ev' = e, obs' = observe(n) }
++    all { st' = { ...n, priorRunName: st.runName }, ev' = e, obs' = observe(n) }
+   }
+   action init = all { st' = INITIAL, ev' = Init, obs' = observe(INITIAL) }
+ 
+@@ -195,6 +211,7 @@ module session {
+     fire(Previous),
+     fire(Lite),
+     all { st.runName == "run-1", fire(NewRun({ name: "run-2" })) },
++    all { st.runName != "run-1", fire(NewRun({ name: "run-1" })) },
+     fire(Turn),
+     fire(Init),
+   }
+@@ -209,5 +226,5 @@ module session {
+       same.last == "ok", bad.last == "static_prefix_changed", bad.prefixes == same.prefixes })
+   }
+ 
+-  val invariant = safe(st)
++  val invariant = safe(st, ev)
+ }
+diff --git a/quint/slices/stream/golden/hand/01-switch-after-two-overloads.json b/quint/slices/stream/golden/hand/01-switch-after-two-overloads.json
+index 5504d14..ae3d572 100644
+--- a/quint/slices/stream/golden/hand/01-switch-after-two-overloads.json
++++ b/quint/slices/stream/golden/hand/01-switch-after-two-overloads.json
+@@ -1 +1 @@
+-{"name": "01-switch-after-two-overloads", "source": "hand", "sets": [], "events": [{"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}, {"tag": "Result", "value": {"kind": "ok", "items": false}}], "obs": [{"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshed": false, "role": "", "waited": 0, "wall": 0}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 2, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 2000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 1, "phase": "open", "queued": true, "reason": "provider/overload", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "switch", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "sol", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/overload", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "success", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "sol", "overloads": 0, "phase": "idle", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}]}
+\ No newline at end of file
++{"name": "01-switch-after-two-overloads", "source": "hand", "sets": [], "events": [{"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}, {"tag": "Result", "value": {"kind": "ok", "items": false}}], "obs": [{"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshable": true, "refreshed": false, "role": "", "waited": 0, "wall": 0}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 2, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 2000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 1, "phase": "open", "queued": true, "reason": "provider/overload", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "switch", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "sol", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/overload", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "success", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "sol", "overloads": 0, "phase": "idle", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}]}
+\ No newline at end of file
+diff --git a/quint/slices/stream/golden/hand/02-other-class-resets-streak.json b/quint/slices/stream/golden/hand/02-other-class-resets-streak.json
+index 0296e97..382f8c4 100644
+--- a/quint/slices/stream/golden/hand/02-other-class-resets-streak.json
++++ b/quint/slices/stream/golden/hand/02-other-class-resets-streak.json
+@@ -1 +1 @@
+-{"name": "02-other-class-resets-streak", "source": "hand", "sets": [], "events": [{"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "timeout", "items": false}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}], "obs": [{"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshed": false, "role": "", "waited": 0, "wall": 0}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 2, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 2000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/timeout", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 4000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 1, "phase": "open", "queued": true, "reason": "provider/overload", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 4, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "switch", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "sol", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/overload", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}]}
+\ No newline at end of file
++{"name": "02-other-class-resets-streak", "source": "hand", "sets": [], "events": [{"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "timeout", "items": false}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}], "obs": [{"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshable": true, "refreshed": false, "role": "", "waited": 0, "wall": 0}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 2, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 2000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/timeout", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 4000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 1, "phase": "open", "queued": true, "reason": "provider/overload", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 4, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "switch", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "sol", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/overload", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}]}
+\ No newline at end of file
+diff --git a/quint/slices/stream/golden/hand/03-attempt-cap-and-budget.json b/quint/slices/stream/golden/hand/03-attempt-cap-and-budget.json
+index 3a155a9..f1552f6 100644
+--- a/quint/slices/stream/golden/hand/03-attempt-cap-and-budget.json
++++ b/quint/slices/stream/golden/hand/03-attempt-cap-and-budget.json
+@@ -1 +1 @@
+-{"name": "03-attempt-cap-and-budget", "source": "hand", "sets": [], "events": [{"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 10000000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "malformed", "items": false}}, {"tag": "Result", "value": {"kind": "malformed", "items": false}}, {"tag": "Result", "value": {"kind": "malformed", "items": false}}, {"tag": "Result", "value": {"kind": "malformed", "items": false}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": false, "wall": 0, "mode": "build"}}, {"tag": "Result", "value": {"kind": "timeout", "items": false}}, {"tag": "Result", "value": {"kind": "timeout", "items": false}}, {"tag": "Result", "value": {"kind": "timeout", "items": false}}, {"tag": "Result", "value": {"kind": "timeout", "items": false}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 10000000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "timeout", "items": false}}, {"tag": "Result", "value": {"kind": "timeout", "items": false}}, {"tag": "Result", "value": {"kind": "timeout", "items": false}}, {"tag": "Result", "value": {"kind": "timeout", "items": false}}], "obs": [{"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshed": false, "role": "", "waited": 0, "wall": 0}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 2, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 2000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/malformed", "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 4000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/malformed", "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 4, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 8000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/malformed", "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 4, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "stop", "delay": 0, "exit": 4, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "provider/malformed", "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 1, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 0}, {"attempt": 2, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 2000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/timeout", "refreshed": false, "role": "builder", "waited": 0, "wall": 0}, {"attempt": 3, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 4000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/timeout", "refreshed": false, "role": "builder", "waited": 0, "wall": 0}, {"attempt": 4, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 8000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/timeout", "refreshed": false, "role": "builder", "waited": 0, "wall": 0}, {"attempt": 4, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "stop", "delay": 0, "exit": 4, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "provider/timeout", "refreshed": false, "role": "builder", "waited": 0, "wall": 0}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 2, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 2000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/timeout", "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 4000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/timeout", "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 4, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 8000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/timeout", "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 5, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 16000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/timeout", "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}]}
+\ No newline at end of file
++{"name": "03-attempt-cap-and-budget", "source": "hand", "sets": [], "events": [{"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 10000000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "malformed", "items": false}}, {"tag": "Result", "value": {"kind": "malformed", "items": false}}, {"tag": "Result", "value": {"kind": "malformed", "items": false}}, {"tag": "Result", "value": {"kind": "malformed", "items": false}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": false, "wall": 0, "mode": "build"}}, {"tag": "Result", "value": {"kind": "timeout", "items": false}}, {"tag": "Result", "value": {"kind": "timeout", "items": false}}, {"tag": "Result", "value": {"kind": "timeout", "items": false}}, {"tag": "Result", "value": {"kind": "timeout", "items": false}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 10000000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "timeout", "items": false}}, {"tag": "Result", "value": {"kind": "timeout", "items": false}}, {"tag": "Result", "value": {"kind": "timeout", "items": false}}, {"tag": "Result", "value": {"kind": "timeout", "items": false}}], "obs": [{"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshable": true, "refreshed": false, "role": "", "waited": 0, "wall": 0}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 2, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 2000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/malformed", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 4000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/malformed", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 4, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 8000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/malformed", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 4, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "stop", "delay": 0, "exit": 4, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "provider/malformed", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 1, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 0}, {"attempt": 2, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 2000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/timeout", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 0}, {"attempt": 3, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 4000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/timeout", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 0}, {"attempt": 4, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 8000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/timeout", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 0}, {"attempt": 4, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "stop", "delay": 0, "exit": 4, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "provider/timeout", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 0}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 2, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 2000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/timeout", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 4000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/timeout", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 4, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 8000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/timeout", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 5, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 16000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/timeout", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}]}
+\ No newline at end of file
+diff --git a/quint/slices/stream/golden/hand/04-wall-bounds-the-retry.json b/quint/slices/stream/golden/hand/04-wall-bounds-the-retry.json
+index 9ff9e58..c04c314 100644
+--- a/quint/slices/stream/golden/hand/04-wall-bounds-the-retry.json
++++ b/quint/slices/stream/golden/hand/04-wall-bounds-the-retry.json
+@@ -1 +1 @@
+-{"name": "04-wall-bounds-the-retry", "source": "hand", "sets": [], "events": [{"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 1000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "timeout", "items": false}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 5000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "first_byte", "items": false}}, {"tag": "Result", "value": {"kind": "total", "items": false}}], "obs": [{"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshed": false, "role": "", "waited": 0, "wall": 0}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 1000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "stop", "delay": 0, "exit": 4, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "provider/timeout", "refreshed": false, "role": "builder", "waited": 0, "wall": 1000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 5000}, {"attempt": 2, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 2000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/timeout", "refreshed": false, "role": "builder", "waited": 0, "wall": 5000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 4000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/timeout", "refreshed": false, "role": "builder", "waited": 0, "wall": 5000}]}
+\ No newline at end of file
++{"name": "04-wall-bounds-the-retry", "source": "hand", "sets": [], "events": [{"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 1000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "timeout", "items": false}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 5000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "first_byte", "items": false}}, {"tag": "Result", "value": {"kind": "total", "items": false}}], "obs": [{"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshable": true, "refreshed": false, "role": "", "waited": 0, "wall": 0}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 1000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "stop", "delay": 0, "exit": 4, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "provider/timeout", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 1000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 5000}, {"attempt": 2, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 2000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/timeout", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 5000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 4000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/timeout", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 5000}]}
+\ No newline at end of file
+diff --git a/quint/slices/stream/golden/hand/05-upstream-cut-continues.json b/quint/slices/stream/golden/hand/05-upstream-cut-continues.json
+index 6f34f61..7ef871e 100644
+--- a/quint/slices/stream/golden/hand/05-upstream-cut-continues.json
++++ b/quint/slices/stream/golden/hand/05-upstream-cut-continues.json
+@@ -1 +1 @@
+-{"name": "05-upstream-cut-continues", "source": "hand", "sets": [], "events": [{"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "cut", "items": true}}, {"tag": "Result", "value": {"kind": "cut", "items": false}}, {"tag": "Result", "value": {"kind": "stall", "items": true}}], "obs": [{"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshed": false, "role": "", "waited": 0, "wall": 0}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 2, "bounded": true, "checkpoint": "", "continuations": 0, "continued": true, "decision": "retry", "delay": 2000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/malformed", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 4000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/transport", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 4, "bounded": true, "checkpoint": "", "continuations": 0, "continued": true, "decision": "retry", "delay": 8000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/stall", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}]}
+\ No newline at end of file
++{"name": "05-upstream-cut-continues", "source": "hand", "sets": [], "events": [{"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "cut", "items": true}}, {"tag": "Result", "value": {"kind": "cut", "items": false}}, {"tag": "Result", "value": {"kind": "stall", "items": true}}], "obs": [{"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshable": true, "refreshed": false, "role": "", "waited": 0, "wall": 0}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 2, "bounded": true, "checkpoint": "", "continuations": 0, "continued": true, "decision": "retry", "delay": 2000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/malformed", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 4000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/transport", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 4, "bounded": true, "checkpoint": "", "continuations": 0, "continued": true, "decision": "retry", "delay": 8000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/stall", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}]}
+\ No newline at end of file
+diff --git a/quint/slices/stream/golden/hand/06-planner-and-fallback-model.json b/quint/slices/stream/golden/hand/06-planner-and-fallback-model.json
+index 421fc73..73463e5 100644
+--- a/quint/slices/stream/golden/hand/06-planner-and-fallback-model.json
++++ b/quint/slices/stream/golden/hand/06-planner-and-fallback-model.json
+@@ -1 +1 @@
+-{"name": "06-planner-and-fallback-model", "source": "hand", "sets": [], "events": [{"tag": "Open", "value": {"role": "planner", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}, {"tag": "Result", "value": {"kind": "ok", "items": false}}, {"tag": "Open", "value": {"role": "builder", "model": "sol", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}, {"tag": "Result", "value": {"kind": "ok", "items": false}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": false, "bounded": true, "wall": 10000000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}], "obs": [{"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshed": false, "role": "", "waited": 0, "wall": 0}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshed": false, "role": "planner", "waited": 0, "wall": 100000}, {"attempt": 2, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 2000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 1, "phase": "open", "queued": true, "reason": "provider/overload", "refreshed": false, "role": "planner", "waited": 0, "wall": 100000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 4000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 2, "phase": "open", "queued": true, "reason": "provider/overload", "refreshed": false, "role": "planner", "waited": 0, "wall": 100000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "success", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 2, "phase": "idle", "queued": true, "reason": "", "refreshed": false, "role": "planner", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "sol", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 2, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 2000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "sol", "overloads": 1, "phase": "open", "queued": true, "reason": "provider/overload", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 4000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "sol", "overloads": 2, "phase": "open", "queued": true, "reason": "provider/overload", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "success", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "sol", "overloads": 2, "phase": "idle", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 2, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 2000, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "build", "model": "luna", "overloads": 1, "phase": "open", "queued": true, "reason": "provider/overload", "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 4000, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "build", "model": "luna", "overloads": 2, "phase": "open", "queued": true, "reason": "provider/overload", "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 4, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 8000, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "build", "model": "luna", "overloads": 3, "phase": "open", "queued": true, "reason": "provider/overload", "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 5, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 16000, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "build", "model": "luna", "overloads": 4, "phase": "open", "queued": true, "reason": "provider/overload", "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}]}
+\ No newline at end of file
++{"name": "06-planner-and-fallback-model", "source": "hand", "sets": [], "events": [{"tag": "Open", "value": {"role": "planner", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}, {"tag": "Result", "value": {"kind": "ok", "items": false}}, {"tag": "Open", "value": {"role": "builder", "model": "sol", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}, {"tag": "Result", "value": {"kind": "ok", "items": false}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": false, "refreshable": true, "bounded": true, "wall": 10000000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}, {"tag": "Result", "value": {"kind": "overload", "items": false}}], "obs": [{"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshable": true, "refreshed": false, "role": "", "waited": 0, "wall": 0}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "planner", "waited": 0, "wall": 100000}, {"attempt": 2, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 2000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 1, "phase": "open", "queued": true, "reason": "provider/overload", "refreshable": true, "refreshed": false, "role": "planner", "waited": 0, "wall": 100000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 4000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 2, "phase": "open", "queued": true, "reason": "provider/overload", "refreshable": true, "refreshed": false, "role": "planner", "waited": 0, "wall": 100000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "success", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 2, "phase": "idle", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "planner", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "sol", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 2, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 2000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "sol", "overloads": 1, "phase": "open", "queued": true, "reason": "provider/overload", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 4000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "sol", "overloads": 2, "phase": "open", "queued": true, "reason": "provider/overload", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "success", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "sol", "overloads": 2, "phase": "idle", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 2, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 2000, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "build", "model": "luna", "overloads": 1, "phase": "open", "queued": true, "reason": "provider/overload", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 3, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 4000, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "build", "model": "luna", "overloads": 2, "phase": "open", "queued": true, "reason": "provider/overload", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 4, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 8000, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "build", "model": "luna", "overloads": 3, "phase": "open", "queued": true, "reason": "provider/overload", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}, {"attempt": 5, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "retry", "delay": 16000, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "build", "model": "luna", "overloads": 4, "phase": "open", "queued": true, "reason": "provider/overload", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 10000000}]}
+\ No newline at end of file
+diff --git a/quint/slices/stream/golden/hand/07-usage-and-login-pause.json b/quint/slices/stream/golden/hand/07-usage-and-login-pause.json
+index 5260c9b..c120add 100644
+--- a/quint/slices/stream/golden/hand/07-usage-and-login-pause.json
++++ b/quint/slices/stream/golden/hand/07-usage-and-login-pause.json
+@@ -1 +1 @@
+-{"name": "07-usage-and-login-pause", "source": "hand", "sets": [], "events": [{"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "usage_limit", "items": false}}, {"tag": "Result", "value": {"kind": "usage_limit", "items": false}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "login", "items": false}}, {"tag": "Result", "value": {"kind": "login", "items": false}}], "obs": [{"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshed": false, "role": "", "waited": 0, "wall": 0}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "refresh", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/usage_limit", "refreshed": true, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "pause", "delay": 300000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "idle", "queued": true, "reason": "provider/usage_limit", "refreshed": true, "role": "builder", "waited": 300000, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 300000, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "refresh", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/login", "refreshed": true, "role": "builder", "waited": 300000, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "pause", "delay": 300000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "idle", "queued": true, "reason": "provider/login", "refreshed": true, "role": "builder", "waited": 600000, "wall": 100000}]}
+\ No newline at end of file
++{"name": "07-usage-and-login-pause", "source": "hand", "sets": [], "events": [{"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "usage_limit", "items": false}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "login", "items": false}}, {"tag": "Result", "value": {"kind": "login", "items": false}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": false, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "login", "items": false}}], "obs": [{"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshable": true, "refreshed": false, "role": "", "waited": 0, "wall": 0}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "pause", "delay": 300000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "idle", "queued": true, "reason": "provider/usage_limit", "refreshable": true, "refreshed": false, "role": "builder", "waited": 300000, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 300000, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "refresh", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/login", "refreshable": true, "refreshed": true, "role": "builder", "waited": 300000, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "pause", "delay": 300000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "idle", "queued": true, "reason": "provider/login", "refreshable": true, "refreshed": true, "role": "builder", "waited": 600000, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": false, "refreshed": false, "role": "builder", "waited": 600000, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "stop", "delay": 0, "exit": 4, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "provider/login", "refreshable": false, "refreshed": false, "role": "builder", "waited": 600000, "wall": 100000}]}
+\ No newline at end of file
+diff --git a/quint/slices/stream/golden/hand/08-pause-cap-and-shaping.json b/quint/slices/stream/golden/hand/08-pause-cap-and-shaping.json
+index e53acd0..ebd5f5e 100644
+--- a/quint/slices/stream/golden/hand/08-pause-cap-and-shaping.json
++++ b/quint/slices/stream/golden/hand/08-pause-cap-and-shaping.json
+@@ -1 +1 @@
+-{"name": "08-pause-cap-and-shaping", "source": "hand", "sets": [], "events": [{"tag": "SetWaited", "value": {"ms": 86100000}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "usage_limit", "items": false}}, {"tag": "Result", "value": {"kind": "usage_limit", "items": false}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "usage_limit", "items": false}}, {"tag": "Result", "value": {"kind": "usage_limit", "items": false}}, {"tag": "SetWaited", "value": {"ms": 0}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "shape"}}, {"tag": "Result", "value": {"kind": "usage_limit", "items": false}}, {"tag": "Result", "value": {"kind": "usage_limit", "items": false}}], "obs": [{"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshed": false, "role": "", "waited": 0, "wall": 0}, {"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshed": false, "role": "", "waited": 86100000, "wall": 0}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 86100000, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "refresh", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/usage_limit", "refreshed": true, "role": "builder", "waited": 86100000, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "pause", "delay": 300000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "idle", "queued": true, "reason": "provider/usage_limit", "refreshed": true, "role": "builder", "waited": 86400000, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 86400000, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "refresh", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/usage_limit", "refreshed": true, "role": "builder", "waited": 86400000, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "stop", "delay": 0, "exit": 4, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "provider/usage_limit", "refreshed": true, "role": "builder", "waited": 86400000, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "stop", "delay": 0, "exit": 4, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "provider/usage_limit", "refreshed": true, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "shape", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "refresh", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "shape", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "provider/usage_limit", "refreshed": true, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "stop", "delay": 0, "exit": 4, "failed": false, "fallbackOn": true, "last": "ok", "mode": "shape", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "provider/usage_limit", "refreshed": true, "role": "builder", "waited": 0, "wall": 100000}]}
+\ No newline at end of file
++{"name": "08-pause-cap-and-shaping", "source": "hand", "sets": [], "events": [{"tag": "SetWaited", "value": {"ms": 86100000}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "usage_limit", "items": false}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "usage_limit", "items": false}}, {"tag": "SetWaited", "value": {"ms": 0}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "shape"}}, {"tag": "Result", "value": {"kind": "usage_limit", "items": false}}], "obs": [{"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshable": true, "refreshed": false, "role": "", "waited": 0, "wall": 0}, {"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshable": true, "refreshed": false, "role": "", "waited": 86100000, "wall": 0}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 86100000, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "pause", "delay": 300000, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "idle", "queued": true, "reason": "provider/usage_limit", "refreshable": true, "refreshed": false, "role": "builder", "waited": 86400000, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 86400000, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "stop", "delay": 0, "exit": 4, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "provider/usage_limit", "refreshable": true, "refreshed": false, "role": "builder", "waited": 86400000, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "stop", "delay": 0, "exit": 4, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "provider/usage_limit", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "shape", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "stop", "delay": 0, "exit": 4, "failed": false, "fallbackOn": true, "last": "ok", "mode": "shape", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "provider/usage_limit", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}]}
+\ No newline at end of file
+diff --git a/quint/slices/stream/golden/hand/09-incomplete-and-success.json b/quint/slices/stream/golden/hand/09-incomplete-and-success.json
+index e1a94b9..d202275 100644
+--- a/quint/slices/stream/golden/hand/09-incomplete-and-success.json
++++ b/quint/slices/stream/golden/hand/09-incomplete-and-success.json
+@@ -1 +1 @@
+-{"name": "09-incomplete-and-success", "source": "hand", "sets": [], "events": [{"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "incomplete", "items": true}}, {"tag": "Result", "value": {"kind": "ok", "items": false}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "ok", "items": true}}], "obs": [{"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshed": false, "role": "", "waited": 0, "wall": 0}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "incomplete", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "idle", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "incomplete", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "not_open", "mode": "build", "model": "luna", "overloads": 0, "phase": "idle", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "success", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "idle", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}]}
+\ No newline at end of file
++{"name": "09-incomplete-and-success", "source": "hand", "sets": [], "events": [{"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "incomplete", "items": true}}, {"tag": "Result", "value": {"kind": "ok", "items": false}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "ok", "items": true}}], "obs": [{"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshable": true, "refreshed": false, "role": "", "waited": 0, "wall": 0}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "incomplete", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "idle", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "incomplete", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "not_open", "mode": "build", "model": "luna", "overloads": 0, "phase": "idle", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "success", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "idle", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}]}
+\ No newline at end of file
+diff --git a/quint/slices/stream/golden/hand/10-checkpoint-and-refusals.json b/quint/slices/stream/golden/hand/10-checkpoint-and-refusals.json
+index d1d3edd..a7dccb6 100644
+--- a/quint/slices/stream/golden/hand/10-checkpoint-and-refusals.json
++++ b/quint/slices/stream/golden/hand/10-checkpoint-and-refusals.json
+@@ -1 +1 @@
+-{"name": "10-checkpoint-and-refusals", "source": "hand", "sets": [], "events": [{"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Checkpoint", "value": {"kind": "valid"}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Checkpoint", "value": {"kind": "invalid"}}, {"tag": "Result", "value": {"kind": "ok", "items": false}}, {"tag": "Open", "value": {"role": "nope", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 1, "mode": "build"}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "nope", "items": false}}, {"tag": "Checkpoint", "value": {"kind": "oversized"}}, {"tag": "SetWaited", "value": {"ms": 1}}, {"tag": "Init"}], "obs": [{"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshed": false, "role": "", "waited": 0, "wall": 0}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "accepted", "continuations": 1, "continued": false, "decision": "checkpoint", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "idle", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 1, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "failed", "continuations": 1, "continued": false, "decision": "stop", "delay": 0, "exit": 1, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "continuation_failed", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "failed", "continuations": 1, "continued": false, "decision": "stop", "delay": 0, "exit": 1, "failed": false, "fallbackOn": true, "last": "not_open", "mode": "build", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "continuation_failed", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "failed", "continuations": 1, "continued": false, "decision": "stop", "delay": 0, "exit": 1, "failed": false, "fallbackOn": true, "last": "bad_open", "mode": "build", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "continuation_failed", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 1, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 1, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "bad_result", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "failed", "continuations": 1, "continued": false, "decision": "stop", "delay": 0, "exit": 1, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "continuation_failed", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "failed", "continuations": 1, "continued": false, "decision": "stop", "delay": 0, "exit": 1, "failed": false, "fallbackOn": true, "last": "bad_wait", "mode": "build", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "continuation_failed", "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshed": false, "role": "", "waited": 0, "wall": 0}]}
+\ No newline at end of file
++{"name": "10-checkpoint-and-refusals", "source": "hand", "sets": [], "events": [{"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Checkpoint", "value": {"kind": "valid"}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Checkpoint", "value": {"kind": "invalid"}}, {"tag": "Result", "value": {"kind": "ok", "items": false}}, {"tag": "Open", "value": {"role": "nope", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 1, "mode": "build"}}, {"tag": "Open", "value": {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}}, {"tag": "Result", "value": {"kind": "nope", "items": false}}, {"tag": "Checkpoint", "value": {"kind": "oversized"}}, {"tag": "SetWaited", "value": {"ms": 1}}, {"tag": "Init"}], "obs": [{"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshable": true, "refreshed": false, "role": "", "waited": 0, "wall": 0}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "accepted", "continuations": 1, "continued": false, "decision": "checkpoint", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "idle", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 1, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "failed", "continuations": 1, "continued": false, "decision": "stop", "delay": 0, "exit": 1, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "continuation_failed", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "failed", "continuations": 1, "continued": false, "decision": "stop", "delay": 0, "exit": 1, "failed": false, "fallbackOn": true, "last": "not_open", "mode": "build", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "continuation_failed", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "failed", "continuations": 1, "continued": false, "decision": "stop", "delay": 0, "exit": 1, "failed": false, "fallbackOn": true, "last": "bad_open", "mode": "build", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "continuation_failed", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 1, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "", "continuations": 1, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": true, "last": "bad_result", "mode": "build", "model": "luna", "overloads": 0, "phase": "open", "queued": true, "reason": "", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "failed", "continuations": 1, "continued": false, "decision": "stop", "delay": 0, "exit": 1, "failed": false, "fallbackOn": true, "last": "ok", "mode": "build", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "continuation_failed", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 1, "bounded": true, "checkpoint": "failed", "continuations": 1, "continued": false, "decision": "stop", "delay": 0, "exit": 1, "failed": false, "fallbackOn": true, "last": "bad_wait", "mode": "build", "model": "luna", "overloads": 0, "phase": "stopped", "queued": true, "reason": "continuation_failed", "refreshable": true, "refreshed": false, "role": "builder", "waited": 0, "wall": 100000}, {"attempt": 0, "bounded": false, "checkpoint": "", "continuations": 0, "continued": false, "decision": "", "delay": 0, "exit": 0, "failed": false, "fallbackOn": false, "last": "ok", "mode": "", "model": "", "overloads": 0, "phase": "idle", "queued": false, "reason": "", "refreshable": true, "refreshed": false, "role": "", "waited": 0, "wall": 0}]}
+\ No newline at end of file
+diff --git a/quint/slices/stream/scenarios/01-switch-after-two-overloads.json b/quint/slices/stream/scenarios/01-switch-after-two-overloads.json
+index 3ab55f4..cfe2bb7 100644
+--- a/quint/slices/stream/scenarios/01-switch-after-two-overloads.json
++++ b/quint/slices/stream/scenarios/01-switch-after-two-overloads.json
+@@ -2,7 +2,7 @@
+   "name": "01-switch-after-two-overloads",
+   "about": "Two consecutive overloads on the builder switch at once to sol. The next success keeps that model.",
+   "steps": [
+-    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}],
++    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+      "expect": {"last": "ok", "phase": "open", "attempt": 1, "model": "luna", "queued": true, "exit": 0}},
+     {"do": ["Result", {"kind": "overload", "items": false}],
+      "expect": {"decision": "retry", "delay": 2000, "attempt": 2, "overloads": 1, "model": "luna", "reason": "provider/overload", "continued": false, "exit": 0}},
+diff --git a/quint/slices/stream/scenarios/02-other-class-resets-streak.json b/quint/slices/stream/scenarios/02-other-class-resets-streak.json
+index 1629fad..86de1ff 100644
+--- a/quint/slices/stream/scenarios/02-other-class-resets-streak.json
++++ b/quint/slices/stream/scenarios/02-other-class-resets-streak.json
+@@ -2,7 +2,7 @@
+   "name": "02-other-class-resets-streak",
+   "about": "A timeout clears the overload streak, so the next overload does not switch. The one after it does.",
+   "steps": [
+-    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}],
++    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+      "expect": {"phase": "open", "attempt": 1}},
+     {"do": ["Result", {"kind": "timeout", "items": false}],
+      "expect": {"decision": "retry", "delay": 2000, "attempt": 2, "overloads": 0, "reason": "provider/timeout", "continued": false}},
+diff --git a/quint/slices/stream/scenarios/03-attempt-cap-and-budget.json b/quint/slices/stream/scenarios/03-attempt-cap-and-budget.json
+index 776644c..53dd247 100644
+--- a/quint/slices/stream/scenarios/03-attempt-cap-and-budget.json
++++ b/quint/slices/stream/scenarios/03-attempt-cap-and-budget.json
+@@ -2,21 +2,21 @@
+   "name": "03-attempt-cap-and-budget",
+   "about": "Malformed stops at 4 attempts even with wall left. With no wall, timeout stops at 4 too. With wall, timeout continues.",
+   "steps": [
+-    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 10000000, "mode": "build"}],
++    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 10000000, "mode": "build"}],
+      "expect": {"bounded": true, "attempt": 1}},
+     {"do": ["Result", {"kind": "malformed", "items": false}], "expect": {"decision": "retry", "delay": 2000, "attempt": 2, "reason": "provider/malformed"}},
+     {"do": ["Result", {"kind": "malformed", "items": false}], "expect": {"decision": "retry", "delay": 4000, "attempt": 3}},
+     {"do": ["Result", {"kind": "malformed", "items": false}], "expect": {"decision": "retry", "delay": 8000, "attempt": 4}},
+     {"do": ["Result", {"kind": "malformed", "items": false}],
+      "expect": {"decision": "stop", "phase": "stopped", "exit": 4, "attempt": 4, "delay": 0, "reason": "provider/malformed", "queued": true, "failed": false, "model": "luna"}},
+-    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": false, "wall": 0, "mode": "build"}],
++    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": false, "wall": 0, "mode": "build"}],
+      "expect": {"phase": "open", "bounded": false, "attempt": 1, "exit": 0}},
+     {"do": ["Result", {"kind": "timeout", "items": false}], "expect": {"decision": "retry", "delay": 2000, "attempt": 2}},
+     {"do": ["Result", {"kind": "timeout", "items": false}], "expect": {"decision": "retry", "delay": 4000, "attempt": 3}},
+     {"do": ["Result", {"kind": "timeout", "items": false}], "expect": {"decision": "retry", "delay": 8000, "attempt": 4}},
+     {"do": ["Result", {"kind": "timeout", "items": false}],
+      "expect": {"decision": "stop", "exit": 4, "reason": "provider/timeout", "attempt": 4, "queued": true, "failed": false}},
+-    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 10000000, "mode": "build"}],
++    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 10000000, "mode": "build"}],
+      "expect": {"phase": "open", "attempt": 1}},
+     {"do": ["Result", {"kind": "timeout", "items": false}], "expect": {"decision": "retry", "delay": 2000, "attempt": 2}},
+     {"do": ["Result", {"kind": "timeout", "items": false}], "expect": {"decision": "retry", "delay": 4000, "attempt": 3}},
+diff --git a/quint/slices/stream/scenarios/04-wall-bounds-the-retry.json b/quint/slices/stream/scenarios/04-wall-bounds-the-retry.json
+index de983e9..a662f4a 100644
+--- a/quint/slices/stream/scenarios/04-wall-bounds-the-retry.json
++++ b/quint/slices/stream/scenarios/04-wall-bounds-the-retry.json
+@@ -2,11 +2,11 @@
+   "name": "04-wall-bounds-the-retry",
+   "about": "A retry whose ceiling does not fit in the remaining wall is not made. First byte and the 20 min cap are timeouts.",
+   "steps": [
+-    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 1000, "mode": "build"}],
++    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 1000, "mode": "build"}],
+      "expect": {"wall": 1000, "attempt": 1}},
+     {"do": ["Result", {"kind": "timeout", "items": false}],
+      "expect": {"decision": "stop", "exit": 4, "reason": "provider/timeout", "attempt": 1, "delay": 0, "queued": true, "failed": false, "wall": 1000}},
+-    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 5000, "mode": "build"}],
++    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 5000, "mode": "build"}],
+      "expect": {"phase": "open", "wall": 5000, "attempt": 1, "exit": 0}},
+     {"do": ["Result", {"kind": "first_byte", "items": false}],
+      "expect": {"decision": "retry", "delay": 2000, "attempt": 2, "reason": "provider/timeout", "continued": false, "wall": 5000}},
+diff --git a/quint/slices/stream/scenarios/05-upstream-cut-continues.json b/quint/slices/stream/scenarios/05-upstream-cut-continues.json
+index 0f1487e..a8629df 100644
+--- a/quint/slices/stream/scenarios/05-upstream-cut-continues.json
++++ b/quint/slices/stream/scenarios/05-upstream-cut-continues.json
+@@ -2,7 +2,7 @@
+   "name": "05-upstream-cut-continues",
+   "about": "A cut after items is a malformed continuation. A cut with no items is transport and resends. A stall after items continues.",
+   "steps": [
+-    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}],
++    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+      "expect": {"phase": "open"}},
+     {"do": ["Result", {"kind": "cut", "items": true}],
+      "expect": {"decision": "retry", "delay": 2000, "attempt": 2, "reason": "provider/malformed", "continued": true}},
+diff --git a/quint/slices/stream/scenarios/06-planner-and-fallback-model.json b/quint/slices/stream/scenarios/06-planner-and-fallback-model.json
+index bb7a230..749afdd 100644
+--- a/quint/slices/stream/scenarios/06-planner-and-fallback-model.json
++++ b/quint/slices/stream/scenarios/06-planner-and-fallback-model.json
+@@ -2,7 +2,7 @@
+   "name": "06-planner-and-fallback-model",
+   "about": "The planner does not switch, nor a builder already on sol. With fallback off, overload keeps the model while the wall can pay.",
+   "steps": [
+-    {"do": ["Open", {"role": "planner", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}],
++    {"do": ["Open", {"role": "planner", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+      "expect": {"role": "planner", "model": "luna"}},
+     {"do": ["Result", {"kind": "overload", "items": false}],
+      "expect": {"decision": "retry", "delay": 2000, "model": "luna", "overloads": 1, "attempt": 2}},
+@@ -10,7 +10,7 @@
+      "expect": {"decision": "retry", "delay": 4000, "model": "luna", "overloads": 2, "attempt": 3}},
+     {"do": ["Result", {"kind": "ok", "items": false}],
+      "expect": {"decision": "success", "phase": "idle", "model": "luna"}},
+-    {"do": ["Open", {"role": "builder", "model": "sol", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}],
++    {"do": ["Open", {"role": "builder", "model": "sol", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+      "expect": {"model": "sol", "attempt": 1}},
+     {"do": ["Result", {"kind": "overload", "items": false}],
+      "expect": {"decision": "retry", "delay": 2000, "model": "sol", "overloads": 1}},
+@@ -18,7 +18,7 @@
+      "expect": {"decision": "retry", "delay": 4000, "model": "sol", "overloads": 2, "attempt": 3}},
+     {"do": ["Result", {"kind": "ok", "items": false}],
+      "expect": {"decision": "success", "phase": "idle", "model": "sol"}},
+-    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": false, "bounded": true, "wall": 10000000, "mode": "build"}],
++    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": false, "refreshable": true, "bounded": true, "wall": 10000000, "mode": "build"}],
+      "expect": {"fallbackOn": false, "attempt": 1, "model": "luna"}},
+     {"do": ["Result", {"kind": "overload", "items": false}], "expect": {"decision": "retry", "delay": 2000, "attempt": 2, "model": "luna"}},
+     {"do": ["Result", {"kind": "overload", "items": false}], "expect": {"decision": "retry", "delay": 4000, "attempt": 3, "model": "luna"}},
+diff --git a/quint/slices/stream/scenarios/07-usage-and-login-pause.json b/quint/slices/stream/scenarios/07-usage-and-login-pause.json
+index 15d7b8d..d59ef02 100644
+--- a/quint/slices/stream/scenarios/07-usage-and-login-pause.json
++++ b/quint/slices/stream/scenarios/07-usage-and-login-pause.json
+@@ -1,18 +1,20 @@
+ {
+   "name": "07-usage-and-login-pause",
+-  "about": "usage_limit and login refresh once inside the call, then pause 5 min. The pause does not spend an attempt or the wall. A new request may refresh again.",
++  "about": "usage_limit pauses without a credential refresh. A refreshable login failure refreshes once, then pauses; a non-refreshable login stops the provider request.",
+   "steps": [
+-    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}],
++    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+      "expect": {"phase": "open", "refreshed": false, "waited": 0}},
+-    {"do": ["Result", {"kind": "usage_limit", "items": false}],
+-     "expect": {"decision": "refresh", "delay": 0, "refreshed": true, "attempt": 1, "phase": "open", "exit": 0, "reason": "provider/usage_limit", "waited": 0, "wall": 100000}},
+     {"do": ["Result", {"kind": "usage_limit", "items": false}],
+      "expect": {"decision": "pause", "delay": 300000, "waited": 300000, "attempt": 1, "phase": "idle", "exit": 0, "reason": "provider/usage_limit", "mode": "build", "wall": 100000}},
+-    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}],
++    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+      "expect": {"refreshed": false, "waited": 300000, "attempt": 1, "phase": "open"}},
+     {"do": ["Result", {"kind": "login", "items": false}],
+      "expect": {"decision": "refresh", "delay": 0, "refreshed": true, "waited": 300000, "reason": "provider/login", "attempt": 1}},
+     {"do": ["Result", {"kind": "login", "items": false}],
+-     "expect": {"decision": "pause", "delay": 300000, "waited": 600000, "attempt": 1, "reason": "provider/login", "phase": "idle", "exit": 0}}
++     "expect": {"decision": "pause", "delay": 300000, "waited": 600000, "attempt": 1, "reason": "provider/login", "phase": "idle", "exit": 0}},
++    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": false, "bounded": true, "wall": 100000, "mode": "build"}],
++     "expect": {"refreshable": false, "phase": "open", "attempt": 1}},
++    {"do": ["Result", {"kind": "login", "items": false}],
++     "expect": {"decision": "stop", "phase": "stopped", "exit": 4, "reason": "provider/login", "queued": true, "failed": false, "refreshed": false}}
+   ]
+ }
+diff --git a/quint/slices/stream/scenarios/08-pause-cap-and-shaping.json b/quint/slices/stream/scenarios/08-pause-cap-and-shaping.json
+index 8c9765b..bdc5a85 100644
+--- a/quint/slices/stream/scenarios/08-pause-cap-and-shaping.json
++++ b/quint/slices/stream/scenarios/08-pause-cap-and-shaping.json
+@@ -1,25 +1,19 @@
+ {
+   "name": "08-pause-cap-and-shaping",
+-  "about": "A pause that lands on 24 h is allowed; the next one stops the Build and leaves the Intent queued. Shaping never pauses.",
++  "about": "A usage-limit pause that lands on 24 h is allowed; the next one stops the Build. Shaping never pauses.",
+   "steps": [
+     {"do": ["SetWaited", {"ms": 86100000}], "expect": {"waited": 86100000, "last": "ok"}},
+-    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}],
++    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+      "expect": {"waited": 86100000, "phase": "open", "refreshed": false}},
+     {"do": ["Result", {"kind": "usage_limit", "items": false}],
+-     "expect": {"decision": "refresh", "waited": 86100000, "refreshed": true}},
+-    {"do": ["Result", {"kind": "usage_limit", "items": false}],
+-     "expect": {"decision": "pause", "delay": 300000, "waited": 86400000, "exit": 0, "phase": "idle"}},
+-    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}],
++     "expect": {"decision": "pause", "delay": 300000, "waited": 86400000, "attempt": 1, "exit": 0, "phase": "idle"}},
++    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+      "expect": {"phase": "open", "refreshed": false, "waited": 86400000, "exit": 0}},
+-    {"do": ["Result", {"kind": "usage_limit", "items": false}],
+-     "expect": {"decision": "refresh", "waited": 86400000, "refreshed": true}},
+     {"do": ["Result", {"kind": "usage_limit", "items": false}],
+      "expect": {"decision": "stop", "exit": 4, "reason": "provider/usage_limit", "queued": true, "failed": false, "phase": "stopped", "delay": 0}},
+     {"do": ["SetWaited", {"ms": 0}], "expect": {"waited": 0}},
+-    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "shape"}],
++    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "shape"}],
+      "expect": {"mode": "shape", "phase": "open", "refreshed": false, "exit": 0}},
+-    {"do": ["Result", {"kind": "usage_limit", "items": false}],
+-     "expect": {"decision": "refresh", "mode": "shape", "waited": 0}},
+     {"do": ["Result", {"kind": "usage_limit", "items": false}],
+      "expect": {"decision": "stop", "exit": 4, "reason": "provider/usage_limit", "waited": 0, "delay": 0, "queued": true, "failed": false, "phase": "stopped"}}
+   ]
+diff --git a/quint/slices/stream/scenarios/09-incomplete-and-success.json b/quint/slices/stream/scenarios/09-incomplete-and-success.json
+index f41205c..08e9448 100644
+--- a/quint/slices/stream/scenarios/09-incomplete-and-success.json
++++ b/quint/slices/stream/scenarios/09-incomplete-and-success.json
+@@ -2,13 +2,13 @@
+   "name": "09-incomplete-and-success",
+   "about": "incomplete is not retried and is not a provider stop. A result outside an open request is refused.",
+   "steps": [
+-    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}],
++    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+      "expect": {"phase": "open", "attempt": 1}},
+     {"do": ["Result", {"kind": "incomplete", "items": true}],
+      "expect": {"decision": "incomplete", "phase": "idle", "exit": 0, "queued": true, "failed": false, "continued": false, "attempt": 1, "reason": ""}},
+     {"do": ["Result", {"kind": "ok", "items": false}],
+      "expect": {"last": "not_open", "phase": "idle", "decision": "incomplete"}},
+-    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}],
++    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+      "expect": {"phase": "open", "decision": ""}},
+     {"do": ["Result", {"kind": "ok", "items": true}],
+      "expect": {"decision": "success", "phase": "idle", "exit": 0, "queued": true, "failed": false}}
+diff --git a/quint/slices/stream/scenarios/10-checkpoint-and-refusals.json b/quint/slices/stream/scenarios/10-checkpoint-and-refusals.json
+index 602015d..c6d77fa 100644
+--- a/quint/slices/stream/scenarios/10-checkpoint-and-refusals.json
++++ b/quint/slices/stream/scenarios/10-checkpoint-and-refusals.json
+@@ -2,19 +2,19 @@
+   "name": "10-checkpoint-and-refusals",
+   "about": "A smaller valid checkpoint is accepted. An invalid or oversized one stops the Build with continuation_failed. Refusals change nothing else.",
+   "steps": [
+-    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}],
++    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+      "expect": {"phase": "open", "continuations": 0}},
+     {"do": ["Checkpoint", {"kind": "valid"}],
+      "expect": {"decision": "checkpoint", "checkpoint": "accepted", "continuations": 1, "phase": "idle", "exit": 0, "reason": "", "queued": true}},
+-    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}],
++    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+      "expect": {"phase": "open", "checkpoint": "", "continuations": 1, "exit": 0}},
+     {"do": ["Checkpoint", {"kind": "invalid"}],
+      "expect": {"decision": "stop", "checkpoint": "failed", "reason": "continuation_failed", "exit": 1, "phase": "stopped", "queued": true, "failed": false, "continuations": 1}},
+     {"do": ["Result", {"kind": "ok", "items": false}],
+      "expect": {"last": "not_open", "phase": "stopped", "exit": 1, "reason": "continuation_failed"}},
+-    {"do": ["Open", {"role": "nope", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 1, "mode": "build"}],
++    {"do": ["Open", {"role": "nope", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 1, "mode": "build"}],
+      "expect": {"last": "bad_open", "phase": "stopped", "exit": 1}},
+-    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "bounded": true, "wall": 100000, "mode": "build"}],
++    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+      "expect": {"phase": "open", "exit": 0, "attempt": 1}},
+     {"do": ["Result", {"kind": "nope", "items": false}],
+      "expect": {"last": "bad_result", "phase": "open", "attempt": 1, "decision": ""}},
+diff --git a/quint/slices/stream/spec/stream.qnt b/quint/slices/stream/spec/stream.qnt
+index 4fc9697..4b69254 100644
+--- a/quint/slices/stream/spec/stream.qnt
++++ b/quint/slices/stream/spec/stream.qnt
+@@ -3,15 +3,16 @@
+ // timeout, 90 s of silence is stall, an upstream cut with no items is transport, and a cut
+ // after items with no completed frame is malformed. The delay recorded here is the backoff
+ // ceiling. The wall is not reduced by a wait. A retry that cannot pay that ceiling is not
+-// made. usage_limit and login refresh once inside the call, then a Build pauses 5 min at a
+-// time up to 24 h and that request ends. Shaping does not pause. The spec names
++// made. A refreshable login failure refreshes once; usage_limit never refreshes. A later
++// login failure pauses a Build 5 min at a time up to 24 h and that request ends. Shaping
++// does not pause. The spec names
+ // continuation_failed and not its process exit; this model uses exit 1.
+ module stream {
+   pure val PAUSE_MS = 300000
+   pure val PAUSE_CAP_MS = 86400000
+   pure val WAITS: Set[int] = Set(0, 300000, 86100000, 86400000)
+ 
+-  type OpenA = { role: str, model: str, fallbackOn: bool, bounded: bool, wall: int, mode: str }
++  type OpenA = { role: str, model: str, fallbackOn: bool, refreshable: bool, bounded: bool, wall: int, mode: str }
+   type ResultA = { kind: str, items: bool }
+   type KindA = { kind: str }
+   type WaitA = { ms: int }
+@@ -21,6 +22,7 @@ module stream {
+     role: str,
+     model: str,
+     fallbackOn: bool,
++    refreshable: bool,
+     bounded: bool,
+     wall: int,
+     attempt: int,
+@@ -47,7 +49,7 @@ module stream {
+   type Obs = State
+ 
+   pure val INITIAL: State = {
+-    phase: "idle", mode: "", role: "", model: "", fallbackOn: false, bounded: false, wall: 0,
++    phase: "idle", mode: "", role: "", model: "", fallbackOn: false, refreshable: true, bounded: false, wall: 0,
+     attempt: 0, overloads: 0, refreshed: false, waited: 0, decision: "", delay: 0, reason: "",
+     continued: false, queued: false, exit: 0, checkpoint: "", continuations: 0, last: "ok",
+     failed: false,
+@@ -55,7 +57,7 @@ module stream {
+ 
+   pure def err(s: State, code: str): State = { ...s, last: code }
+   pure def knownRole(r: str): bool = r == "builder" or r == "planner"
+-  pure def knownModel(m: str): bool = m == "luna" or m == "sol"
++  pure def knownModel(m: str): bool = m == "luna" or m == "sol" or m == "grok"
+   pure def knownMode(m: str): bool = m == "build" or m == "shape"
+ 
+   pure def ceiling(n: int): int =
+@@ -98,7 +100,8 @@ module stream {
+     if (s.phase == "open") err(s, "bad_open")
+     else if (not(knownRole(a.role)) or not(knownModel(a.model)) or not(knownMode(a.mode))) err(s, "bad_open")
+     else {
+-      ...s, phase: "open", mode: a.mode, role: a.role, model: a.model, fallbackOn: a.fallbackOn,
++      ...s, phase: "open", mode: a.mode, role: a.role, model: a.model,
++      fallbackOn: a.fallbackOn and a.model != "grok", refreshable: a.refreshable,
+       bounded: a.bounded, wall: a.wall, attempt: 1, overloads: 0, refreshed: false,
+       decision: "", delay: 0, reason: "", continued: false, checkpoint: "", queued: true,
+       exit: 0, last: "ok", failed: false,
+@@ -114,7 +117,8 @@ module stream {
+ 
+   // One forced refresh, then 5 min pauses. Exactly 24 h of pauses is still allowed.
+   pure def credential(s: State, k: str): State =
+-    if (not(s.refreshed)) {
++    if (k == "login" and not(s.refreshable)) halt(s, reasonOf(k), 4)
++    else if (k == "login" and not(s.refreshed)) {
+       ...s, refreshed: true, decision: "refresh", delay: 0, reason: reasonOf(k), continued: false,
+       phase: "open", exit: 0, last: "ok",
+     } else if (s.mode == "shape" or s.waited + PAUSE_MS > PAUSE_CAP_MS) halt(s, reasonOf(k), 4)
+@@ -209,18 +213,19 @@ module stream {
+   }
+   action init = all { st' = INITIAL, ev' = Init, obs' = observe(INITIAL) }
+ 
+-  pure def opened(role: str, model: str, fallbackOn: bool, bounded: bool, wall: int, mode: str): Event =
+-    Open({ role: role, model: model, fallbackOn: fallbackOn, bounded: bounded, wall: wall, mode: mode })
++  pure def opened(role: str, model: str, fallbackOn: bool, refreshable: bool, bounded: bool, wall: int, mode: str): Event =
++    Open({ role: role, model: model, fallbackOn: fallbackOn, refreshable: refreshable, bounded: bounded, wall: wall, mode: mode })
+ 
+   action step = any {
+-    all { st.phase != "open", fire(opened("builder", "luna", true, true, 100000, "build")) },
+-    all { st.phase != "open", fire(opened("builder", "luna", true, false, 0, "build")) },
+-    all { st.phase != "open", fire(opened("builder", "luna", false, true, 10000000, "build")) },
+-    all { st.phase != "open", fire(opened("planner", "luna", true, true, 100000, "build")) },
+-    all { st.phase != "open", fire(opened("builder", "sol", true, true, 100000, "build")) },
+-    all { st.phase != "open", fire(opened("builder", "luna", true, true, 1000, "build")) },
+-    all { st.phase != "open", fire(opened("builder", "luna", true, true, 3000, "shape")) },
+-    all { st.phase != "open", fire(opened("builder", "luna", true, true, 100000, "shape")) },
++    all { st.phase != "open", fire(opened("builder", "luna", true, true, true, 100000, "build")) },
++    all { st.phase != "open", fire(opened("builder", "luna", true, true, false, 0, "build")) },
++    all { st.phase != "open", fire(opened("builder", "luna", false, true, true, 10000000, "build")) },
++    all { st.phase != "open", fire(opened("planner", "luna", true, true, true, 100000, "build")) },
++    all { st.phase != "open", fire(opened("builder", "sol", true, true, true, 100000, "build")) },
++    all { st.phase != "open", fire(opened("builder", "grok", true, true, true, 100000, "build")) },
++    all { st.phase != "open", fire(opened("builder", "luna", true, true, true, 1000, "build")) },
++    all { st.phase != "open", fire(opened("builder", "luna", true, true, true, 3000, "shape")) },
++    all { st.phase != "open", fire(opened("builder", "luna", true, true, true, 100000, "shape")) },
+     all { st.phase == "open", fire(Result({ kind: "ok", items: false })) },
+     all { st.phase == "open", fire(Result({ kind: "overload", items: false })) },
+     all { st.phase == "open", fire(Result({ kind: "overload", items: false })) },
+@@ -244,7 +249,7 @@ module stream {
+     all { st.phase == "open" and st.refreshed, fire(SetWaited({ ms: 86400000 })) },
+     fire(SetWaited({ ms: 0 })),
+     fire(Result({ kind: "nope", items: false })),
+-    fire(Open({ role: "nope", model: "luna", fallbackOn: true, bounded: true, wall: 1, mode: "build" })),
++    fire(Open({ role: "nope", model: "luna", fallbackOn: true, refreshable: true, bounded: true, wall: 1, mode: "build" })),
+     fire(Init),
+   }
+ 
+diff --git a/spec/.DS_Store b/spec/.DS_Store
+deleted file mode 100644
+index 4cf15b86226964dde0a10653971023bdab6aabe7..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 6148
+zcmeHKy-veG47MRdC4|(G@m`@L+fjv)sV_iFBp6zyQenT1SK~n#c>@+c+XqUBI<PQQ
+zpC$Xt`R6YAhI1?;x_s#tB6AU$K@H{A%v3CHI+3&LX@F{bY#$e^hkm!8WFB`|Z6lqm
+z<yqF_`n$_vY}dE#X4`MzvzK}QxPH4C$Gbti96o==_fLO*H*8NK17v^<kO4Aqatxqn
+zo6If(X~_T?AOk-P*!_^8hPh%1^s58LM*yJx#=GFzX9-|32QXJGf$%^yN`X<Tb;Qsp
+zhd<T4T(Ja3xu~Cved@_tClvM5;ZL3}ngeOc02vrFa30IK_5WMwk@<gI#1$DJ11H6R
+zHtnii;*)A`oqU}2+629aehYFv9mZQR&|5JU){3tNdC8s;&lO9cm&5PnK>i3AFBCHH
+H9}Ii}c|9jK
+

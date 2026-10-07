@@ -1,0 +1,97 @@
+{
+  "id": "v1.2-20-cli-21-invalid-slug",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "title": "v1.2 replacement for cli-21: Invalid slugs fail at command dispatch",
+  "spec": [
+    "§1.3",
+    "§1.5",
+    "§2.1.1"
+  ],
+  "notes": "Slug validation is command-time intent/invalid_slug, with no parse-time usage page; this covers the character and length forms from cli-21 (§1.3, §1.5, §2.1.1).",
+  "rows": [
+    {
+      "label": "uppercase",
+      "argv": [
+        "intent",
+        "approve",
+        "Greet"
+      ],
+      "path": "intent approve",
+      "page": "kogen-intent-approve"
+    },
+    {
+      "label": "underscore",
+      "argv": [
+        "intent",
+        "remove",
+        "my_slug"
+      ],
+      "path": "intent remove",
+      "page": "kogen-intent-remove"
+    },
+    {
+      "label": "too short",
+      "argv": [
+        "status",
+        "ab"
+      ],
+      "path": "status",
+      "page": "kogen-status"
+    },
+    {
+      "label": "double dash",
+      "argv": [
+        "intent",
+        "shape",
+        "a--b",
+        "-"
+      ],
+      "path": "intent shape",
+      "page": "kogen-intent-shape"
+    },
+    {
+      "label": "leading dash",
+      "argv": [
+        "intent",
+        "approve",
+        "-",
+        "abcdef"
+      ],
+      "path": "intent approve",
+      "page": "kogen-intent-approve"
+    },
+    {
+      "label": "49 chars",
+      "argv": [
+        "status",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ],
+      "path": "status",
+      "page": "kogen-status"
+    },
+    {
+      "label": "trailing dash",
+      "argv": [
+        "intent",
+        "remove",
+        "greet-"
+      ],
+      "path": "intent remove",
+      "page": "kogen-intent-remove"
+    }
+  ],
+  "steps": [
+    {
+      "run": [
+        "kogen",
+        "{*row.argv}"
+      ],
+      "expect": {
+        "exit": 2,
+        "stdout": "intent/invalid_slug: Slug must use lowercase letters, digits, and dashes.\n",
+        "stderr": ""
+      }
+    }
+  ]
+}

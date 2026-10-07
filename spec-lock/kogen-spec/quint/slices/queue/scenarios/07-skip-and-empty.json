@@ -1,0 +1,11 @@
+{
+  "name": "07-skip-and-empty",
+  "about": "A drain that only skips prints nothing to build. An empty start does too. Stop with nobody home is not running.",
+  "steps": [
+    {"do": ["Start"], "expect": {"line": "nothing_to_build", "exit": 0, "held": false}},
+    {"do": ["Halt"], "expect": {"line": "not_running"}},
+    {"do": ["Enqueue", {"slug": "alpha", "time": 1, "priority": 0}]},
+    {"do": ["Start"], "expect": {"current": "alpha"}},
+    {"do": ["Outcome", {"kind": "skipped"}], "expect": {"line": "nothing_to_build", "exit": 0, "built": 0, "queue": []}}
+  ]
+}

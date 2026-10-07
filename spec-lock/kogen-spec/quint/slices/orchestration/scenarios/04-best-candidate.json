@@ -1,0 +1,13 @@
+{
+  "name": "04-best-candidate",
+  "about": "When the last rung is not landable the selector records the best candidate and the Build fails with a parked ref.",
+  "steps": [
+    {"do": ["Begin", {"valid": true, "branchOk": true, "claimFree": true, "witness": false, "hard": false, "maxR": 1}]},
+    {"do": ["Probe", {"confined": true}]},
+    {"do": ["Plan"]},
+    {"do": ["Setup", {"ok": true}]},
+    {"do": ["BaseAccept", {"runner": true}]},
+    {"do": ["Verify", {"red": false, "landable": false, "counted": true, "count": 0}], "expect": {"phase": "b6", "reason": "unverified", "snapshots": 1}},
+    {"do": ["Audit", {"nowLandable": false}], "expect": {"status": "failed", "parkedRef": true, "claim": false, "exit": 1, "phase": "done"}}
+  ]
+}

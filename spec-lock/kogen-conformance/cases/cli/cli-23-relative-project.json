@@ -1,0 +1,63 @@
+{
+ "id": "cli-23",
+ "profile": "cli",
+ "title": "A relative --project",
+ "spec": [
+  "§1.3.5",
+  "§1.6"
+ ],
+ "fixture": "kt",
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "--project",
+    "checkout"
+   ],
+   "cwd": "case",
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "Queue: stopped",
+     "Drafts:",
+     "~  greet(  \\S.*)?"
+    ],
+    "stderr": ""
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "greet",
+    "--project",
+    "./checkout/../checkout"
+   ],
+   "cwd": "case",
+   "expect": {
+    "exit": 0,
+    "stdout": "greet: draft; review it with kogen intent approve greet\n",
+    "stderr": ""
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "greet",
+    "--project",
+    "../checkout"
+   ],
+   "cwd": "nowhere",
+   "expect": {
+    "exit": 0,
+    "stdout": "greet: draft; review it with kogen intent approve greet\n",
+    "stderr": ""
+   }
+  }
+ ]
+}

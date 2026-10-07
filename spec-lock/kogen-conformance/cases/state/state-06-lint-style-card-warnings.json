@@ -1,0 +1,41 @@
+{
+ "id": "state-06",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "Lint style rules are card warnings and exit 5",
+ "spec": [
+  "§2.2",
+  "§1.7.2"
+ ],
+ "steps": [
+  {
+   "intent": {
+    "slug": "greet",
+    "intent_text": "---\ntitle: Greet Almir by name in the single greeting file that the kt fixture ships today\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir and so that the greeting keeps the same punctuation and the same single line layout as the one before it.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir! and the file keeps exactly one line with no trailing spaces after the greeting text at all\n\n## Verify\n- A1: test\n\n## Notes\nApproach: replace the line in lib/greet.txt.\n\n```\nline 0\nline 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9\nline 10\nline 11\nline 12\nline 13\nline 14\nline 15\n```\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+    "test_text": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 5,
+    "stderr": "",
+    "stdout_contains": [
+     "\nWarnings\n",
+     "  - lint_title_too_long: - — title must be at most 72 characters",
+     "  - lint_item_too_long: A1 — A1 exceeds 25 words",
+     "  - lint_sentence_too_long: - — Brief has a sentence over 30 words",
+     "  - lint_long_code_block: - — Notes code blocks must contain at most 15 lines"
+    ]
+   }
+  },
+  {
+   "approve": "greet"
+  }
+ ]
+}

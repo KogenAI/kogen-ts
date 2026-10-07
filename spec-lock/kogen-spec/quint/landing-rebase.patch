@@ -1,0 +1,536 @@
+diff --color -ruN -x build -x node_modules -x golden -x target -x _build -x slices -x qt -x *.lock /tmp/claude-501/exec-spec-proto/PROTOCOL.md xspec/PROTOCOL.md
+--- /tmp/claude-501/exec-spec-proto/PROTOCOL.md	2026-10-05 15:47:28
++++ xspec/PROTOCOL.md	2026-10-05 17:25:51
+@@ -17,7 +17,7 @@
+ 
+ ## Events `E` (tagged; unit events have no `value`)
+ `{"tag":"Approve","value":{"slug":"alpha","time":1}}` · `{"tag":"Start","value":"r1"}` ·
+-`{"tag":"Gate","value":true}` · `{"tag":"Step"}` · `{"tag":"Crash"}` · `{"tag":"Interrupt"}` ·
++`{"tag":"Gate","value":true}` · `{"tag":"Step"}` · `{"tag":"Rebase","value":true}` · `{"tag":"Crash"}` · `{"tag":"Interrupt"}` ·
+ `{"tag":"PushExternal","value":"x1"}` · `{"tag":"Recover"}`
+ 
+ ## Observation (compared for exact equality after canonicalisation)
+diff --color -ruN -x build -x node_modules -x golden -x target -x _build -x slices -x qt -x *.lock /tmp/claude-501/exec-spec-proto/harness/xspec.py xspec/harness/xspec.py
+--- /tmp/claude-501/exec-spec-proto/harness/xspec.py	2026-10-05 15:53:33
++++ xspec/harness/xspec.py	2026-10-05 17:23:57
+@@ -13,11 +13,12 @@
+ import json, os, re, subprocess, sys, glob, select, time
+ 
+ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+-CFG = json.load(open(os.path.join(ROOT, "xspec.json")))
++SLICE = os.path.abspath(os.environ.get("XSPEC_SLICE", ROOT))  # a slice dir holds xspec.json, spec/, scenarios/
++CFG = json.load(open(os.path.join(SLICE, "xspec.json")))
+ CFG["spec"] = os.environ.get("XSPEC_SPEC", CFG["spec"])  # e.g. a spec mutant
+ QUINT = [os.path.join(ROOT, "node_modules", ".bin", "quint")]
+-BUILD = os.path.join(ROOT, "build")
+-GOLD = os.environ.get("XSPEC_GOLDEN", os.path.join(ROOT, "golden"))
++BUILD = os.path.join(SLICE, "build")
++GOLD = os.environ.get("XSPEC_GOLDEN", os.path.join(SLICE, "golden"))
+ 
+ 
+ # ---------- values: ITF <-> neutral JSON <-> Quint literals ----------
+@@ -79,14 +80,14 @@
+ 
+ # ---------- spec stage ----------
+ def load_scenarios():
+-    return [json.load(open(p)) for p in sorted(glob.glob(os.path.join(ROOT, "scenarios", "*.json")))]
++    return [json.load(open(p)) for p in sorted(glob.glob(os.path.join(SLICE, "scenarios", "*.json")))]
+ 
+ def tname(name): return "s_" + re.sub(r"\W", "_", name) + "Test"
+ 
+ def cmd_spec(_args):
+     os.makedirs(os.path.join(BUILD, "itf"), exist_ok=True)
+     scen = load_scenarios()
+-    rel = os.path.relpath(os.path.join(ROOT, CFG["spec"]), BUILD)[:-4]
++    rel = os.path.relpath(os.path.join(SLICE, CFG["spec"]), BUILD)[:-4]
+     inv, fire = CFG["invariant"], CFG["fire"]
+     lines = [f"module scenarios_test {{", f'  import {CFG["module"]}.* from "{rel}"']
+     for s in scen:
+@@ -135,7 +136,7 @@
+     out = os.path.join(BUILD, "gen"); os.makedirs(out, exist_ok=True)
+     for f in glob.glob(os.path.join(out, "*.itf.json")): os.remove(f)
+     t0 = time.time()
+-    r = subprocess.run(QUINT + ["run", os.path.join(ROOT, CFG["spec"]), "--invariant", CFG["invariant"],
++    r = subprocess.run(QUINT + ["run", os.path.join(SLICE, CFG["spec"]), "--invariant", CFG["invariant"],
+                                 "--max-samples", str(n), "--n-traces", str(n), "--max-steps", str(steps),
+                                 "--seed", seed, "--out-itf", os.path.join(out, "t{seq}.itf.json")],
+                        capture_output=True, text=True)
+@@ -189,7 +190,19 @@
+         try: self.p.stdin.close(); self.p.wait(5)
+         except Exception: self.p.kill()
+ 
++def prune(v, paths, cur=""):
++    """keep only the dotted paths in `paths` (prefix match) - for adapters over code that exposes a partial view"""
++    if isinstance(v, dict):
++        out = {}
++        for k, x in v.items():
++            p = f"{cur}.{k}" if cur else k
++            if p in paths: out[k] = x
++            elif any(q.startswith(p + ".") for q in paths): out[k] = prune(x, paths, p)
++        return out
++    return v
++
+ def cmd_conform(args, cmd):
++    proj = set(args["--project"].split(",")) if args.get("--project") else None
+     files = []
+     for src in (["hand", "gen"] if not args.get("--only") else [args["--only"]]):
+         files += sorted(glob.glob(os.path.join(GOLD, src, "*.json")))
+@@ -199,10 +212,12 @@
+         g = json.load(open(f)); sets = {tuple(p) for p in g["sets"]}
+         try:
+             got = canon(ad.ask({"op": "reset"}), sets)
+-            d = diff(g["obs"][0], got); i = 0
++            if proj: got = prune(got, proj)
++            d = diff(prune(g["obs"][0], proj) if proj else g["obs"][0], got); i = 0
+             while not d and i < len(g["events"]):
+                 got = canon(ad.ask({"op": "apply", "event": g["events"][i]}), sets); steps += 1
+-                d = diff(g["obs"][i + 1], got); i += 1
++                if proj: got = prune(got, proj)
++                d = diff(prune(g["obs"][i + 1], proj) if proj else g["obs"][i + 1], got); i += 1
+         except Exception as ex:
+             d = [f"adapter error: {str(ex)[:300]}"]; ad.close(); ad = Adapter(cmd)
+         if d:
+diff --color -ruN -x build -x node_modules -x golden -x target -x _build -x slices -x qt -x *.lock /tmp/claude-501/exec-spec-proto/impls/elixir/adapter.exs xspec/impls/elixir/adapter.exs
+--- /tmp/claude-501/exec-spec-proto/impls/elixir/adapter.exs	2026-10-05 15:49:02
++++ xspec/impls/elixir/adapter.exs	2026-10-05 17:27:35
+@@ -8,6 +8,7 @@
+   def decode_event(%{"tag" => "Start", "value" => id}) when is_binary(id), do: {:ok, {:start, id}}
+   def decode_event(%{"tag" => "Gate", "value" => v}) when is_boolean(v), do: {:ok, {:gate, v}}
+   def decode_event(%{"tag" => "Step"}), do: {:ok, :step}
++  def decode_event(%{"tag" => "Rebase", "value" => v}) when is_boolean(v), do: {:ok, {:rebase, v}}
+   def decode_event(%{"tag" => "Crash"}), do: {:ok, :crash}
+   def decode_event(%{"tag" => "Interrupt"}), do: {:ok, :interrupt}
+   def decode_event(%{"tag" => "PushExternal", "value" => id}) when is_binary(id), do: {:ok, {:push_external, id}}
+diff --color -ruN -x build -x node_modules -x golden -x target -x _build -x slices -x qt -x *.lock /tmp/claude-501/exec-spec-proto/impls/elixir/core.ex xspec/impls/elixir/core.ex
+--- /tmp/claude-501/exec-spec-proto/impls/elixir/core.ex	2026-10-05 15:49:02
++++ xspec/impls/elixir/core.ex	2026-10-05 17:27:35
+@@ -189,11 +189,13 @@
+           %{s | base: s.base ++ [%Commit{id: id, slug: rn.slug}],
+                 proc: %Proc{rid: id, phase: "based"}, last: "ok"}
+         else
+-          %{put_run(s, id, %{rn | status: "parked", reason: "base_moved"})
+-            | parked: MapSet.put(s.parked, id), incoming: MapSet.delete(s.incoming, id),
+-              claim: "", proc: no_proc(), last: "ok"}
++          # base moved: the Build stays owner and must rebase + re-gate
++          %{s | incoming: MapSet.delete(s.incoming, id), proc: %Proc{rid: id, phase: "moved"}, last: "ok"}
+         end
+ 
++      "moved" ->
++        err(s, "rebase_required")
++
+       "based" ->
+         %{s | incoming: MapSet.delete(s.incoming, id), proc: %Proc{rid: id, phase: "cleaned"}, last: "ok"}
+ 
+@@ -207,6 +209,19 @@
+ 
+   defp advance(s), do: err(s, "nothing_to_step")
+ 
++  defp rebase(%State{proc: %Proc{rid: id, phase: "moved"}} = s, ok) do
++    rn = Map.fetch!(s.runs, id)
++
++    if ok do
++      %{put_run(s, id, %{rn | parent: tip(s)}) | proc: %Proc{rid: id, phase: "built"}, last: "ok"}
++    else
++      %{put_run(s, id, %{rn | status: "parked", reason: "base_moved"})
++        | parked: MapSet.put(s.parked, id), claim: "", proc: no_proc(), last: "ok"}
++    end
++  end
++
++  defp rebase(s, _ok), do: err(s, "not_moved")
++
+   defp kill(%State{proc: %Proc{phase: ""}} = s, _sigterm), do: err(s, "no_process")
+ 
+   defp kill(%State{proc: %Proc{rid: id}} = s, sigterm) do
+@@ -228,6 +243,7 @@
+   def apply(s, {:start, id}), do: start(s, id)
+   def apply(s, {:gate, pass}), do: gate(s, pass)
+   def apply(s, :step), do: advance(s)
++  def apply(s, {:rebase, ok}), do: rebase(s, ok)
+   def apply(s, :crash), do: kill(s, false)
+   def apply(s, :interrupt), do: kill(s, true)
+   def apply(s, {:push_external, id}), do: push_external(s, id)
+diff --color -ruN -x build -x node_modules -x golden -x target -x _build -x slices -x qt -x *.lock /tmp/claude-501/exec-spec-proto/impls/go/core/core.go xspec/impls/go/core/core.go
+--- /tmp/claude-501/exec-spec-proto/impls/go/core/core.go	2026-10-05 15:49:00
++++ xspec/impls/go/core/core.go	2026-10-05 17:27:35
+@@ -31,7 +31,7 @@
+ 
+ type Proc struct {
+ 	RID   string `json:"rid"`
+-	Phase string `json:"phase"` // "" | building | built | recorded | pushed | based | cleaned
++	Phase string `json:"phase"` // "" | building | built | recorded | pushed | moved | based | cleaned
+ }
+ 
+ type Set map[string]struct{}
+@@ -61,6 +61,7 @@
+ 	Start        struct{ ID string }
+ 	Gate         struct{ Pass bool }
+ 	Step         struct{}
++	Rebase       struct{ OK bool }
+ 	Crash        struct{}
+ 	Interrupt    struct{}
+ 	PushExternal struct{ ID string }
+@@ -72,6 +73,7 @@
+ func (Start) isEvent()        {}
+ func (Gate) isEvent()         {}
+ func (Step) isEvent()         {}
++func (Rebase) isEvent()       {}
+ func (Crash) isEvent()        {}
+ func (Interrupt) isEvent()    {}
+ func (PushExternal) isEvent() {}
+@@ -302,14 +304,13 @@
+ 		if s.tip() == rn.Parent {
+ 			s.Base = append(s.Base, Commit{ID: id, Slug: rn.Slug})
+ 			s.Proc.Phase = "based"
+-		} else { // base moved: park the candidate, release everything
+-			rn.Status, rn.Reason = "parked", "base_moved"
+-			s.Runs[id] = rn
+-			s.Parked[id] = struct{}{}
++		} else { // base moved: drop the incoming ref; the Build stays owner and must rebase + re-gate
+ 			delete(s.Incoming, id)
+-			s.Claim = ""
+-			s.Proc = Proc{}
++			s.Proc.Phase = "moved"
+ 		}
++	case "moved":
++		s.fail("rebase_required")
++		return
+ 	case "based":
+ 		delete(s.Incoming, id)
+ 		s.Proc.Phase = "cleaned"
+@@ -325,6 +326,28 @@
+ 	s.Last = "ok"
+ }
+ 
++// rebase handles Rebase(ok): green restarts landing from the new tip; only an impossible rebase parks.
++func (s *State) rebase(ok bool) {
++	if s.Proc.Phase != "moved" {
++		s.fail("not_moved")
++		return
++	}
++	id := s.Proc.RID
++	rn := s.Runs[id]
++	if ok {
++		rn.Parent = s.tip()
++		s.Runs[id] = rn
++		s.Proc.Phase = "built"
++	} else {
++		rn.Status, rn.Reason = "parked", "base_moved"
++		s.Runs[id] = rn
++		s.Parked[id] = struct{}{}
++		s.Claim = ""
++		s.Proc = Proc{}
++	}
++	s.Last = "ok"
++}
++
+ func (s *State) kill(sigterm bool) {
+ 	if s.Proc.Phase == "" {
+ 		s.fail("no_process")
+@@ -362,6 +385,8 @@
+ 		n.gate(e.Pass)
+ 	case Step:
+ 		n.advance()
++	case Rebase:
++		n.rebase(e.OK)
+ 	case Crash:
+ 		n.kill(false)
+ 	case Interrupt:
+Binary files /tmp/claude-501/exec-spec-proto/impls/go/landing-adapter and xspec/impls/go/landing-adapter differ
+diff --color -ruN -x build -x node_modules -x golden -x target -x _build -x slices -x qt -x *.lock /tmp/claude-501/exec-spec-proto/impls/go/main.go xspec/impls/go/main.go
+--- /tmp/claude-501/exec-spec-proto/impls/go/main.go	2026-10-05 15:49:00
++++ xspec/impls/go/main.go	2026-10-05 17:27:35
+@@ -54,6 +54,12 @@
+ 			return nil, err
+ 		}
+ 		return core.PushExternal{ID: id}, nil
++	case "Rebase":
++		var ok bool
++		if err := json.Unmarshal(value, &ok); err != nil {
++			return nil, err
++		}
++		return core.Rebase{OK: ok}, nil
+ 	case "Gate":
+ 		var pass bool
+ 		if err := json.Unmarshal(value, &pass); err != nil {
+diff --color -ruN -x build -x node_modules -x golden -x target -x _build -x slices -x qt -x *.lock /tmp/claude-501/exec-spec-proto/impls/rust/src/core.rs xspec/impls/rust/src/core.rs
+--- /tmp/claude-501/exec-spec-proto/impls/rust/src/core.rs	2026-10-05 15:48:50
++++ xspec/impls/rust/src/core.rs	2026-10-05 17:31:05
+@@ -60,6 +60,7 @@
+     Start(String),
+     Gate(bool),
+     Step,
++    Rebase(bool),
+     Crash,
+     Interrupt,
+     PushExternal(String),
+@@ -289,15 +290,12 @@
+                 s.base.push(Commit { id, slug });
+                 s.proc.phase = "based".into();
+             } else {
+-                let rn = s.runs.get_mut(&id).unwrap();
+-                rn.status = "parked".into();
+-                rn.reason = "base_moved".into();
++                // base moved: the Build stays owner and must rebase + re-gate
+                 s.incoming.remove(&id);
+-                s.parked.insert(id);
+-                s.claim.clear();
+-                s.proc = Proc::default();
++                s.proc.phase = "moved".into();
+             }
+         }
++        "moved" => return s.err("rebase_required"),
+         "based" => {
+             s.incoming.remove(&id);
+             s.proc.phase = "cleaned".into();
+@@ -312,6 +310,26 @@
+     s.ok()
+ }
+ 
++fn rebase(mut s: State, ok: bool) -> State {
++    if s.proc.phase != "moved" {
++        return s.err("not_moved");
++    }
++    let id = s.proc.rid.clone();
++    if ok {
++        let tip = s.tip().to_string();
++        s.runs.get_mut(&id).unwrap().parent = tip;
++        s.proc.phase = "built".into();
++    } else {
++        let rn = s.runs.get_mut(&id).unwrap();
++        rn.status = "parked".into();
++        rn.reason = "base_moved".into();
++        s.parked.insert(id);
++        s.claim.clear();
++        s.proc = Proc::default();
++    }
++    s.ok()
++}
++
+ fn kill(mut s: State, sigterm: bool) -> State {
+     if s.proc.phase.is_empty() {
+         return s.err("no_process");
+@@ -339,6 +357,7 @@
+         Event::Start(id) => start(s, id),
+         Event::Gate(pass) => gate(s, pass),
+         Event::Step => advance(s),
++        Event::Rebase(ok) => rebase(s, ok),
+         Event::Crash => kill(s, false),
+         Event::Interrupt => kill(s, true),
+         Event::PushExternal(id) => push_external(s, id),
+diff --color -ruN -x build -x node_modules -x golden -x target -x _build -x slices -x qt -x *.lock /tmp/claude-501/exec-spec-proto/scenarios/07-base-moved-parks.json xspec/scenarios/07-base-moved-parks.json
+--- /tmp/claude-501/exec-spec-proto/scenarios/07-base-moved-parks.json	2026-10-05 15:48:34
++++ xspec/scenarios/07-base-moved-parks.json	1970-01-01 03:00:00
+@@ -1,23 +0,0 @@
+-{
+-  "name": "07-base-moved-parks",
+-  "about": "Someone pushes to the base during the Build: the CAS fails, the candidate is parked, nothing lands.",
+-  "steps": [
+-    {"do": ["Approve", {"slug": "alpha", "time": 1}]},
+-    {"do": ["Start", "r1"]},
+-    {"do": ["Gate", true]},
+-    {"do": ["PushExternal", "x1"]},
+-    {"do": ["Step"]},
+-    {"do": ["Step"]},
+-    {"do": ["Step"], "expect": {"base": ["root", "x1"], "parked": ["r1"], "incoming": [], "claim": "", "status": {"alpha": "parked"}, "runs": {"r1": {"status": "parked", "reason": "base_moved"}}}},
+-    {"do": ["Step"], "expect": {"last": "nothing_to_step"}},
+-    {"do": ["Approve", {"slug": "alpha", "time": 2}], "expect": {"queue": ["alpha"]}},
+-    {"do": ["Start", "r2"]},
+-    {"do": ["Gate", true]},
+-    {"do": ["Step"]},
+-    {"do": ["Step"]},
+-    {"do": ["Step"]},
+-    {"do": ["Step"]},
+-    {"do": ["Step"]},
+-    {"do": ["Recover"], "expect": {"base": ["root", "x1", "r2"], "status": {"alpha": "landed"}}}
+-  ]
+-}
+diff --color -ruN -x build -x node_modules -x golden -x target -x _build -x slices -x qt -x *.lock /tmp/claude-501/exec-spec-proto/scenarios/07-base-moved-rebases.json xspec/scenarios/07-base-moved-rebases.json
+--- /tmp/claude-501/exec-spec-proto/scenarios/07-base-moved-rebases.json	1970-01-01 03:00:00
++++ xspec/scenarios/07-base-moved-rebases.json	2026-10-05 17:25:51
+@@ -0,0 +1,22 @@
++{
++  "name": "07-base-moved-rebases",
++  "about": "Someone pushes to the base during the Build: the CAS fails, the Build stays owner, rebases onto the new tip, re-gates and lands on top (an approved Build must finish).",
++  "steps": [
++    {"do": ["Approve", {"slug": "alpha", "time": 1}]},
++    {"do": ["Start", "r1"]},
++    {"do": ["Gate", true]},
++    {"do": ["PushExternal", "x1"]},
++    {"do": ["Step"]},
++    {"do": ["Step"]},
++    {"do": ["Step"], "expect": {"base": ["root", "x1"], "incoming": [], "claim": "r1", "parked": [], "status": {"alpha": "building"}, "proc": {"rid": "r1", "phase": "moved"}, "runs": {"r1": {"status": "running", "reason": ""}}}},
++    {"do": ["Step"], "expect": {"last": "rebase_required", "proc": {"phase": "moved"}}},
++    {"do": ["Gate", true], "expect": {"last": "not_building"}},
++    {"do": ["Rebase", true], "expect": {"last": "ok", "proc": {"rid": "r1", "phase": "built"}, "base": ["root", "x1"], "parked": []}},
++    {"do": ["Step"]},
++    {"do": ["Step"]},
++    {"do": ["Step"], "expect": {"base": ["root", "x1", "r1"], "incoming": ["r1"], "status": {"alpha": "landed"}}},
++    {"do": ["Step"]},
++    {"do": ["Step"]},
++    {"do": ["Step"], "expect": {"claim": "", "status": {"alpha": "landed"}, "runs": {"r1": {"status": "landed", "reason": ""}}, "proc": {"rid": "", "phase": ""}}}
++  ]
++}
+diff --color -ruN -x build -x node_modules -x golden -x target -x _build -x slices -x qt -x *.lock /tmp/claude-501/exec-spec-proto/scenarios/19-base-moved-rebase-impossible-parks.json xspec/scenarios/19-base-moved-rebase-impossible-parks.json
+--- /tmp/claude-501/exec-spec-proto/scenarios/19-base-moved-rebase-impossible-parks.json	1970-01-01 03:00:00
++++ xspec/scenarios/19-base-moved-rebase-impossible-parks.json	2026-10-05 17:25:30
+@@ -0,0 +1,24 @@
++{
++  "name": "19-base-moved-rebase-impossible-parks",
++  "about": "Base moved and the rebase or re-gate is impossible after repairs: only then is the candidate parked; the claim is released and nothing lands. Re-approval retries.",
++  "steps": [
++    {"do": ["Approve", {"slug": "alpha", "time": 1}]},
++    {"do": ["Start", "r1"]},
++    {"do": ["Gate", true]},
++    {"do": ["PushExternal", "x1"]},
++    {"do": ["Step"]},
++    {"do": ["Step"]},
++    {"do": ["Step"], "expect": {"base": ["root", "x1"], "incoming": [], "claim": "r1", "parked": [], "status": {"alpha": "building"}, "proc": {"rid": "r1", "phase": "moved"}, "runs": {"r1": {"status": "running", "reason": ""}}}},
++    {"do": ["Rebase", false], "expect": {"base": ["root", "x1"], "parked": ["r1"], "incoming": [], "claim": "", "status": {"alpha": "parked"}, "proc": {"rid": "", "phase": ""}, "runs": {"r1": {"status": "parked", "reason": "base_moved"}}}},
++    {"do": ["Rebase", true], "expect": {"last": "not_moved"}},
++    {"do": ["Approve", {"slug": "alpha", "time": 2}], "expect": {"queue": ["alpha"]}},
++    {"do": ["Start", "r2"]},
++    {"do": ["Gate", true]},
++    {"do": ["Step"]},
++    {"do": ["Step"]},
++    {"do": ["Step"]},
++    {"do": ["Step"]},
++    {"do": ["Step"]},
++    {"do": ["Recover"], "expect": {"base": ["root", "x1", "r2"], "status": {"alpha": "landed"}}}
++  ]
++}
+diff --color -ruN -x build -x node_modules -x golden -x target -x _build -x slices -x qt -x *.lock /tmp/claude-501/exec-spec-proto/scenarios/20-base-moves-twice.json xspec/scenarios/20-base-moves-twice.json
+--- /tmp/claude-501/exec-spec-proto/scenarios/20-base-moves-twice.json	1970-01-01 03:00:00
++++ xspec/scenarios/20-base-moves-twice.json	2026-10-05 17:25:30
+@@ -0,0 +1,24 @@
++{
++  "name": "20-base-moves-twice",
++  "about": "The base moves again after the rebase: the CAS fails again and the Build rebases again, then lands on the newest tip.",
++  "steps": [
++    {"do": ["Approve", {"slug": "alpha", "time": 1}]},
++    {"do": ["Start", "r1"]},
++    {"do": ["Gate", true]},
++    {"do": ["PushExternal", "x1"]},
++    {"do": ["Step"]},
++    {"do": ["Step"]},
++    {"do": ["Step"], "expect": {"base": ["root", "x1"], "incoming": [], "claim": "r1", "parked": [], "status": {"alpha": "building"}, "proc": {"rid": "r1", "phase": "moved"}, "runs": {"r1": {"status": "running", "reason": ""}}}},
++    {"do": ["Rebase", true]},
++    {"do": ["Step"]},
++    {"do": ["Step"]},
++    {"do": ["PushExternal", "x2"]},
++    {"do": ["Step"], "expect": {"base": ["root", "x1", "x2"], "proc": {"phase": "moved"}, "incoming": []}},
++    {"do": ["Rebase", true], "expect": {"proc": {"phase": "built"}}},
++    {"do": ["Step"]},
++    {"do": ["Step"]},
++    {"do": ["Step"], "expect": {"base": ["root", "x1", "x2", "r1"]}},
++    {"do": ["Step"]},
++    {"do": ["Step"], "expect": {"status": {"alpha": "landed"}, "claim": ""}}
++  ]
++}
+diff --color -ruN -x build -x node_modules -x golden -x target -x _build -x slices -x qt -x *.lock /tmp/claude-501/exec-spec-proto/scenarios/21-crash-while-moved.json xspec/scenarios/21-crash-while-moved.json
+--- /tmp/claude-501/exec-spec-proto/scenarios/21-crash-while-moved.json	1970-01-01 03:00:00
++++ xspec/scenarios/21-crash-while-moved.json	2026-10-05 17:25:51
+@@ -0,0 +1,15 @@
++{
++  "name": "21-crash-while-moved",
++  "about": "The owner dies after the lost CAS, before the rebase: nothing was landed, so recovery fails the run as interrupted and releases the claim.",
++  "steps": [
++    {"do": ["Approve", {"slug": "alpha", "time": 1}]},
++    {"do": ["Start", "r1"]},
++    {"do": ["Gate", true]},
++    {"do": ["PushExternal", "x1"]},
++    {"do": ["Step"]},
++    {"do": ["Step"]},
++    {"do": ["Step"], "expect": {"base": ["root", "x1"], "incoming": [], "claim": "r1", "parked": [], "status": {"alpha": "building"}, "proc": {"rid": "r1", "phase": "moved"}, "runs": {"r1": {"status": "running", "reason": ""}}}},
++    {"do": ["Crash"]},
++    {"do": ["Recover"], "expect": {"runs": {"r1": {"status": "failed", "reason": "interrupted"}}, "claim": "", "incoming": [], "base": ["root", "x1"], "status": {"alpha": "interrupted"}}}
++  ]
++}
+diff --color -ruN -x build -x node_modules -x golden -x target -x _build -x slices -x qt -x *.lock /tmp/claude-501/exec-spec-proto/spec/landing.qnt xspec/spec/landing.qnt
+--- /tmp/claude-501/exec-spec-proto/spec/landing.qnt	2026-10-05 15:52:14
++++ xspec/spec/landing.qnt	2026-10-05 17:25:04
+@@ -3,6 +3,10 @@
+ // Landing recorded before the base moves), §2.11 (status derivation, queue order).
+ // §3.12/§3.13 (recovery, drain) are not written yet; their behaviour here is a proposal.
+ //
++// Moved base (revised 2026-10-05): an approved Build must finish (no return to shaping). A lost
++// CAS rebases the candidate onto the new tip and re-gates (3.9.2); it is parked only when that is
++// impossible. Event Rebase(bool) carries the rebase + re-gate verdict.
++//
+ // Shape: a pure transition function apply(State, Event) -> State and a pure
+ // observation observe(State) -> Obs. Implementations in any language implement the
+ // same two functions behind an adapter (see ../PROTOCOL.md). Every source of
+@@ -31,7 +35,7 @@
+     interrupted: bool, // got SIGTERM (event `interrupted` appended)
+   }
+   // The Build in flight. phase "" = no Build. Each phase boundary is a crash point.
+-  type Proc = { rid: str, phase: str } // building | built | recorded | pushed | based | cleaned
++  type Proc = { rid: str, phase: str } // building | built | recorded | pushed | moved | based | cleaned
+ 
+   type State = {
+     base: List[Commit],
+@@ -52,6 +56,7 @@
+     | Start(str)                          // queue start: recovery, then claim + start next Build with this run id
+     | Gate(bool)                          // the Build's gate verdict (stands in for model + checks)
+     | Step                                // advance landing by one atomic step
++    | Rebase(bool)                        // moved base: rebase + re-gate result (true = green on the new tip, false = impossible after repairs)
+     | Crash                               // SIGKILL of the owner between two atomic steps
+     | Interrupt                           // SIGTERM: like Crash, but the run records `interrupted`
+     | PushExternal(str)                   // someone else fast-forwards the base
+@@ -175,16 +180,27 @@
+     else if (ph == "pushed")    // 3. CAS fast-forward of the base from the expected parent
+       if (tip(s) == rn.parent)
+         { ...s, base: s.base.append({ id: id, slug: rn.slug }), proc: { rid: id, phase: "based" }, last: "ok" }
+-      else                      //    base moved: park the candidate, release everything
+-        { ...setRun(s, id, { ...rn, status: "parked", reason: "base_moved" }),
+-          parked: s.parked.union(Set(id)), incoming: s.incoming.exclude(Set(id)),
+-          claim: "", proc: NO_PROC, last: "ok" }
++      else                      //    base moved: drop the incoming ref, the Build stays owner and must rebase + re-gate (3.9.2)
++        { ...s, incoming: s.incoming.exclude(Set(id)), proc: { rid: id, phase: "moved" }, last: "ok" }
++    else if (ph == "moved") err(s, "rebase_required")
+     else if (ph == "based")     // 4. CAS-delete the incoming ref
+       { ...s, incoming: s.incoming.exclude(Set(id)), proc: { rid: id, phase: "cleaned" }, last: "ok" }
+     else if (ph == "cleaned")   // 5. finish: run landed, claim released
+       { ...setRun(s, id, { ...rn, status: "landed" }), claim: "", proc: NO_PROC, last: "ok" }
+     else err(s, "nothing_to_step")
+ 
++  // Moved base (3.9.2): an approved Build must finish. Rebase onto the new tip and re-gate;
++  // green -> landing restarts from the new tip (the CAS parent is now the tip), only an
++  // impossible rebase / red result after repairs parks the candidate.
++  pure def rebase(s: State, ok: bool): State =
++    if (s.proc.phase != "moved") err(s, "not_moved")
++    else
++      val id = s.proc.rid
++      val rn = s.runs.get(id)
++      if (ok) { ...setRun(s, id, { ...rn, parent: tip(s) }), proc: { rid: id, phase: "built" }, last: "ok" }
++      else { ...setRun(s, id, { ...rn, status: "parked", reason: "base_moved" }),
++             parked: s.parked.union(Set(id)), claim: "", proc: NO_PROC, last: "ok" }
++
+   pure def kill(s: State, sigterm: bool): State =
+     if (s.proc.phase == "") err(s, "no_process")
+     else
+@@ -202,6 +218,7 @@
+     | Start(id) => start(s, id)
+     | Gate(pass) => gate(s, pass)
+     | Step => advance(s)
++    | Rebase(ok) => rebase(s, ok)
+     | Crash => kill(s, false)
+     | Interrupt => kill(s, true)
+     | PushExternal(id) => pushExternal(s, id)
+@@ -257,14 +274,15 @@
+     tuples(SLUG_ORDER.indices().map(i => SLUG_ORDER[i]), TIMES).map(((sl, t)) => Approve({ slug: sl, time: t }))
+       .union(RUN_IDS.map(r => Start(r)))
+   pure val FAULTS: Set[Event] =
+-    EXTERNAL_IDS.map(x => PushExternal(x)).union(Set(Gate(false), Crash, Interrupt, Recover))
+-  pure val EVENTS: Set[Event] = LIFECYCLE.union(FAULTS).union(Set(Gate(true), Step))
++    EXTERNAL_IDS.map(x => PushExternal(x)).union(Set(Gate(false), Rebase(false), Crash, Interrupt, Recover))
++  pure val EVENTS: Set[Event] = LIFECYCLE.union(FAULTS).union(Set(Gate(true), Step, Rebase(true)))
+   action step = any {
+     nondet e = EVENTS.oneOf()  fire(e),
+     nondet e = LIFECYCLE.oneOf()  fire(e),
+     nondet e = FAULTS.oneOf()  fire(e),
+     all { st.proc.phase == "building", fire(Gate(true)) },
+     all { Set("built", "recorded", "pushed", "based", "cleaned").contains(st.proc.phase), fire(Step) },
++    all { st.proc.phase == "moved", fire(Rebase(true)) },
+   }
+ 
+   val safety = safe(st)

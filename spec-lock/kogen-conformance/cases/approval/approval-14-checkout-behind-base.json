@@ -1,0 +1,57 @@
+{
+ "id": "approval-14",
+ "profile": "approval",
+ "fixture": "kt",
+ "title": "A checkout behind its base gives exit 3",
+ "spec": [
+  "§2.5.2",
+  "§1.5"
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "origin_commit": {
+    "files": {
+     "Makefile": "all:\n\ttrue\n",
+     "checks/unit.sh": "exit 0\n"
+    },
+    "message": "Add a Makefile"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 3,
+    "stderr": "",
+    "stdout_regex": "\\Aenvironment/checkout_behind_base: checkout is behind main: (Makefile, checks/unit\\.sh|checks/unit\\.sh, Makefile) differ; update your checkout first\n\\Z"
+   }
+  },
+  {
+   "git": [
+    "pull",
+    "-q",
+    "--rebase",
+    "origin",
+    "main"
+   ]
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 5
+   }
+  }
+ ]
+}

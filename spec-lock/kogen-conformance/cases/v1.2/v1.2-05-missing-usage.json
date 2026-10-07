@@ -1,0 +1,43 @@
+{
+ "id": "v1.2-05-missing-usage",
+ "profile": "v1.2",
+ "fixture": "exunit-hello",
+ "fake": true,
+ "title": "Missing provider usage stays null and yields a null cache-hit rate",
+ "notes": "This fixture omits the optional acceptance key and uses the spec v1.2 default adapter, exunit. Installed Kogen b73a0534 rejects the spec-defined acceptance project key as unknown during approval; that is Kogen drift. Approval reads the implementation-advertised digest so this downstream case can proceed despite the hash drift directly tested in v1.2-02.",
+ "spec": ["spec/04-provider.md §4.9.5", "spec/CONFORMANCE-v1.2-CASES.md P9"],
+ "script": [
+  {
+   "include": "v1.2_prefix",
+   "override": {
+    "plan": {"usage": null},
+    "edit": {"usage": null},
+    "inspect": {"usage": null},
+    "verify": {"usage": null},
+    "hold": {"usage": null}
+   }
+  }
+ ],
+ "steps": [
+  {"intent": {"slug": "greet", "template": "exunit-greet"}},
+  {"run": ["kogen", "intent", "approve", "greet"], "expect": {"exit": 5, "stdout_regex": "SHA-256: [0-9a-f]{64}", "stderr": ""}, "capture": {"approval_hash": "SHA-256: ([0-9a-f]{64})"}},
+  {"run": ["kogen", "intent", "approve", "greet", "{var:approval_hash}"], "expect": {"exit": 0, "stdout_regex": "approved greet [0-9a-f]{8} \\(approval [0-9a-f]{8}\\); it is queued\\n", "stderr": ""}},
+  {"run": ["kogen", "queue", "start"], "background": "drain"},
+  {"wait_until": {"fake_requests": 4, "timeout_s": 60}},
+  {
+   "run": ["kogen", "status", "greet", "--json"],
+   "expect": {
+    "exit": 0,
+    "stdout_json": {
+     "cache_hit_rate": "$null",
+     "model_stages": {
+      "$each": {"tokens": {"input": "$null", "cached_input": "$null"}}
+     }
+    },
+    "stderr": ""
+   }
+  },
+  {"signal": {"name": "drain", "sig": "KILL", "target": "group"}},
+  {"wait": {"name": "drain", "timeout": 15, "expect": {"exit": 137}}}
+ ]
+}

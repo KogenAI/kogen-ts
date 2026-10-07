@@ -1,0 +1,8 @@
+{
+ "name": "14-acceptance-missing",
+ "about": "Missing acceptance source: exit 2 with or without a hash; no checks run.",
+ "steps": [
+  {"do": ["Approve", {"slug": "alpha", "given": "", "prefixOk": true, "stableBeforeCas": true, "newSha8": "aaaa1111", "sha": "aaaa1111bbbb2222", "sha8": "aaaa1111", "by": "", "byBad": false, "ident": "Ann <ann@x.io>", "parseErr": false, "lintErr": false, "lintWarn": false, "missing": true, "setup": "ok", "cacheKey": "k1", "baseline": "green", "acceptance": "green", "witnessMode": false, "feas": "not checked", "commit": "c1", "baseSha": "b0"}], "expect": {"last": "intent/acceptance_missing", "exit": 2, "ran": false, "checkRuns": 0}},
+  {"do": ["Approve", {"slug": "alpha", "given": "aaaa1111", "prefixOk": true, "stableBeforeCas": true, "newSha8": "aaaa1111", "sha": "aaaa1111bbbb2222", "sha8": "aaaa1111", "by": "", "byBad": false, "ident": "Ann <ann@x.io>", "parseErr": false, "lintErr": false, "lintWarn": false, "missing": true, "setup": "ok", "cacheKey": "k1", "baseline": "green", "acceptance": "green", "witnessMode": false, "feas": "not checked", "commit": "c1", "baseSha": "b0"}], "expect": {"last": "intent/acceptance_missing", "exit": 2, "ran": false, "checkRuns": 0}}
+ ]
+}

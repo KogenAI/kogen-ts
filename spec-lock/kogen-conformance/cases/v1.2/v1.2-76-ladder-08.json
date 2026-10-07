@@ -1,0 +1,203 @@
+{
+  "id": "v1.2-76-ladder-08",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for ladder-08: Unsupported infeasible verdict stays upheld as valid",
+  "spec": [
+    "§3.5",
+    "§3.8.2",
+    "§3.6",
+    "§4.7",
+    "§2.3",
+    "§2.8"
+  ],
+  "script": [
+    {
+      "id": "plan",
+      "expect": {
+        "role": "planner"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "r1.edit",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 1,
+        "tools": [
+          "shell",
+          "finish",
+          "tool_output"
+        ]
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r1.done",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 2,
+        "last_item_type": "function_call_output"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "r1.keep",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "turn": 3,
+        "last_user_contains": "Kogen's controller reported this failure."
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'repair attempt\\n' > lib/repair-marker.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r1.claim",
+      "expect": {
+        "role": "builder",
+        "model": "gpt-6-luna",
+        "effort": "max",
+        "last_item_type": "function_call_output"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "audit",
+      "expect": {
+        "role": "auditor"
+      },
+      "reply": {
+        "text": "{\"items\": [{\"id\": \"A2\", \"verdict\": \"infeasible\", \"reason\": \"No network.\"}]}"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": {
+        "slug": "greet",
+        "intent_text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n- A2: lib/greet.txt is published to the greeting server.\n\n## Verify\n- A1: test\n- A2: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+        "test_text": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\nt_A2() { echo 'kt: the greeting server is unreachable from this sandbox'; return 1; }\n",
+        "commit": true
+      }
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 1,
+        "stdout_lines": [
+          "building greet",
+          "~failed greet: [a-z_/]+; best candidate unverified at refs/kogen/parked/[0-9a-f]{32} \\(Build [0-9a-f]{8}\\)",
+          "queue: done; 1 Build(s), 0 landed, 1 not"
+        ]
+      }
+    },
+    {
+      "assert": {
+        "fake_requests": [
+          {
+            "select": {
+              "step": "audit"
+            },
+            "input_contains": "the greeting server is unreachable from this sandbox"
+          }
+        ],
+        "events": {
+          "slug": "greet",
+          "last": {
+            "event": "finished",
+            "status": "failed",
+            "verdict": "unverified",
+            "advisory_items": []
+          },
+          "subsequence": [
+            {
+              "event": "audit",
+              "items": [
+                {
+                  "id": "A2",
+                  "verdict": "valid",
+                  "reason": "$any"
+                }
+              ]
+            },
+            {
+              "event": "acceptance_upheld",
+              "id": "A2",
+              "verdict": "valid"
+            },
+            {
+              "event": "repair",
+              "rung": "R1"
+            },
+            {
+              "event": "rung_finished",
+              "rung": "R1",
+              "reason": "no_progress",
+              "verdict": "unverified"
+            }
+          ],
+          "count": {
+            "audit": 1,
+            "repair": 1,
+            "acceptance_demoted": 0
+          }
+        }
+      }
+    }
+  ],
+  "notes": "infeasible is not a v1.2 Build auditor verdict; an unknown or garbled item stays valid and is not demoted (§3.8.2). The unchanged red count ends the one-rung case as no_progress after the repair changes the tree but leaves the red count unchanged (§3.5). The one-rung setting is project configuration (§2.3); builder completion uses finish alone with {} and shell-recipe tools (§§3.6, 4.7).",
+  "project": {
+    "build": {
+      "ladder": {
+        "max_rungs": 1
+      }
+    }
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "id": "v1.2-120-custody-07",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "title": "v1.2 replacement for custody-07: KOGEN_SANDBOX=unavailable gives the warning, the event and the report field, and the Build still lands",
+  "spec": [
+    "§5.3",
+    "§5.5.7",
+    "§3.6",
+    "§4.7"
+  ],
+  "fake": true,
+  "sandbox_unavailable": true,
+  "script": [
+    {
+      "id": "r1_happy.plan",
+      "expect": {
+        "role": "planner",
+        "turn": 1,
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "r1_happy.edit",
+      "expect": {
+        "role": "builder",
+        "turn": 1,
+        "tools": [
+          "shell",
+          "finish",
+          "tool_output"
+        ],
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r1_happy.done",
+      "expect": {
+        "role": "builder",
+        "turn": 2,
+        "last_output_contains": "exit 0",
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    }
+  ],
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_lines": [
+          "building greet",
+          "~\\~landed greet [0-9a-f]{8} \\(Build {id8:greet}\\)",
+          "queue: done; 1 Build(s), 1 landed, 0 not"
+        ],
+        "stderr_regex": "\\Akogen: warning: sandbox unavailable: [^\\n]+; building unconfined\n\\Z"
+      }
+    },
+    {
+      "assert": {
+        "events": {
+          "slug": "greet",
+          "subsequence": [
+            {
+              "event": "started",
+              "sandbox": "unconfined"
+            },
+            {
+              "event": "sandbox_unavailable",
+              "reason": "$nonempty"
+            },
+            {
+              "event": "finished",
+              "status": "landed"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "status",
+        "greet",
+        "--json"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_json": {
+          "slug": "greet",
+          "status": "landed",
+          "sandbox": "unconfined"
+        },
+        "stderr_any": true
+      }
+    }
+  ],
+  "notes": "v1.2 replacement for custody-07. Text-only builder replies are progress; completion requires finish alone with {} (§3.6). Shell-recipe builders expose shell, finish, and tool_output (§4.7)."
+}

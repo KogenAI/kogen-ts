@@ -1,0 +1,28 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.3.11/schema.json",
+	"vcs": {
+		"enabled": false
+	},
+	"files": {
+		"includes": [
+			"packages/**/*.ts",
+			"packages/**/package.json",
+			"tools/**/*.ts",
+			"tests/**/*.ts",
+			"*.json",
+			"!toolchain.lock.json"
+		]
+	},
+	"formatter": {
+		"enabled": true
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true
+		}
+	},
+	"assist": {
+		"enabled": true
+	}
+}

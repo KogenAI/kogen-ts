@@ -1,0 +1,92 @@
+{
+ "id": "state-29",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "Two concurrent approves: one CAS retry, then both commits exist in a chain",
+ "spec": [
+  "§2.5.1"
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 5
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet",
+    "{hash8:greet}",
+    "--by",
+    "first approver"
+   ],
+   "background": "a"
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet",
+    "{hash8:greet}",
+    "--by",
+    "second approver"
+   ],
+   "background": "b"
+  },
+  {
+   "wait": {
+    "name": "a",
+    "expect": {
+     "exit": 0,
+     "stdout_regex": "approved greet"
+    }
+   }
+  },
+  {
+   "wait": {
+    "name": "b",
+    "expect": {
+     "exit": 0,
+     "stdout_regex": "approved greet"
+    }
+   }
+  },
+  {
+   "assert": {
+    "git": [
+     {
+      "args": [
+       "rev-list",
+       "--count",
+       "refs/kogen/intents/greet"
+      ],
+      "stdout": "2\n"
+     },
+     {
+      "args": [
+       "log",
+       "--format=%(trailers:key=Kogen-Approved-By,valueonly)",
+       "refs/kogen/intents/greet"
+      ],
+      "stdout_regex": [
+       "first approver",
+       "second approver"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

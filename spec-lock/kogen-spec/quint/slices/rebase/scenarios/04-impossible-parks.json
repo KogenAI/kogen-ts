@@ -1,0 +1,15 @@
+{
+  "name": "04-impossible-parks",
+  "about": "An impossible rebase parks. The claim is released. The Intent is parked, not failed.",
+  "steps": [
+    {"do": ["Record"]},
+    {"do": ["Lock"], "expect": {"tries": 1}},
+    {"do": ["Again"]},
+    {"do": ["Lock"], "expect": {"tries": 2}},
+    {"do": ["Again"]},
+    {"do": ["Lock"], "expect": {"tries": 3}},
+    {"do": ["Again"]},
+    {"do": ["Lock"], "expect": {"phase": "moved"}},
+    {"do": ["Rebase", {"kind": "impossible"}], "expect": {"status": "parked", "line": "parked", "claim": false, "onBase": false, "exit": 1, "reason": "not_landable"}}
+  ]
+}

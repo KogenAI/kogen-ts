@@ -1,0 +1,11 @@
+{
+  "name": "01-same-key-across-repair",
+  "about": "Defaults are builder, builder, initial. Turns, repairs, and a fallback model keep the key. previous_response_id stays unset.",
+  "steps": [
+    {"do": ["Bind", {"stage": "develop", "attempt": "", "rung": ""}],
+     "expect": {"last": "ok", "version": "v2", "stage": "develop", "attempt": "builder", "rung": "builder", "epoch": "initial", "epochClass": "initial", "keyChanged": false, "previous": false}},
+    {"do": ["Turn"], "expect": {"keyChanged": false, "attempt": "builder", "rung": "builder", "epoch": "initial", "last": "ok"}},
+    {"do": ["Repair"], "expect": {"keyChanged": false, "stage": "develop", "epochClass": "initial"}},
+    {"do": ["Model", {"name": "sol"}], "expect": {"model": "sol", "keyChanged": false, "stage": "develop", "attempt": "builder", "previous": false}}
+  ]
+}

@@ -1,0 +1,72 @@
+{
+ "id": "approval-04",
+ "profile": "approval",
+ "fixture": "kt",
+ "title": "Re-approval chains to the previous approval as parent",
+ "spec": [
+  "§2.5.1",
+  "§1.7.2"
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "git": [
+    "rev-parse",
+    "refs/kogen/intents/greet"
+   ],
+   "in": "origin",
+   "capture": {
+    "first": "^([0-9a-f]+)"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet",
+    "{hash8:greet}"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout": {
+     "lines": [
+      "approved greet {hash8:greet} (approval {approval8:greet}); it is queued",
+      "Next: kogen queue start (does nothing if the queue is already running)"
+     ]
+    }
+   }
+  },
+  {
+   "assert": {
+    "git": [
+     {
+      "args": [
+       "rev-parse",
+       "refs/kogen/intents/greet^"
+      ],
+      "stdout": "{var:first}\n"
+     },
+     {
+      "args": [
+       "rev-list",
+       "--count",
+       "refs/kogen/intents/greet"
+      ],
+      "stdout": "2\n"
+     }
+    ],
+    "refs": {
+     "refs/kogen/intents/greet": {
+      "$not": "{var:first}"
+     }
+    }
+   }
+  }
+ ]
+}

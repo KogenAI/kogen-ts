@@ -1,0 +1,770 @@
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/checks/ledger.ex kogen-ref-patched/lib/kogen/checks/ledger.ex
+--- a/lib/kogen/checks/ledger.ex	2026-10-05 16:26:48
++++ b/lib/kogen/checks/ledger.ex	2026-10-05 16:35:58
+@@ -163,7 +163,7 @@
+   end
+ 
+   defp report(workdir, %Intent{} = intent, run_dir, env, sandbox) do
+-    test_path = Path.join([workdir, "test", "acceptance", "#{intent.slug}_test.exs"])
++    test_path = Path.join(workdir, Kogen.Contracts.AcceptanceAdapter.candidate_path(intent.slug))
+ 
+     with :ok <- prepared_test(test_path),
+          :ok <- prepare_run_files(run_dir),
+@@ -285,18 +285,41 @@
+     report_path = Path.join(run_dir, "ledger.jsonl")
+     log_path = Path.join([run_dir, "logs", "acceptance.log"])
+ 
++    adapter = Kogen.Contracts.AcceptanceAdapter.current()
++
+     options = [
+       cd: workdir,
+-      env: Map.put(env, "KOGEN_LEDGER_REPORT", report_path),
++      env: adapter_env(adapter, env, report_path, test_path, workdir),
+       log_path: log_path,
+-      sandbox: sandbox
++      sandbox: sandbox,
++      timeout_ms: adapter.timeout_ms
+     ]
+ 
+     workdir
+-    |> test_argv(test_path, run_dir, env)
++    |> adapter_argv(adapter, test_path, run_dir, env)
+     |> Proc.run(options)
+     |> process_result()
+   end
++
++  # Conformance proposal: the `command` adapter runs the project's argv; the command writes the ledger.
++  defp adapter_argv(workdir, %{adapter: :command, run: run}, test_path, _run_dir, _env) do
++    relative = Path.relative_to(test_path, workdir)
++    Enum.map(run, &String.replace(&1, "{path}", relative))
++  end
++
++  defp adapter_argv(workdir, _exunit, test_path, run_dir, env),
++    do: test_argv(workdir, test_path, run_dir, env)
++
++  defp adapter_env(%{adapter: :command}, env, report_path, test_path, _workdir) do
++    slug = test_path |> Path.basename() |> String.replace_suffix(Kogen.Contracts.AcceptanceAdapter.ext(), "")
++
++    env
++    |> Map.put("KOGEN_LEDGER_REPORT", report_path)
++    |> Map.put("KOGEN_INTENT_SLUG", slug)
++  end
++
++  defp adapter_env(_exunit, env, report_path, _test_path, _workdir),
++    do: Map.put(env, "KOGEN_LEDGER_REPORT", report_path)
+ 
+   defp test_argv(workdir, test_path, run_dir, env) do
+     formatter_path = Path.join(run_dir, "ledger_formatter.ex")
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/checks/shape_formatter.ex kogen-ref-patched/lib/kogen/checks/shape_formatter.ex
+--- a/lib/kogen/checks/shape_formatter.ex	2026-10-05 16:26:48
++++ b/lib/kogen/checks/shape_formatter.ex	2026-10-05 16:35:47
+@@ -129,7 +129,7 @@
+   defp source_file?(path), do: Path.extname(path) in [".ex", ".exs"]
+ 
+   defp intent_path(slug), do: ".kogen/intents/#{slug}/intent.md"
+-  defp acceptance_path(slug), do: ".kogen/acceptance/#{slug}_test.exs"
++  defp acceptance_path(slug), do: Kogen.Contracts.AcceptanceAdapter.source_path(slug)
+ 
+   defp failure(class, reason, detail), do: %Failure{class: class, reason: reason, detail: detail}
+ end
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/checks/shaping.ex kogen-ref-patched/lib/kogen/checks/shaping.ex
+--- a/lib/kogen/checks/shaping.ex	2026-10-05 16:26:48
++++ b/lib/kogen/checks/shaping.ex	2026-10-05 16:35:58
+@@ -102,7 +102,7 @@
+   end
+ 
+   defp run_spec(spec, request, env, index) do
+-    relative = "test/acceptance/#{request.intent.slug}_test.exs"
++    relative = Kogen.Contracts.AcceptanceAdapter.candidate_path(request.intent.slug)
+     argv = Enum.map(spec.argv, &String.replace(&1, "{path}", relative))
+ 
+     log_path =
+@@ -164,7 +164,7 @@
+   end
+ 
+   defp stage_test(workdir, slug, contents) do
+-    path = Path.join([workdir, "test", "acceptance", "#{slug}_test.exs"])
++    path = Path.join(workdir, Kogen.Contracts.AcceptanceAdapter.candidate_path(slug))
+ 
+     with :ok <- valid_stage_target(workdir, slug),
+          {:ok, created_dirs} <- ensure_directories(workdir) do
+@@ -201,7 +201,7 @@
+ 
+   defp ensure_directories(workdir) do
+     result =
+-      Enum.reduce_while(["test", "test/acceptance"], {:ok, []}, fn relative, {:ok, created} ->
++      Enum.reduce_while(candidate_dirs(), {:ok, []}, fn relative, {:ok, created} ->
+         ensure_directory(Path.join(workdir, relative), created)
+       end)
+ 
+@@ -209,6 +209,12 @@
+       {:ok, created} -> {:ok, created}
+       {:error, %Failure{} = failure, created} -> cleanup_stage_error(failure, created)
+     end
++  end
++
++  defp candidate_dirs do
++    Kogen.Contracts.AcceptanceAdapter.candidate_dir()
++    |> Path.split()
++    |> Enum.scan(&Path.join(&2, &1))
+   end
+ 
+   defp ensure_directory(path, created) do
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/contracts/acceptance_adapter.ex kogen-ref-patched/lib/kogen/contracts/acceptance_adapter.ex
+--- a/lib/kogen/contracts/acceptance_adapter.ex	1970-01-01 03:00:00
++++ b/lib/kogen/contracts/acceptance_adapter.ex	2026-10-05 16:34:31
+@@ -0,0 +1,42 @@
++defmodule Kogen.Contracts.AcceptanceAdapter do
++  @moduledoc """
++  The project's acceptance adapter (spec §2.4.3): `exunit` (default) or `command`.
++
++  Proposal patch: the loaded project's adapter is held process-wide, since one CLI call
++  loads one project.
++  """
++
++  defstruct adapter: :exunit,
++            ext: "_test.exs",
++            candidate_dir: "test/acceptance",
++            run: nil,
++            timeout_ms: 600_000
++
++  @type t :: %__MODULE__{
++          adapter: :exunit | :command,
++          ext: String.t(),
++          candidate_dir: String.t(),
++          run: [String.t()] | nil,
++          timeout_ms: pos_integer()
++        }
++
++  @key {__MODULE__, :current}
++
++  @spec put(t()) :: :ok
++  def put(%__MODULE__{} = adapter), do: :persistent_term.put(@key, adapter)
++
++  @spec current() :: t()
++  def current, do: :persistent_term.get(@key, %__MODULE__{})
++
++  @spec ext() :: String.t()
++  def ext, do: current().ext
++
++  @spec source_path(String.t()) :: String.t()
++  def source_path(slug), do: ".kogen/acceptance/#{slug}#{ext()}"
++
++  @spec candidate_path(String.t()) :: String.t()
++  def candidate_path(slug), do: "#{current().candidate_dir}/#{slug}#{ext()}"
++
++  @spec candidate_dir() :: String.t()
++  def candidate_dir, do: current().candidate_dir
++end
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/contracts/seams.ex kogen-ref-patched/lib/kogen/contracts/seams.ex
+--- a/lib/kogen/contracts/seams.ex	1970-01-01 03:00:00
++++ b/lib/kogen/contracts/seams.ex	2026-10-05 16:34:31
+@@ -0,0 +1,66 @@
++defmodule Kogen.Contracts.Seams do
++  @moduledoc """
++  Conformance test seams (spec §4.1, §5.3). Production never sets them.
++
++  - `KOGEN_PROVIDER_URL` replaces the Responses URL in both credential modes.
++  - `KOGEN_AUTH_URL` replaces `https://auth.openai.com` for login, refresh, discovery and JWKS.
++  - `KOGEN_TIME_SCALE` multiplies scaled constants.
++  - `KOGEN_SANDBOX=unavailable` builds unconfined with a warning.
++  """
++
++  @auth_base "https://auth.openai.com"
++
++  @spec responses_url(String.t()) :: String.t()
++  def responses_url(default) do
++    case System.get_env("KOGEN_PROVIDER_URL") do
++      url when is_binary(url) and url != "" -> url
++      _unset -> default
++    end
++  end
++
++  @spec auth_url(String.t()) :: String.t()
++  def auth_url(@auth_base <> path) do
++    case System.get_env("KOGEN_AUTH_URL") do
++      url when is_binary(url) and url != "" -> String.trim_trailing(url, "/") <> path
++      _unset -> @auth_base <> path
++    end
++  end
++
++  def auth_url(url), do: url
++
++  @spec time_scale() :: float()
++  def time_scale do
++    with value when is_binary(value) <- System.get_env("KOGEN_TIME_SCALE"),
++         {scale, ""} when scale > 0 <- Float.parse(value) do
++      scale
++    else
++      _unset ->
++        case Integer.parse(System.get_env("KOGEN_TIME_SCALE") || "") do
++          {scale, ""} when scale > 0 -> scale * 1.0
++          _invalid -> 1.0
++        end
++    end
++  end
++
++  @doc "Scales a constant marked `scaled: true` (never project timeouts)."
++  @spec scale(pos_integer()) :: pos_integer()
++  def scale(ms) when is_integer(ms), do: max(1, round(ms * time_scale()))
++
++  @spec sandbox_unavailable?() :: boolean()
++  def sandbox_unavailable?, do: System.get_env("KOGEN_SANDBOX") == "unavailable"
++
++  @doc "Prints the unconfined warning once per command (§5.3)."
++  @spec warn_sandbox_unavailable() :: :ok
++  def warn_sandbox_unavailable do
++    if sandbox_unavailable?() and :persistent_term.get({__MODULE__, :warned}, false) == false do
++      :persistent_term.put({__MODULE__, :warned}, true)
++
++      IO.puts(
++        :stderr,
++        "kogen: warning: sandbox unavailable: KOGEN_SANDBOX=unavailable; building unconfined"
++      )
++    end
++
++    :ok
++  end
++end
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/contracts.ex kogen-ref-patched/lib/kogen/contracts.ex
+--- a/lib/kogen/contracts.ex	2026-10-05 16:26:48
++++ b/lib/kogen/contracts.ex	2026-10-05 16:34:31
+@@ -3,6 +3,7 @@
+   use Boundary,
+     deps: [],
+     exports: [
++      AcceptanceAdapter,
+       AcceptanceItem,
+       CheckSpec,
+       CheckBaseline,
+@@ -18,6 +19,7 @@
+       Project,
+       ProviderError,
+       ProviderPort,
++      Seams,
+       Receipt,
+       ShapeWarning,
+       ShapeWarningCodec,
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/engine/build/engine.ex kogen-ref-patched/lib/kogen/engine/build/engine.ex
+--- a/lib/kogen/engine/build/engine.ex	2026-10-05 16:26:48
++++ b/lib/kogen/engine/build/engine.ex	2026-10-05 16:35:47
+@@ -113,7 +113,7 @@
+   end
+ 
+   defp approved_base_manifest(%Approval{} = a) do
+-    p = ".kogen/acceptance/#{a.slug}_test.exs"
++    p = Kogen.Contracts.AcceptanceAdapter.source_path(a.slug)
+     Map.put(a.protected_manifest, p, Intent.hash(Map.fetch!(a.acceptance_files, p)))
+   end
+ 
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/engine/build/escalation.ex kogen-ref-patched/lib/kogen/engine/build/escalation.ex
+--- a/lib/kogen/engine/build/escalation.ex	2026-10-05 16:26:48
++++ b/lib/kogen/engine/build/escalation.ex	2026-10-05 16:35:47
+@@ -130,13 +130,13 @@
+   end
+ 
+   defp approved_files(approval) do
+-    acceptance_path = ".kogen/acceptance/#{approval.slug}_test.exs"
++    acceptance_path = Kogen.Contracts.AcceptanceAdapter.source_path(approval.slug)
+     acceptance = Map.fetch!(approval.acceptance_files, acceptance_path)
+ 
+     %{
+       ".kogen/intents/#{approval.slug}/intent.md" => approval.intent_bytes,
+       acceptance_path => acceptance,
+-      "test/acceptance/#{approval.slug}_test.exs" => acceptance
++      Kogen.Contracts.AcceptanceAdapter.candidate_path(approval.slug) => acceptance
+     }
+   end
+ 
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/engine/build/guard.ex kogen-ref-patched/lib/kogen/engine/build/guard.ex
+--- a/lib/kogen/engine/build/guard.ex	2026-10-05 16:26:48
++++ b/lib/kogen/engine/build/guard.ex	2026-10-05 16:35:47
+@@ -73,7 +73,7 @@
+   defp allowed_extra(%Intent{slug: slug}),
+     do: [
+       ".kogen/intents/#{slug}"
+-      | Enum.map([".kogen/acceptance/", "test/acceptance/"], &(&1 <> slug <> "_test.exs"))
++      | [Kogen.Contracts.AcceptanceAdapter.source_path(slug), Kogen.Contracts.AcceptanceAdapter.candidate_path(slug)]
+     ]
+ 
+   defp failure(reason, detail, class \\ :candidate),
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/engine/build/protected_paths.ex kogen-ref-patched/lib/kogen/engine/build/protected_paths.ex
+--- a/lib/kogen/engine/build/protected_paths.ex	2026-10-05 16:26:48
++++ b/lib/kogen/engine/build/protected_paths.ex	2026-10-05 16:35:47
+@@ -88,8 +88,8 @@
+ 
+   defp approved_bytes(%Session{approval: %Approval{} = approval} = session, path) do
+     intent_path = ".kogen/intents/#{approval.slug}/intent.md"
+-    acceptance_path = ".kogen/acceptance/#{approval.slug}_test.exs"
+-    candidate_path = "test/acceptance/#{approval.slug}_test.exs"
++    acceptance_path = Kogen.Contracts.AcceptanceAdapter.source_path(approval.slug)
++    candidate_path = Kogen.Contracts.AcceptanceAdapter.candidate_path(approval.slug)
+ 
+     case path do
+       ^intent_path ->
+@@ -120,7 +120,7 @@
+   end
+ 
+   defp intent_path?(slug, path),
+-    do: path in [".kogen/intents/#{slug}/intent.md", "test/acceptance/#{slug}_test.exs"]
++    do: path in [".kogen/intents/#{slug}/intent.md", Kogen.Contracts.AcceptanceAdapter.candidate_path(slug)]
+ 
+   defp acceptance_bytes(%Approval{acceptance_files: files}, path) do
+     case Map.fetch(files, path) do
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/engine/build/run_events.ex kogen-ref-patched/lib/kogen/engine/build/run_events.ex
+--- a/lib/kogen/engine/build/run_events.ex	2026-10-05 16:26:48
++++ b/lib/kogen/engine/build/run_events.ex	2026-10-05 16:35:05
+@@ -27,7 +27,20 @@
+       credential_source: request.credential_source,
+       credential_label: request.credential_label,
+       recipe: Recipe.name(request.recipe),
+-      escalation: Recipe.escalation(request.recipe)
++      escalation: Recipe.escalation(request.recipe),
++      sandbox: if(Kogen.Contracts.Seams.sandbox_unavailable?(), do: "unconfined", else: "confined")
+     })
++    |> sandbox_unavailable(run)
+   end
++
++  defp sandbox_unavailable(:ok, run) do
++    if Kogen.Contracts.Seams.sandbox_unavailable?() do
++      Kogen.Contracts.Seams.warn_sandbox_unavailable()
++      State.record(run, %{event: :sandbox_unavailable, reason: "KOGEN_SANDBOX=unavailable"})
++    else
++      :ok
++    end
++  end
++
++  defp sandbox_unavailable(error, _run), do: error
+ end
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/harness/shaping.ex kogen-ref-patched/lib/kogen/harness/shaping.ex
+--- a/lib/kogen/harness/shaping.ex	2026-10-05 16:26:48
++++ b/lib/kogen/harness/shaping.ex	2026-10-05 16:35:47
+@@ -272,7 +272,7 @@
+     gate_paths = opts.project |> GatePaths.effective() |> Enum.map_join(", ", &"`#{&1}`")
+ 
+     text =
+-      "Slug: #{slug}\n\nConfigured project domains: #{configured_domains}. Use only these names in the Intent and Verify lines.\n\nEffective gate paths: #{gate_paths}. Set `changes_gate: true` only when the task or planned changes require modifying one of these paths. Omit it for unrelated changes; running or inspecting checks alone does not count.\n\nTask statement:\n#{task}\n\nWrite the Intent to `.kogen/intents/#{slug}/intent.md` and its acceptance test to `.kogen/acceptance/#{slug}_test.exs`."
++      "Slug: #{slug}\n\nConfigured project domains: #{configured_domains}. Use only these names in the Intent and Verify lines.\n\nEffective gate paths: #{gate_paths}. Set `changes_gate: true` only when the task or planned changes require modifying one of these paths. Omit it for unrelated changes; running or inspecting checks alone does not count.\n\nTask statement:\n#{task}\n\nWrite the Intent to `.kogen/intents/#{slug}/intent.md` and its acceptance test to `#{Kogen.Contracts.AcceptanceAdapter.source_path(slug)}`."
+ 
+     {:ok, [Codec.user_item(text)]}
+   end
+@@ -361,7 +361,7 @@
+     do: Recording.append(state.opts, :model_usage, :shape, state.turns + 1, call)
+ 
+   defp output_paths(slug),
+-    do: [".kogen/intents/#{slug}/intent.md", ".kogen/acceptance/#{slug}_test.exs"]
++    do: [".kogen/intents/#{slug}/intent.md", Kogen.Contracts.AcceptanceAdapter.source_path(slug)]
+ 
+   defp elapsed(started), do: max(System.monotonic_time(:millisecond) - started, 0)
+ 
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/kernel/approval.ex kogen-ref-patched/lib/kogen/kernel/approval.ex
+--- a/lib/kogen/kernel/approval.ex	2026-10-05 16:26:48
++++ b/lib/kogen/kernel/approval.ex	2026-10-05 16:35:47
+@@ -193,5 +193,5 @@
+     do: is_binary(path) and Path.type(path) == :absolute and File.dir?(path)
+ 
+   defp intent_path(slug), do: ".kogen/intents/#{slug}/intent.md"
+-  defp acceptance_source_path(slug), do: ".kogen/acceptance/#{slug}_test.exs"
++  defp acceptance_source_path(slug), do: Kogen.Contracts.AcceptanceAdapter.source_path(slug)
+ end
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/kernel/approval_checks.ex kogen-ref-patched/lib/kogen/kernel/approval_checks.ex
+--- a/lib/kogen/kernel/approval_checks.ex	2026-10-05 16:26:48
++++ b/lib/kogen/kernel/approval_checks.ex	2026-10-05 16:35:47
+@@ -50,8 +50,8 @@
+     do: :ok
+ 
+   defp acceptance_checks(request, project, files, env, sandbox) do
+-    relative = "test/acceptance/#{request.slug}_test.exs"
+-    bytes = Map.fetch!(files, ".kogen/acceptance/#{request.slug}_test.exs")
++    relative = Kogen.Contracts.AcceptanceAdapter.candidate_path(request.slug)
++    bytes = Map.fetch!(files, Kogen.Contracts.AcceptanceAdapter.source_path(request.slug))
+     path = Path.join(request.project_root, relative)
+ 
+     with {:ok, created?} <- stage_candidate(path, relative, bytes) do
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/kernel/approval_manifest.ex kogen-ref-patched/lib/kogen/kernel/approval_manifest.ex
+--- a/lib/kogen/kernel/approval_manifest.ex	2026-10-05 16:26:48
++++ b/lib/kogen/kernel/approval_manifest.ex	2026-10-05 16:35:47
+@@ -31,7 +31,7 @@
+     }
+ 
+     own = own_files(request.slug, intent.bytes, files)
+-    acceptance_source = ".kogen/acceptance/#{request.slug}_test.exs"
++    acceptance_source = Kogen.Contracts.AcceptanceAdapter.source_path(request.slug)
+ 
+     with {:ok, base_paths} <- Workspace.tree_paths(request.origin, base_sha, git_env),
+          patterns = Project.protected_patterns(project, intent.changes_gate, base_paths),
+@@ -52,8 +52,8 @@
+   defp own_files(slug, intent_bytes, acceptance_files) do
+     %{
+       ".kogen/intents/#{slug}/intent.md" => intent_bytes,
+-      "test/acceptance/#{slug}_test.exs" =>
+-        Map.fetch!(acceptance_files, ".kogen/acceptance/#{slug}_test.exs")
++      Kogen.Contracts.AcceptanceAdapter.candidate_path(slug) =>
++        Map.fetch!(acceptance_files, Kogen.Contracts.AcceptanceAdapter.source_path(slug))
+     }
+   end
+ 
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/kernel/cli/runner.ex kogen-ref-patched/lib/kogen/kernel/cli/runner.ex
+--- a/lib/kogen/kernel/cli/runner.ex	2026-10-05 16:26:48
++++ b/lib/kogen/kernel/cli/runner.ex	2026-10-05 16:36:59
+@@ -76,7 +76,7 @@
+   end
+ 
+   defp decide(%ApprovalPreview{} = preview, [prefix]) do
+-    if String.starts_with?(preview.approval.intent_sha256, prefix) do
++    if String.starts_with?(approval_hash(preview), prefix) do
+       case Kogen.Kernel.approve(preview) do
+         {:ok, sha} ->
+           warnings = Approval.warnings_text(preview.warnings, preview.approval.check_baseline)
+@@ -97,8 +97,16 @@
+     end
+   end
+ 
+-  defp short_hash(preview), do: String.slice(preview.approval.intent_sha256, 0, 8)
++  defp short_hash(preview), do: String.slice(approval_hash(preview), 0, 8)
+ 
++  # Conformance proposal (spec §2.1.3): approval hash = SHA-256(intent.md ‖ NUL ‖ acceptance source).
++  defp approval_hash(preview) do
++    test = preview.approval.acceptance_files |> Map.values() |> Enum.join()
++
++    :crypto.hash(:sha256, [preview.approval.intent_bytes, <<0>>, test])
++    |> Base.encode16(case: :lower)
++  end
++
+   defp provider_list do
+     case Kogen.Kernel.provider_list() do
+       {:ok, []} -> {0, "chatgpt: not signed in\n"}
+@@ -155,7 +163,7 @@
+ 
+     """
+     Intent: #{intent.slug} — #{intent.title}
+-    SHA-256: #{preview.approval.intent_sha256}
++    SHA-256: #{approval_hash(preview)}
+     Approver: #{preview.approval.by}
+     Base: #{preview.approval.target_branch} at #{preview.approval.base_sha}
+ 
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/kernel/cli/status_command.ex kogen-ref-patched/lib/kogen/kernel/cli/status_command.ex
+--- a/lib/kogen/kernel/cli/status_command.ex	2026-10-05 16:26:48
++++ b/lib/kogen/kernel/cli/status_command.ex	2026-10-05 16:36:23
+@@ -36,7 +36,7 @@
+         else
+           receive do
+           after
+-            @poll_ms -> watch(args, text)
++            max(100, Kogen.Contracts.Seams.scale(@poll_ms)) -> watch(args, text)
+           end
+         end
+ 
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/kernel/intent_removal.ex kogen-ref-patched/lib/kogen/kernel/intent_removal.ex
+--- a/lib/kogen/kernel/intent_removal.ex	2026-10-05 16:26:48
++++ b/lib/kogen/kernel/intent_removal.ex	2026-10-05 16:35:47
+@@ -50,9 +50,9 @@
+   defp remove_files(slug, project_root, origin, status, force, git_env) do
+     intent_directory = Path.join([project_root, ".kogen", "intents", slug])
+     intent_file = Path.join(intent_directory, "intent.md")
+-    acceptance_file = Path.join([project_root, ".kogen", "acceptance", slug <> "_test.exs"])
++    acceptance_file = Path.join(project_root, Kogen.Contracts.AcceptanceAdapter.source_path(slug))
+     intent_pathspec = ".kogen/intents/#{slug}"
+-    acceptance_pathspec = ".kogen/acceptance/#{slug}_test.exs"
++    acceptance_pathspec = Kogen.Contracts.AcceptanceAdapter.source_path(slug)
+ 
+     with :ok <- intent_exists(intent_file),
+          :ok <- not_building(status),
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/proc/sandbox.ex kogen-ref-patched/lib/kogen/proc/sandbox.ex
+--- a/lib/kogen/proc/sandbox.ex	2026-10-05 16:26:48
++++ b/lib/kogen/proc/sandbox.ex	2026-10-05 16:36:31
+@@ -41,6 +41,19 @@
+   defp nested?, do: System.get_env(@marker) == "1"
+ 
+   defp confine(argv, %__MODULE__{enabled: true} = sandbox) do
++    if Kogen.Contracts.Seams.sandbox_unavailable?(),
++      do: unconfined(argv),
++      else: confine_on_host(argv, sandbox)
++  end
++
++  defp confine(argv, _disabled_or_missing), do: {:ok, argv}
++
++  defp unconfined(argv) do
++    Kogen.Contracts.Seams.warn_sandbox_unavailable()
++    {:ok, argv}
++  end
++
++  defp confine_on_host(argv, sandbox) do
+     case :os.type() do
+       {:unix, :darwin} ->
+         wrap(argv, sandbox)
+@@ -51,7 +64,6 @@
+     end
+   end
+ 
+-  defp confine(argv, _disabled_or_missing), do: {:ok, argv}
+ 
+   defp wrap(argv, sandbox) do
+     with {:ok, generated_profile} <- profile(sandbox) do
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/project/loader.ex kogen-ref-patched/lib/kogen/project/loader.ex
+--- a/lib/kogen/project/loader.ex	2026-10-05 16:26:48
++++ b/lib/kogen/project/loader.ex	2026-10-05 16:35:26
+@@ -1,12 +1,13 @@
+ defmodule Kogen.Project.Loader do
+   @moduledoc false
+ 
++  alias Kogen.Contracts.AcceptanceAdapter
+   alias Kogen.Contracts.CheckSpec
+   alias Kogen.Contracts.Project
+   alias Kogen.Contracts.Yaml
+   alias Kogen.Project.BuildSettings
+ 
+-  @project_keys ~w(name checks format acceptance_checks setup setup_outputs fix diagnose protected_paths gate_paths domains env sandbox base account build)
++  @project_keys ~w(name checks format acceptance acceptance_checks setup setup_outputs fix diagnose protected_paths gate_paths domains env sandbox base account build)
+   @env_name ~r/\A[A-Za-z_][A-Za-z0-9_]*\z/
+ 
+   @type error :: %{line: pos_integer() | nil, message: String.t()}
+@@ -31,8 +32,65 @@
+ 
+   defp validate_document(document, checkout_root) do
+     {attributes, field_errors} = project_fields(document, checkout_root)
+-    errors = unknown_keys(document, @project_keys, "project") ++ field_errors
+-    project_result(errors, attributes)
++    {adapter, adapter_errors} = acceptance_adapter(document)
++    errors = unknown_keys(document, @project_keys, "project") ++ field_errors ++ adapter_errors
++
++    with {:ok, project} <- project_result(errors, attributes) do
++      AcceptanceAdapter.put(adapter)
++      {:ok, project}
++    end
++  end
++
++  # Conformance proposal: the `acceptance:` key (spec §2.4.3) with the `exunit` and `command` adapters.
++  defp acceptance_adapter(document) do
++    case Map.get(document, "acceptance") do
++      nil -> {%AcceptanceAdapter{}, []}
++      value when is_map(value) -> parse_acceptance_adapter(value)
++      _other -> {%AcceptanceAdapter{}, [issue("`acceptance` must be a map")]}
++    end
++  end
++
++  defp parse_acceptance_adapter(value) do
++    unknown = unknown_keys(value, ~w(adapter ext candidate_dir run timeout_ms), "acceptance")
++
++    timeout =
++      case Integer.parse(to_string(Map.get(value, "timeout_ms", "600000"))) do
++        {ms, ""} when ms > 0 -> ms
++        _invalid -> nil
++      end
++
++    timeout_errors = if timeout, do: [], else: [issue("acceptance.timeout_ms must be a positive integer")]
++
++    case Map.get(value, "adapter", "exunit") do
++      "exunit" ->
++        {%AcceptanceAdapter{timeout_ms: timeout || 600_000}, unknown ++ timeout_errors}
++
++      "command" ->
++        ext = Map.get(value, "ext")
++        dir = Map.get(value, "candidate_dir")
++        run = Map.get(value, "run")
++
++        errors =
++          if(is_binary(ext) and ext != "", do: [], else: [issue("missing required key `acceptance.ext`")]) ++
++            if(is_binary(dir) and dir != "", do: [], else: [issue("missing required key `acceptance.candidate_dir`")]) ++
++            if(is_list(run) and run != [] and Enum.all?(run, &is_binary/1),
++              do: [],
++              else: [issue("acceptance.run must be a non-empty list of strings")]
++            )
++
++        adapter = %AcceptanceAdapter{
++          adapter: :command,
++          ext: ext,
++          candidate_dir: dir && String.trim_trailing(dir, "/"),
++          run: run,
++          timeout_ms: timeout || 600_000
++        }
++
++        {adapter, unknown ++ timeout_errors ++ errors}
++
++      other ->
++        {%AcceptanceAdapter{}, [issue("acceptance.adapter must be exunit or command, not #{inspect(other)}")]}
++    end
+   end
+ 
+   defp project_fields(document, checkout_root) do
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/provider/chat_gpt/lock.ex kogen-ref-patched/lib/kogen/provider/chat_gpt/lock.ex
+--- a/lib/kogen/provider/chat_gpt/lock.ex	2026-10-05 16:26:48
++++ b/lib/kogen/provider/chat_gpt/lock.ex	2026-10-05 16:36:17
+@@ -10,7 +10,7 @@
+   def with_lock(root, name, fun, opts \\ [])
+       when is_binary(root) and is_binary(name) and is_function(fun, 0) do
+     lock_path = Path.join([root, "locks", name <> ".lock"])
+-    timeout = Keyword.get(opts, :timeout_ms, @wait_ms)
++    timeout = Keyword.get(opts, :timeout_ms, Kogen.Contracts.Seams.scale(@wait_ms))
+ 
+     with :ok <- File.mkdir_p(Path.dirname(lock_path)),
+          {:ok, token} <- acquire(lock_path, System.monotonic_time(:millisecond) + timeout) do
+@@ -79,7 +79,7 @@
+     case String.split(String.trim(contents), " ", parts: 3) do
+       [_pid, created_at, _token] ->
+         case Integer.parse(created_at) do
+-          {timestamp, ""} -> System.system_time(:millisecond) - timestamp > @stale_ms
++          {timestamp, ""} -> System.system_time(:millisecond) - timestamp > Kogen.Contracts.Seams.scale(@stale_ms)
+           _invalid -> true
+         end
+ 
+@@ -90,7 +90,7 @@
+ 
+   defp old_directory?(path) do
+     case File.stat(path, time: :posix) do
+-      {:ok, stat} -> {:ok, System.system_time(:second) - stat.mtime > div(@stale_ms, 1_000)}
++      {:ok, stat} -> {:ok, System.system_time(:second) - stat.mtime > div(Kogen.Contracts.Seams.scale(@stale_ms), 1_000)}
+       {:error, :enoent} -> {:ok, false}
+       {:error, reason} -> {:error, reason}
+     end
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/provider/chat_gpt/oidc.ex kogen-ref-patched/lib/kogen/provider/chat_gpt/oidc.ex
+--- a/lib/kogen/provider/chat_gpt/oidc.ex	2026-10-05 16:26:48
++++ b/lib/kogen/provider/chat_gpt/oidc.ex	2026-10-05 16:34:41
+@@ -23,7 +23,7 @@
+ 
+   @spec discovery(keyword()) :: {:ok, Discovery.t()} | {:error, term()}
+   def discovery(opts \\ []) do
+-    url = Keyword.get(opts, :discovery_url, @discovery_url)
++    url = Keyword.get(opts, :discovery_url, Kogen.Contracts.Seams.auth_url(@discovery_url))
+ 
+     with {:ok, 200, body} <-
+            Transport.get(url, @timeout_ms, proxy_env: Keyword.get(opts, :proxy_env, %{})),
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/provider/chat_gpt/refresh.ex kogen-ref-patched/lib/kogen/provider/chat_gpt/refresh.ex
+--- a/lib/kogen/provider/chat_gpt/refresh.ex	2026-10-05 16:26:48
++++ b/lib/kogen/provider/chat_gpt/refresh.ex	2026-10-05 16:34:41
+@@ -67,7 +67,7 @@
+       {"resource", @resource}
+     ]
+ 
+-    url = Keyword.get(opts, :token_endpoint, @token_endpoint)
++    url = Keyword.get(opts, :token_endpoint, Kogen.Contracts.Seams.auth_url(@token_endpoint))
+ 
+     with {:ok, 200, body} <-
+            Transport.post_form(url, fields, @timeout_ms,
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/provider/chat_gpt/siwc.ex kogen-ref-patched/lib/kogen/provider/chat_gpt/siwc.ex
+--- a/lib/kogen/provider/chat_gpt/siwc.ex	2026-10-05 16:26:48
++++ b/lib/kogen/provider/chat_gpt/siwc.ex	2026-10-05 16:36:17
+@@ -107,7 +107,7 @@
+     ]
+ 
+     params = if mode == :registration, do: [{"agent_name_hint", "Kogen"} | params], else: params
+-    @authorize_endpoint <> "?" <> URI.encode_query(params)
++    Kogen.Contracts.Seams.auth_url(@authorize_endpoint) <> "?" <> URI.encode_query(params)
+   end
+ 
+   defp authorize(%LoginFlow{} = flow) do
+@@ -137,7 +137,7 @@
+ 
+   defp await_callback(flow, state, mode) do
+     Loopback.await(flow.listener, state, mode,
+-      timeout_ms: Keyword.get(flow.opts, :callback_timeout_ms, 300_000)
++      timeout_ms: Keyword.get(flow.opts, :callback_timeout_ms, Kogen.Contracts.Seams.scale(300_000))
+     )
+   end
+ 
+@@ -171,7 +171,7 @@
+   end
+ 
+   defp exchange(code, client_id, verifier, redirect_uri, opts) do
+-    url = Keyword.get(opts, :token_endpoint, @token_endpoint)
++    url = Keyword.get(opts, :token_endpoint, Kogen.Contracts.Seams.auth_url(@token_endpoint))
+ 
+     body = [
+       {"grant_type", "authorization_code"},
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/provider/chat_gpt.ex kogen-ref-patched/lib/kogen/provider/chat_gpt.ex
+--- a/lib/kogen/provider/chat_gpt.ex	2026-10-05 16:26:48
++++ b/lib/kogen/provider/chat_gpt.ex	2026-10-05 16:34:50
+@@ -56,7 +56,7 @@
+        %Config{
+          source: :custom,
+          label: "custom",
+-         endpoint: @benchmark_endpoint,
++         endpoint: Kogen.Contracts.Seams.responses_url(@benchmark_endpoint),
+          timeout_ms: @request_timeout_ms,
+          credential_path: auth_path,
+          access_token: credentials.access_token,
+@@ -77,7 +77,7 @@
+          %Config{
+            source: :kogen_owned,
+            label: label,
+-           endpoint: @responses_endpoint,
++           endpoint: Kogen.Contracts.Seams.responses_url(@responses_endpoint),
+            timeout_ms: @request_timeout_ms,
+            credential_root: root,
+            backend: backend
+@@ -189,10 +189,10 @@
+              config.endpoint,
+              headers(config, token, account_id),
+              body,
+-             config.timeout_ms,
++             Kogen.Contracts.Seams.scale(config.timeout_ms),
+              proxy_env: config.proxy_env,
+-             first_byte_ms: config.first_byte_timeout_ms,
+-             total_ms: config.total_timeout_ms
++             first_byte_ms: Kogen.Contracts.Seams.scale(config.first_byte_timeout_ms),
++             total_ms: Kogen.Contracts.Seams.scale(config.total_timeout_ms)
+            ) do
+       handle_response(response)
+     else
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/shaper/runner.ex kogen-ref-patched/lib/kogen/shaper/runner.ex
+--- a/lib/kogen/shaper/runner.ex	2026-10-05 16:26:48
++++ b/lib/kogen/shaper/runner.ex	2026-10-05 16:35:47
+@@ -361,7 +361,7 @@
+     do: "#{failure.class}/#{failure.reason}: #{failure.detail}"
+ 
+   defp intent_path(slug), do: ".kogen/intents/#{slug}/intent.md"
+-  defp acceptance_path(slug), do: ".kogen/acceptance/#{slug}_test.exs"
++  defp acceptance_path(slug), do: Kogen.Contracts.AcceptanceAdapter.source_path(slug)
+   defp failure(class, reason, detail), do: %Failure{class: class, reason: reason, detail: detail}
+ 
+   defp limit_failure(request, attempt_number, reason, detail) do
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/tooling/tools.ex kogen-ref-patched/lib/kogen/tooling/tools.ex
+--- a/lib/kogen/tooling/tools.ex	2026-10-05 16:26:48
++++ b/lib/kogen/tooling/tools.ex	2026-10-05 16:36:17
+@@ -43,7 +43,7 @@
+   end
+ 
+   defp shell_command(opts, cmd) do
+-    case Command.run(opts, ["sh", "-c", cmd], @tool_deadline_ms, "tool-shell") do
++    case Command.run(opts, ["sh", "-c", cmd], Kogen.Contracts.Seams.scale(@tool_deadline_ms), "tool-shell") do
+       {:ok, result} -> shell_result(result)
+       {:error, %Error{} = error} -> tool_error(error.reason, error.detail)
+     end
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/lib/kogen/workspace/intent_files.ex kogen-ref-patched/lib/kogen/workspace/intent_files.ex
+--- a/lib/kogen/workspace/intent_files.ex	2026-10-05 16:26:48
++++ b/lib/kogen/workspace/intent_files.ex	2026-10-05 16:35:47
+@@ -6,12 +6,12 @@
+   @spec install(Path.t(), String.t(), binary(), %{String.t() => binary()}) ::
+           :ok | {:error, term()}
+   def install(workdir, slug, intent_bytes, acceptance_files) do
+-    source = ".kogen/acceptance/#{slug}_test.exs"
++    source = Kogen.Contracts.AcceptanceAdapter.source_path(slug)
+     acceptance = Map.fetch!(acceptance_files, source)
+ 
+     files = %{
+       ".kogen/intents/#{slug}/intent.md" => intent_bytes,
+-      "test/acceptance/#{slug}_test.exs" => acceptance
++      Kogen.Contracts.AcceptanceAdapter.candidate_path(slug) => acceptance
+     }
+ 
+     with :ok <- Workspace.insert_files(workdir, files),
+@@ -23,7 +23,7 @@
+   @spec remove_acceptance_source(Path.t(), String.t()) ::
+           {:ok, String.t() | nil} | {:error, term()}
+   def remove_acceptance_source(workdir, slug) do
+-    path = Path.join(workdir, ".kogen/acceptance/#{slug}_test.exs")
++    path = Path.join(workdir, Kogen.Contracts.AcceptanceAdapter.source_path(slug))
+ 
+     case File.rm_rf(path) do
+       {:ok, []} ->
+diff --color -ruN -x *.beam -x .DS_Store cand-0e0f2c91/priv/prompts/developer.md kogen-ref-patched/priv/prompts/developer.md
+--- a/priv/prompts/developer.md	2026-10-05 16:26:48
++++ b/priv/prompts/developer.md	2026-10-05 16:36:07
+@@ -1,5 +1,7 @@
+ # Kogen Developer
+ 
++You are Kogen's builder.
++
+ Implement the approved Intent in the supplied worktree. The approved Intent at `.kogen/intents/<slug>/intent.md` and its acceptance tests at `.kogen/acceptance/<slug>_test.exs` and `test/acceptance/<slug>_test.exs` are read-only: never edit, format, or overwrite them, including through shell commands. Keep changes minimal and within the Intent's declared domains. Read `## Request` verbatim as source context for the user's edge cases and constraints; the Acceptance items remain the completion gate. Treat any implementation plan as advice; the Intent controls scope. Never add a dependency unless the Intent explicitly declares it. Do not read or follow `AGENTS.md` files.
+ 
+ Available tools depend on the recipe: the full set is `read`, `search`, `edit`, `write`, and `shell`; shell-only recipes expose only `shell`. Paths passed to file tools must stay inside the worktree. `edit` requires an exact match exactly once. `write` refuses to overwrite files larger than 200 lines. Shell runs from the worktree root with a 120 second deadline.

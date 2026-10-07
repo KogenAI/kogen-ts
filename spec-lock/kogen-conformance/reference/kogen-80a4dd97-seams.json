@@ -1,0 +1,1266 @@
+{
+ "reference": "careful-rebuild 80a4dd97 + proposals/reference-seams-on-80a4dd97.diff",
+ "classes": {
+  "ref-bug": "(a) Kogen bug: contradicts the spec and Almir's settled rules, or a plain defect",
+  "R-gap": "(d) unbuilt feature or spec format not adopted",
+  "spec": "(b) spec wrong/stale: fixed in v1.1",
+  "test": "(c) test wrong: fixed in v1.1"
+ },
+ "cases": {
+  "cli-09": {
+   "class": "ref-bug",
+   "causes": [
+    "a02",
+    "a01"
+   ],
+   "note": "a02: usage errors: boolean flags with =value say 'needs a value'; slug checked only after the project loads [task 23-usage-errors-first]; a01: mapped error lines: errors print as Elixir terms or exit 70 (config, parse, not_found, acceptance_missing, path conflict, request_unavailable, trailer mismatch, lost CAS, setup wording) [task 22-error-lines]"
+  },
+  "cli-13": {
+   "class": "ref-bug",
+   "causes": [
+    "a02"
+   ],
+   "note": "a02: usage errors: boolean flags with =value say 'needs a value'; slug checked only after the project loads [task 23-usage-errors-first]"
+  },
+  "cli-21": {
+   "class": "ref-bug",
+   "causes": [
+    "a02"
+   ],
+   "note": "a02: usage errors: boolean flags with =value say 'needs a value'; slug checked only after the project loads [task 23-usage-errors-first]"
+  },
+  "cli-25": {
+   "class": "R-gap",
+   "causes": [
+    "d01"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "cli-26": {
+   "class": "R-gap",
+   "causes": [
+    "d01"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "cli-28": {
+   "class": "R-gap",
+   "causes": [
+    "d01"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "cli-29": {
+   "class": "ref-bug",
+   "causes": [
+    "a12"
+   ],
+   "note": "a12: SIGINT during queue start records no interrupted{reason: sigint} [task 34-sigint]"
+  },
+  "cli-30": {
+   "class": "ref-bug",
+   "causes": [
+    "a11"
+   ],
+   "note": "a11: stops that should leave the Intent queued (setup failing twice, acceptance runner missing on base, claim held, tampered approval, login, provider exhaustion) end as failed or a bare error line; no skipped line on branch mismatch [task 11-stopped-keeps-intent-queued]"
+  },
+  "state-01": {
+   "class": "ref-bug",
+   "causes": [
+    "a01"
+   ],
+   "note": "a01: mapped error lines: errors print as Elixir terms or exit 70 (config, parse, not_found, acceptance_missing, path conflict, request_unavailable, trailer mismatch, lost CAS, setup wording) [task 22-error-lines]"
+  },
+  "state-02": {
+   "class": "ref-bug",
+   "causes": [
+    "a01"
+   ],
+   "note": "a01: mapped error lines: errors print as Elixir terms or exit 70 (config, parse, not_found, acceptance_missing, path conflict, request_unavailable, trailer mismatch, lost CAS, setup wording) [task 22-error-lines]"
+  },
+  "state-03": {
+   "class": "R-gap",
+   "causes": [
+    "d04"
+   ],
+   "note": "d04: project.yaml build keys: ladder.max_rungs, land, budget_ms, fallback, roles rung2/rung3/fallback_shaper, shaping.proof (Kogen has recipe/wall_minutes) [task 26-build-config-keys]"
+  },
+  "state-04": {
+   "class": "ref-bug",
+   "causes": [
+    "a01"
+   ],
+   "note": "a01: mapped error lines: errors print as Elixir terms or exit 70 (config, parse, not_found, acceptance_missing, path conflict, request_unavailable, trailer mismatch, lost CAS, setup wording) [task 22-error-lines]"
+  },
+  "state-05": {
+   "class": "ref-bug",
+   "causes": [
+    "a07"
+   ],
+   "note": "a07: style lint rules block approval (exit 1) instead of being card warnings; lint lines print 'at line :' [task 08-style-never-blocks]"
+  },
+  "state-06": {
+   "class": "ref-bug",
+   "causes": [
+    "a07"
+   ],
+   "note": "a07: style lint rules block approval (exit 1) instead of being card warnings; lint lines print 'at line :' [task 08-style-never-blocks]"
+  },
+  "state-09": {
+   "class": "ref-bug",
+   "causes": [
+    "a04",
+    "d03"
+   ],
+   "note": "a04: approval hash and Kogen-Approved-Hash trailer cover intent.md only, not intent.md + NUL + test [task 20-approval-hash-binds-test]; d03: approval.json schema 2 (approval_sha256, witness, baseline exit_status/path/rule/symbol) [task 20-approval-hash-binds-test]"
+  },
+  "state-10": {
+   "class": "ref-bug",
+   "causes": [
+    "a11"
+   ],
+   "note": "a11: stops that should leave the Intent queued (setup failing twice, acceptance runner missing on base, claim held, tampered approval, login, provider exhaustion) end as failed or a bare error line; no skipped line on branch mismatch [task 11-stopped-keeps-intent-queued]"
+  },
+  "state-11": {
+   "class": "R-gap",
+   "causes": [
+    "d01"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "state-12": {
+   "class": "R-gap",
+   "causes": [
+    "d02"
+   ],
+   "note": "d02: Build report §2.10 (verdict, land_policy, advisory_items, rungs R1.., best_candidate, audit, sandbox, budget) [task 25-build-report]"
+  },
+  "state-16": {
+   "class": "ref-bug",
+   "causes": [
+    "a08"
+   ],
+   "note": "a08: project.yaml validation: env KOGEN_* and duplicate check names accepted, scalar domain crashes, >1 MiB accepted [task 31-config-validation]"
+  },
+  "state-17": {
+   "class": "R-gap",
+   "causes": [
+    "d01"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "state-19": {
+   "class": "R-gap",
+   "causes": [
+    "d01"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "state-20": {
+   "class": "R-gap",
+   "causes": [
+    "d01"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "state-21": {
+   "class": "R-gap",
+   "causes": [
+    "d01"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "state-23": {
+   "class": "ref-bug",
+   "causes": [
+    "a10"
+   ],
+   "note": "a10: a reused slug stays landed forever (landed = any reachable trailer) [task 32-slug-reuse]"
+  },
+  "state-25": {
+   "class": "R-gap",
+   "causes": [
+    "d05"
+   ],
+   "note": "d05: shape-warnings.json in the §2.4.5 shape is rejected [task 30-approval-card]"
+  },
+  "state-26": {
+   "class": "R-gap",
+   "causes": [
+    "d04"
+   ],
+   "note": "d04: project.yaml build keys: ladder.max_rungs, land, budget_ms, fallback, roles rung2/rung3/fallback_shaper, shaping.proof (Kogen has recipe/wall_minutes) [task 26-build-config-keys]"
+  },
+  "state-28": {
+   "class": "R-gap",
+   "causes": [
+    "d07"
+   ],
+   "note": "d07: approval-baseline cache (approval-cache/<hex>.json) [task 19-approve-hash-first]"
+  },
+  "state-29": {
+   "class": "ref-bug",
+   "causes": [
+    "a09"
+   ],
+   "note": "a09: two concurrent approvals: the lost CAS is not retried (controller/:exists) [task 33-approval-cas-retry]"
+  },
+  "state-30": {
+   "class": "R-gap",
+   "causes": [
+    "d01"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "approval-01": {
+   "class": "ref-bug",
+   "causes": [
+    "a05"
+   ],
+   "note": "a05: approval card: no Feasibility line, '(test_keep)', blank-line layout, base-red rows not parsed, acceptance-check output not indented [task 30-approval-card]"
+  },
+  "approval-02": {
+   "class": "ref-bug",
+   "causes": [
+    "a04"
+   ],
+   "note": "a04: approval hash and Kogen-Approved-Hash trailer cover intent.md only, not intent.md + NUL + test [task 20-approval-hash-binds-test]"
+  },
+  "approval-03": {
+   "class": "ref-bug",
+   "causes": [
+    "a03"
+   ],
+   "note": "a03: intent approve <hash> runs setup and checks before comparing the hash [task 19-approve-hash-first]"
+  },
+  "approval-08": {
+   "class": "ref-bug",
+   "causes": [
+    "a05"
+   ],
+   "note": "a05: approval card: no Feasibility line, '(test_keep)', blank-line layout, base-red rows not parsed, acceptance-check output not indented [task 30-approval-card]"
+  },
+  "approval-09": {
+   "class": "ref-bug",
+   "causes": [
+    "a06"
+   ],
+   "note": "a06: approval baseline records a missing tool as red and refuses a timing-out or tree-mutating check instead of recording unavailable/timeout/mutating [task 21-baseline-statuses]"
+  },
+  "approval-10": {
+   "class": "ref-bug",
+   "causes": [
+    "a05"
+   ],
+   "note": "a05: approval card: no Feasibility line, '(test_keep)', blank-line layout, base-red rows not parsed, acceptance-check output not indented [task 30-approval-card]"
+  },
+  "approval-13": {
+   "class": "ref-bug",
+   "causes": [
+    "a01"
+   ],
+   "note": "a01: mapped error lines: errors print as Elixir terms or exit 70 (config, parse, not_found, acceptance_missing, path conflict, request_unavailable, trailer mismatch, lost CAS, setup wording) [task 22-error-lines]"
+  },
+  "approval-15": {
+   "class": "R-gap",
+   "causes": [
+    "d08"
+   ],
+   "note": "d08: command adapter: acceptance.run program is not a gate file / not in the first-message gate paths [task 00-test-seams]"
+  },
+  "approval-17": {
+   "class": "R-gap",
+   "causes": [
+    "d05"
+   ],
+   "note": "d05: shape-warnings.json in the §2.4.5 shape is rejected [task 30-approval-card]"
+  },
+  "approval-19": {
+   "class": "ref-bug",
+   "causes": [
+    "a01"
+   ],
+   "note": "a01: mapped error lines: errors print as Elixir terms or exit 70 (config, parse, not_found, acceptance_missing, path conflict, request_unavailable, trailer mismatch, lost CAS, setup wording) [task 22-error-lines]"
+  },
+  "approval-21": {
+   "class": "R-gap",
+   "causes": [
+    "d06"
+   ],
+   "note": "d06: no_change_item lint rule (resolved call 2: no Intent without a change item) [task 09-no-change-item]"
+  },
+  "approval-23": {
+   "class": "R-gap",
+   "causes": [
+    "d01"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "shape-01": {
+   "class": "R-gap",
+   "causes": [
+    "d09c",
+    "d09l",
+    "d09a"
+   ],
+   "note": "d09c: shape output: Feasibility line, usage role, Concerns warnings, 'shaper pass=<n> role=<role>' progress lines [task 35-shape-output-and-concerns]; d09l: requirement ledger and coverage check at shaping [task 13-requirement-ledger]; d09a: shaping test audit with citations [task 14-shaping-test-audit]"
+  },
+  "shape-02": {
+   "class": "R-gap",
+   "causes": [
+    "d09c"
+   ],
+   "note": "d09c: shape output: Feasibility line, usage role, Concerns warnings, 'shaper pass=<n> role=<role>' progress lines [task 35-shape-output-and-concerns]"
+  },
+  "shape-03": {
+   "class": "ref-bug",
+   "causes": [
+    "a14"
+   ],
+   "note": "a14: shaping rewrites the Request bytes (CRLF to LF, non-UTF-8 re-encoded) [task 29-request-bytes-verbatim]"
+  },
+  "shape-04": {
+   "class": "ref-bug",
+   "causes": [
+    "a14"
+   ],
+   "note": "a14: shaping rewrites the Request bytes (CRLF to LF, non-UTF-8 re-encoded) [task 29-request-bytes-verbatim]"
+  },
+  "shape-05": {
+   "class": "ref-bug",
+   "causes": [
+    "a01"
+   ],
+   "note": "a01: mapped error lines: errors print as Elixir terms or exit 70 (config, parse, not_found, acceptance_missing, path conflict, request_unavailable, trailer mismatch, lost CAS, setup wording) [task 22-error-lines]"
+  },
+  "shape-06": {
+   "class": "R-gap",
+   "causes": [
+    "d08"
+   ],
+   "note": "d08: command adapter: acceptance.run program is not a gate file / not in the first-message gate paths [task 00-test-seams]"
+  },
+  "shape-07": {
+   "class": "ref-bug",
+   "causes": [
+    "a13"
+   ],
+   "note": "a13: shaping pass ends on the first successful write (generated_file_missing; measured 207 failures) instead of on a reply without tool calls, with no finish guard [task 01-shaping-pass-ends-on-done]"
+  },
+  "shape-08": {
+   "class": "ref-bug",
+   "causes": [
+    "a13"
+   ],
+   "note": "a13: shaping pass ends on the first successful write (generated_file_missing; measured 207 failures) instead of on a reply without tool calls, with no finish guard [task 01-shaping-pass-ends-on-done]"
+  },
+  "shape-09": {
+   "class": "ref-bug",
+   "causes": [
+    "a13",
+    "d09l",
+    "d09a"
+   ],
+   "note": "a13: shaping pass ends on the first successful write (generated_file_missing; measured 207 failures) instead of on a reply without tool calls, with no finish guard [task 01-shaping-pass-ends-on-done]; d09l: requirement ledger and coverage check at shaping [task 13-requirement-ledger]; d09a: shaping test audit with citations [task 14-shaping-test-audit]"
+  },
+  "shape-10": {
+   "class": "ref-bug",
+   "causes": [
+    "a13",
+    "d09c"
+   ],
+   "note": "a13: shaping pass ends on the first successful write (generated_file_missing; measured 207 failures) instead of on a reply without tool calls, with no finish guard [task 01-shaping-pass-ends-on-done]; d09c: shape output: Feasibility line, usage role, Concerns warnings, 'shaper pass=<n> role=<role>' progress lines [task 35-shape-output-and-concerns]"
+  },
+  "shape-11": {
+   "class": "R-gap",
+   "causes": [
+    "d09s"
+   ],
+   "note": "d09s: style findings repaired outside the pass budget during shaping, leftovers as lint_* warnings [task 08-style-never-blocks]"
+  },
+  "shape-12": {
+   "class": "R-gap",
+   "causes": [
+    "d09"
+   ],
+   "note": "d09: shaping fallback conversation (passes 4-6, fallback_shaper, fresh) [task 07-shaping-fallback-conversation]"
+  },
+  "shape-13": {
+   "class": "R-gap",
+   "causes": [
+    "d09"
+   ],
+   "note": "d09: shaping fallback conversation (passes 4-6, fallback_shaper, fresh) [task 07-shaping-fallback-conversation]"
+  },
+  "shape-14": {
+   "class": "ref-bug",
+   "causes": [
+    "a13",
+    "d09l",
+    "d09a"
+   ],
+   "note": "a13: shaping pass ends on the first successful write (generated_file_missing; measured 207 failures) instead of on a reply without tool calls, with no finish guard [task 01-shaping-pass-ends-on-done]; d09l: requirement ledger and coverage check at shaping [task 13-requirement-ledger]; d09a: shaping test audit with citations [task 14-shaping-test-audit]"
+  },
+  "shape-15": {
+   "class": "ref-bug",
+   "causes": [
+    "a13"
+   ],
+   "note": "a13: shaping pass ends on the first successful write (generated_file_missing; measured 207 failures) instead of on a reply without tool calls, with no finish guard [task 01-shaping-pass-ends-on-done]"
+  },
+  "shape-16": {
+   "class": "ref-bug",
+   "causes": [
+    "a13"
+   ],
+   "note": "a13: shaping pass ends on the first successful write (generated_file_missing; measured 207 failures) instead of on a reply without tool calls, with no finish guard [task 01-shaping-pass-ends-on-done]"
+  },
+  "shape-17": {
+   "class": "ref-bug",
+   "causes": [
+    "a13"
+   ],
+   "note": "a13: shaping pass ends on the first successful write (generated_file_missing; measured 207 failures) instead of on a reply without tool calls, with no finish guard [task 01-shaping-pass-ends-on-done]"
+  },
+  "shape-18": {
+   "class": "ref-bug",
+   "causes": [
+    "a15"
+   ],
+   "note": "a15: a missing shaping formatter gives no stderr warning [task 36-formatter-warning]"
+  },
+  "shape-19": {
+   "class": "R-gap",
+   "causes": [
+    "d09l"
+   ],
+   "note": "d09l: requirement ledger and coverage check at shaping [task 13-requirement-ledger]"
+  },
+  "shape-20": {
+   "class": "R-gap",
+   "causes": [
+    "d09a"
+   ],
+   "note": "d09a: shaping test audit with citations [task 14-shaping-test-audit]"
+  },
+  "shape-21": {
+   "class": "R-gap",
+   "causes": [
+    "d09a"
+   ],
+   "note": "d09a: shaping test audit with citations [task 14-shaping-test-audit]"
+  },
+  "shape-22": {
+   "class": "R-gap",
+   "causes": [
+    "d09c"
+   ],
+   "note": "d09c: shape output: Feasibility line, usage role, Concerns warnings, 'shaper pass=<n> role=<role>' progress lines [task 35-shape-output-and-concerns]"
+  },
+  "shape-23": {
+   "class": "ref-bug",
+   "causes": [
+    "b02",
+    "a13",
+    "d09l"
+   ],
+   "note": "b02: shaper default: Almir 5 Oct 'Sol (never Luna) shapes' (build/LOG.md; T69); spec said shaper = builder [task -]; a13: shaping pass ends on the first successful write (generated_file_missing; measured 207 failures) instead of on a reply without tool calls, with no finish guard [task 01-shaping-pass-ends-on-done]; d09l: requirement ledger and coverage check at shaping [task 13-requirement-ledger]"
+  },
+  "shape-24": {
+   "class": "ref-bug",
+   "causes": [
+    "a13",
+    "d09l"
+   ],
+   "note": "a13: shaping pass ends on the first successful write (generated_file_missing; measured 207 failures) instead of on a reply without tool calls, with no finish guard [task 01-shaping-pass-ends-on-done]; d09l: requirement ledger and coverage check at shaping [task 13-requirement-ledger]"
+  },
+  "shape-26": {
+   "class": "R-gap",
+   "causes": [
+    "d14",
+    "d04"
+   ],
+   "note": "d14: witness mode (pending measurement; not a default) [task -]; d04: project.yaml build keys: ladder.max_rungs, land, budget_ms, fallback, roles rung2/rung3/fallback_shaper, shaping.proof (Kogen has recipe/wall_minutes) [task 26-build-config-keys]"
+  },
+  "build-02": {
+   "class": "ref-bug",
+   "causes": [
+    "a16",
+    "d10"
+   ],
+   "note": "a16: tool-less roles (planner, auditor) send \"tools\": [] instead of omitting the key [task 37-toolless-requests]; d10: builder messages and feedback (§3.6/§3.7.3): Acceptance on the base, Repairs available, plan rules, Earlier attempts, acceptance/gate lines [task 17-builder-messages]"
+  },
+  "build-03": {
+   "class": "R-gap",
+   "causes": [
+    "d01"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "build-04": {
+   "class": "R-gap",
+   "causes": [
+    "d11",
+    "d10",
+    "d01"
+   ],
+   "note": "d11: build auditor per §3.8.2: after the rung (B6), citations, infeasible, audit event, '(advisory: …)' drain line [task 15-build-auditor-citations]; d10: builder messages and feedback (§3.6/§3.7.3): Acceptance on the base, Repairs available, plan rules, Earlier attempts, acceptance/gate lines [task 17-builder-messages]; d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "build-05": {
+   "class": "ref-bug",
+   "causes": [
+    "a18"
+   ],
+   "note": "a18: repair progress is not counted for GNU-line findings (failure_count null), so the rung ends no_progress after 2 repairs [task 06-progress-count]"
+  },
+  "build-06": {
+   "class": "R-gap",
+   "causes": [
+    "d04"
+   ],
+   "note": "d04: project.yaml build keys: ladder.max_rungs, land, budget_ms, fallback, roles rung2/rung3/fallback_shaper, shaping.proof (Kogen has recipe/wall_minutes) [task 26-build-config-keys]"
+  },
+  "build-07": {
+   "class": "R-gap",
+   "causes": [
+    "d04"
+   ],
+   "note": "d04: project.yaml build keys: ladder.max_rungs, land, budget_ms, fallback, roles rung2/rung3/fallback_shaper, shaping.proof (Kogen has recipe/wall_minutes) [task 26-build-config-keys]"
+  },
+  "build-08": {
+   "class": "R-gap",
+   "causes": [
+    "d13",
+    "d11"
+   ],
+   "note": "d13: empty-done refusal (first empty done claim) not built [task 18-empty-done-refusal]; d11: build auditor per §3.8.2: after the rung (B6), citations, infeasible, audit event, '(advisory: …)' drain line [task 15-build-auditor-citations]"
+  },
+  "build-09": {
+   "class": "R-gap",
+   "causes": [
+    "d01"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "build-10": {
+   "class": "R-gap",
+   "causes": [
+    "d04"
+   ],
+   "note": "d04: project.yaml build keys: ladder.max_rungs, land, budget_ms, fallback, roles rung2/rung3/fallback_shaper, shaping.proof (Kogen has recipe/wall_minutes) [task 26-build-config-keys]"
+  },
+  "build-11": {
+   "class": "ref-bug",
+   "causes": [
+    "a17b"
+   ],
+   "note": "a17b: gate: a check that times out or disappears ends the rung instead of being fed back red; a tree-mutating check is not detected (its file lands); a fix exiting non-zero is no finding [task 03-gate-feeds-back-every-check]"
+  },
+  "build-12": {
+   "class": "ref-bug",
+   "causes": [
+    "a17b",
+    "d10"
+   ],
+   "note": "a17b: gate: a check that times out or disappears ends the rung instead of being fed back red; a tree-mutating check is not detected (its file lands); a fix exiting non-zero is no finding [task 03-gate-feeds-back-every-check]; d10: builder messages and feedback (§3.6/§3.7.3): Acceptance on the base, Repairs available, plan rules, Earlier attempts, acceptance/gate lines [task 17-builder-messages]"
+  },
+  "build-13": {
+   "class": "ref-bug",
+   "causes": [
+    "a17b",
+    "d10"
+   ],
+   "note": "a17b: gate: a check that times out or disappears ends the rung instead of being fed back red; a tree-mutating check is not detected (its file lands); a fix exiting non-zero is no finding [task 03-gate-feeds-back-every-check]; d10: builder messages and feedback (§3.6/§3.7.3): Acceptance on the base, Repairs available, plan rules, Earlier attempts, acceptance/gate lines [task 17-builder-messages]"
+  },
+  "build-14": {
+   "class": "ref-bug",
+   "causes": [
+    "a17"
+   ],
+   "note": "a17: gate: a base-red check with a NEW finding identity is excused and the Build lands; a check unavailable on base too is not excused [task 02-gate-base-red-identities]"
+  },
+  "build-15": {
+   "class": "R-gap",
+   "causes": [
+    "d01"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "build-16": {
+   "class": "ref-bug",
+   "causes": [
+    "a17"
+   ],
+   "note": "a17: gate: a base-red check with a NEW finding identity is excused and the Build lands; a check unavailable on base too is not excused [task 02-gate-base-red-identities]"
+  },
+  "build-17": {
+   "class": "R-gap",
+   "causes": [
+    "d01"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "build-18": {
+   "class": "ref-bug",
+   "causes": [
+    "a06"
+   ],
+   "note": "a06: approval baseline records a missing tool as red and refuses a timing-out or tree-mutating check instead of recording unavailable/timeout/mutating [task 21-baseline-statuses]"
+  },
+  "build-19": {
+   "class": "ref-bug",
+   "causes": [
+    "a17"
+   ],
+   "note": "a17: gate: a base-red check with a NEW finding identity is excused and the Build lands; a check unavailable on base too is not excused [task 02-gate-base-red-identities]"
+  },
+  "build-20": {
+   "class": "ref-bug",
+   "causes": [
+    "a17b"
+   ],
+   "note": "a17b: gate: a check that times out or disappears ends the rung instead of being fed back red; a tree-mutating check is not detected (its file lands); a fix exiting non-zero is no finding [task 03-gate-feeds-back-every-check]"
+  },
+  "build-22": {
+   "class": "R-gap",
+   "causes": [
+    "d01"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "build-23": {
+   "class": "R-gap",
+   "causes": [
+    "d01"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "build-24": {
+   "class": "R-gap",
+   "causes": [
+    "d01"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "build-25": {
+   "class": "ref-bug",
+   "causes": [
+    "a19"
+   ],
+   "note": "a19: moved base at landing parks at once (':base_moved', exit 70) with no rebase, re-gate and repair [task 04-landing-rebase-regate]"
+  },
+  "build-26": {
+   "class": "ref-bug",
+   "causes": [
+    "a19"
+   ],
+   "note": "a19: moved base at landing parks at once (':base_moved', exit 70) with no rebase, re-gate and repair [task 04-landing-rebase-regate]"
+  },
+  "build-27": {
+   "class": "ref-bug",
+   "causes": [
+    "a19b"
+   ],
+   "note": "a19b: a landing .lock is retried once instead of 1/2/4 s; no warning for a dirty checked-out base [task 05-landing-transient-retries]"
+  },
+  "build-29": {
+   "class": "ref-bug",
+   "causes": [
+    "a19b"
+   ],
+   "note": "a19b: a landing .lock is retried once instead of 1/2/4 s; no warning for a dirty checked-out base [task 05-landing-transient-retries]"
+  },
+  "build-31": {
+   "class": "R-gap",
+   "causes": [
+    "d04"
+   ],
+   "note": "d04: project.yaml build keys: ladder.max_rungs, land, budget_ms, fallback, roles rung2/rung3/fallback_shaper, shaping.proof (Kogen has recipe/wall_minutes) [task 26-build-config-keys]"
+  },
+  "build-37": {
+   "class": "R-gap",
+   "causes": [
+    "d01"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "build-39": {
+   "class": "ref-bug",
+   "causes": [
+    "a11"
+   ],
+   "note": "a11: stops that should leave the Intent queued (setup failing twice, acceptance runner missing on base, claim held, tampered approval, login, provider exhaustion) end as failed or a bare error line; no skipped line on branch mismatch [task 11-stopped-keeps-intent-queued]"
+  },
+  "build-40": {
+   "class": "ref-bug",
+   "causes": [
+    "a11"
+   ],
+   "note": "a11: stops that should leave the Intent queued (setup failing twice, acceptance runner missing on base, claim held, tampered approval, login, provider exhaustion) end as failed or a bare error line; no skipped line on branch mismatch [task 11-stopped-keeps-intent-queued]"
+  },
+  "build-41": {
+   "class": "ref-bug",
+   "causes": [
+    "a11"
+   ],
+   "note": "a11: stops that should leave the Intent queued (setup failing twice, acceptance runner missing on base, claim held, tampered approval, login, provider exhaustion) end as failed or a bare error line; no skipped line on branch mismatch [task 11-stopped-keeps-intent-queued]"
+  },
+  "build-42": {
+   "class": "ref-bug",
+   "causes": [
+    "a11"
+   ],
+   "note": "a11: stops that should leave the Intent queued (setup failing twice, acceptance runner missing on base, claim held, tampered approval, login, provider exhaustion) end as failed or a bare error line; no skipped line on branch mismatch [task 11-stopped-keeps-intent-queued]"
+  },
+  "build-44": {
+   "class": "R-gap",
+   "causes": [
+    "d04"
+   ],
+   "note": "d04: project.yaml build keys: ladder.max_rungs, land, budget_ms, fallback, roles rung2/rung3/fallback_shaper, shaping.proof (Kogen has recipe/wall_minutes) [task 26-build-config-keys]"
+  },
+  "ladder-01": {
+   "class": "R-gap",
+   "causes": [
+    "d01"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "ladder-02": {
+   "class": "ref-bug",
+   "causes": [
+    "d01",
+    "a16",
+    "d11",
+    "dM"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]; a16: tool-less roles (planner, auditor) send \"tools\": [] instead of omitting the key [task 37-toolless-requests]; d11: build auditor per §3.8.2: after the rung (B6), citations, infeasible, audit event, '(advisory: …)' drain line [task 15-build-auditor-citations]; dM: design differs, no decision or measurement either way (Kogen: hard runs Luna+Sol in parallel and later rungs get the plan; spec: hard enters R2, later rungs get no plan) - measure, no task [task -]"
+  },
+  "ladder-03": {
+   "class": "R-gap",
+   "causes": [
+    "dM"
+   ],
+   "note": "dM: design differs, no decision or measurement either way (Kogen: hard runs Luna+Sol in parallel and later rungs get the plan; spec: hard enters R2, later rungs get no plan) - measure, no task [task -]"
+  },
+  "ladder-04": {
+   "class": "R-gap",
+   "causes": [
+    "d04"
+   ],
+   "note": "d04: project.yaml build keys: ladder.max_rungs, land, budget_ms, fallback, roles rung2/rung3/fallback_shaper, shaping.proof (Kogen has recipe/wall_minutes) [task 26-build-config-keys]"
+  },
+  "ladder-05": {
+   "class": "R-gap",
+   "causes": [
+    "d11"
+   ],
+   "note": "d11: build auditor per §3.8.2: after the rung (B6), citations, infeasible, audit event, '(advisory: …)' drain line [task 15-build-auditor-citations]"
+  },
+  "ladder-06": {
+   "class": "R-gap",
+   "causes": [
+    "d04"
+   ],
+   "note": "d04: project.yaml build keys: ladder.max_rungs, land, budget_ms, fallback, roles rung2/rung3/fallback_shaper, shaping.proof (Kogen has recipe/wall_minutes) [task 26-build-config-keys]"
+  },
+  "ladder-07": {
+   "class": "R-gap",
+   "causes": [
+    "d04"
+   ],
+   "note": "d04: project.yaml build keys: ladder.max_rungs, land, budget_ms, fallback, roles rung2/rung3/fallback_shaper, shaping.proof (Kogen has recipe/wall_minutes) [task 26-build-config-keys]"
+  },
+  "ladder-08": {
+   "class": "R-gap",
+   "causes": [
+    "d11"
+   ],
+   "note": "d11: build auditor per §3.8.2: after the rung (B6), citations, infeasible, audit event, '(advisory: …)' drain line [task 15-build-auditor-citations]"
+  },
+  "ladder-09": {
+   "class": "R-gap",
+   "causes": [
+    "d04"
+   ],
+   "note": "d04: project.yaml build keys: ladder.max_rungs, land, budget_ms, fallback, roles rung2/rung3/fallback_shaper, shaping.proof (Kogen has recipe/wall_minutes) [task 26-build-config-keys]"
+  },
+  "ladder-10": {
+   "class": "R-gap",
+   "causes": [
+    "d04"
+   ],
+   "note": "d04: project.yaml build keys: ladder.max_rungs, land, budget_ms, fallback, roles rung2/rung3/fallback_shaper, shaping.proof (Kogen has recipe/wall_minutes) [task 26-build-config-keys]"
+  },
+  "ladder-11": {
+   "class": "R-gap",
+   "causes": [
+    "d11"
+   ],
+   "note": "d11: build auditor per §3.8.2: after the rung (B6), citations, infeasible, audit event, '(advisory: …)' drain line [task 15-build-auditor-citations]"
+  },
+  "ladder-12": {
+   "class": "R-gap",
+   "causes": [
+    "d01"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "ladder-13": {
+   "class": "R-gap",
+   "causes": [
+    "d12"
+   ],
+   "note": "d12: selection and best candidate: refs/kogen/candidates/<run>/<rung>, selection event, 'best candidate <verdict> at refs/kogen/parked/…' line [task 16-best-candidate]"
+  },
+  "ladder-14": {
+   "class": "R-gap",
+   "causes": [
+    "d12"
+   ],
+   "note": "d12: selection and best candidate: refs/kogen/candidates/<run>/<rung>, selection event, 'best candidate <verdict> at refs/kogen/parked/…' line [task 16-best-candidate]"
+  },
+  "ladder-15": {
+   "class": "R-gap",
+   "causes": [
+    "d04"
+   ],
+   "note": "d04: project.yaml build keys: ladder.max_rungs, land, budget_ms, fallback, roles rung2/rung3/fallback_shaper, shaping.proof (Kogen has recipe/wall_minutes) [task 26-build-config-keys]"
+  },
+  "ladder-16": {
+   "class": "R-gap",
+   "causes": [
+    "d12"
+   ],
+   "note": "d12: selection and best candidate: refs/kogen/candidates/<run>/<rung>, selection event, 'best candidate <verdict> at refs/kogen/parked/…' line [task 16-best-candidate]"
+  },
+  "ladder-17": {
+   "class": "R-gap",
+   "causes": [
+    "d04"
+   ],
+   "note": "d04: project.yaml build keys: ladder.max_rungs, land, budget_ms, fallback, roles rung2/rung3/fallback_shaper, shaping.proof (Kogen has recipe/wall_minutes) [task 26-build-config-keys]"
+  },
+  "ladder-18": {
+   "class": "R-gap",
+   "causes": [
+    "d04"
+   ],
+   "note": "d04: project.yaml build keys: ladder.max_rungs, land, budget_ms, fallback, roles rung2/rung3/fallback_shaper, shaping.proof (Kogen has recipe/wall_minutes) [task 26-build-config-keys]"
+  },
+  "ladder-19": {
+   "class": "ref-bug",
+   "causes": [
+    "a19"
+   ],
+   "note": "a19: moved base at landing parks at once (':base_moved', exit 70) with no rebase, re-gate and repair [task 04-landing-rebase-regate]"
+  },
+  "ladder-20": {
+   "class": "R-gap",
+   "causes": [
+    "d01"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "ladder-21": {
+   "class": "R-gap",
+   "causes": [
+    "d01"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "ladder-22": {
+   "class": "spec",
+   "causes": [
+    "b01",
+    "d01"
+   ],
+   "note": "b01: resilience: Kogen (T66) switches after 2 consecutive overloads (overloads only), caps a request at 4 attempts and jitters backoff (half to full ceiling); spec now follows the code [task -]; d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "ladder-23": {
+   "class": "R-gap",
+   "causes": [
+    "d12"
+   ],
+   "note": "d12: selection and best candidate: refs/kogen/candidates/<run>/<rung>, selection event, 'best candidate <verdict> at refs/kogen/parked/…' line [task 16-best-candidate]"
+  },
+  "ladder-24": {
+   "class": "R-gap",
+   "causes": [
+    "d02"
+   ],
+   "note": "d02: Build report §2.10 (verdict, land_policy, advisory_items, rungs R1.., best_candidate, audit, sandbox, budget) [task 25-build-report]"
+  },
+  "ladder-25": {
+   "class": "R-gap",
+   "causes": [
+    "d04"
+   ],
+   "note": "d04: project.yaml build keys: ladder.max_rungs, land, budget_ms, fallback, roles rung2/rung3/fallback_shaper, shaping.proof (Kogen has recipe/wall_minutes) [task 26-build-config-keys]"
+  },
+  "ladder-26": {
+   "class": "ref-bug",
+   "causes": [
+    "a17b",
+    "d01"
+   ],
+   "note": "a17b: gate: a check that times out or disappears ends the rung instead of being fed back red; a tree-mutating check is not detected (its file lands); a fix exiting non-zero is no finding [task 03-gate-feeds-back-every-check]; d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "ladder-27": {
+   "class": "R-gap",
+   "causes": [
+    "d01",
+    "d10"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]; d10: builder messages and feedback (§3.6/§3.7.3): Acceptance on the base, Repairs available, plan rules, Earlier attempts, acceptance/gate lines [task 17-builder-messages]"
+  },
+  "ladder-28": {
+   "class": "R-gap",
+   "causes": [
+    "d11"
+   ],
+   "note": "d11: build auditor per §3.8.2: after the rung (B6), citations, infeasible, audit event, '(advisory: …)' drain line [task 15-build-auditor-citations]"
+  },
+  "ladder-29": {
+   "class": "R-gap",
+   "causes": [
+    "d11",
+    "d10"
+   ],
+   "note": "d11: build auditor per §3.8.2: after the rung (B6), citations, infeasible, audit event, '(advisory: …)' drain line [task 15-build-auditor-citations]; d10: builder messages and feedback (§3.6/§3.7.3): Acceptance on the base, Repairs available, plan rules, Earlier attempts, acceptance/gate lines [task 17-builder-messages]"
+  },
+  "ladder-30": {
+   "class": "R-gap",
+   "causes": [
+    "d10"
+   ],
+   "note": "d10: builder messages and feedback (§3.6/§3.7.3): Acceptance on the base, Repairs available, plan rules, Earlier attempts, acceptance/gate lines [task 17-builder-messages]"
+  },
+  "ladder-31": {
+   "class": "R-gap",
+   "causes": [
+    "d12"
+   ],
+   "note": "d12: selection and best candidate: refs/kogen/candidates/<run>/<rung>, selection event, 'best candidate <verdict> at refs/kogen/parked/…' line [task 16-best-candidate]"
+  },
+  "ladder-32": {
+   "class": "R-gap",
+   "causes": [
+    "d14"
+   ],
+   "note": "d14: witness mode (pending measurement; not a default) [task -]"
+  },
+  "ladder-33": {
+   "class": "R-gap",
+   "causes": [
+    "d14"
+   ],
+   "note": "d14: witness mode (pending measurement; not a default) [task -]"
+  },
+  "ladder-34": {
+   "class": "R-gap",
+   "causes": [
+    "d04"
+   ],
+   "note": "d04: project.yaml build keys: ladder.max_rungs, land, budget_ms, fallback, roles rung2/rung3/fallback_shaper, shaping.proof (Kogen has recipe/wall_minutes) [task 26-build-config-keys]"
+  },
+  "ladder-35": {
+   "class": "ref-bug",
+   "causes": [
+    "a22",
+    "d01"
+   ],
+   "note": "a22: usage limits pause for a fixed 5 min (scaled) and ignore retry-after; journal says paused, not provider_wait [task 12-usage-limit-retry-after]; d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "ladder-36": {
+   "class": "ref-bug",
+   "causes": [
+    "b01",
+    "a11"
+   ],
+   "note": "b01: resilience: Kogen (T66) switches after 2 consecutive overloads (overloads only), caps a request at 4 attempts and jitters backoff (half to full ceiling); spec now follows the code [task -]; a11: stops that should leave the Intent queued (setup failing twice, acceptance runner missing on base, claim held, tampered approval, login, provider exhaustion) end as failed or a bare error line; no skipped line on branch mismatch [task 11-stopped-keeps-intent-queued]"
+  },
+  "provider-01": {
+   "class": "ref-bug",
+   "causes": [
+    "a16"
+   ],
+   "note": "a16: tool-less roles (planner, auditor) send \"tools\": [] instead of omitting the key [task 37-toolless-requests]"
+  },
+  "provider-03": {
+   "class": "R-gap",
+   "causes": [
+    "d04"
+   ],
+   "note": "d04: project.yaml build keys: ladder.max_rungs, land, budget_ms, fallback, roles rung2/rung3/fallback_shaper, shaping.proof (Kogen has recipe/wall_minutes) [task 26-build-config-keys]"
+  },
+  "provider-08": {
+   "class": "spec",
+   "causes": [
+    "b01",
+    "d01"
+   ],
+   "note": "b01: resilience: Kogen (T66) switches after 2 consecutive overloads (overloads only), caps a request at 4 attempts and jitters backoff (half to full ceiling); spec now follows the code [task -]; d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "provider-09": {
+   "class": "spec",
+   "causes": [
+    "b01"
+   ],
+   "note": "b01: resilience: Kogen (T66) switches after 2 consecutive overloads (overloads only), caps a request at 4 attempts and jitters backoff (half to full ceiling); spec now follows the code [task -]"
+  },
+  "provider-10": {
+   "class": "ref-bug",
+   "causes": [
+    "a21",
+    "a11"
+   ],
+   "note": "a21: provider login fails with eaddrinuse when port 1455 is in TIME_WAIT from a previous login [task 27-login-port-reuse]; a11: stops that should leave the Intent queued (setup failing twice, acceptance runner missing on base, claim held, tampered approval, login, provider exhaustion) end as failed or a bare error line; no skipped line on branch mismatch [task 11-stopped-keeps-intent-queued]"
+  },
+  "provider-11": {
+   "class": "ref-bug",
+   "causes": [
+    "a22"
+   ],
+   "note": "a22: usage limits pause for a fixed 5 min (scaled) and ignore retry-after; journal says paused, not provider_wait [task 12-usage-limit-retry-after]"
+  },
+  "provider-12": {
+   "class": "spec",
+   "causes": [
+    "b01"
+   ],
+   "note": "b01: resilience: Kogen (T66) switches after 2 consecutive overloads (overloads only), caps a request at 4 attempts and jitters backoff (half to full ceiling); spec now follows the code [task -]"
+  },
+  "provider-13": {
+   "class": "spec",
+   "causes": [
+    "b01",
+    "d01"
+   ],
+   "note": "b01: resilience: Kogen (T66) switches after 2 consecutive overloads (overloads only), caps a request at 4 attempts and jitters backoff (half to full ceiling); spec now follows the code [task -]; d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "provider-14": {
+   "class": "spec",
+   "causes": [
+    "b01"
+   ],
+   "note": "b01: resilience: Kogen (T66) switches after 2 consecutive overloads (overloads only), caps a request at 4 attempts and jitters backoff (half to full ceiling); spec now follows the code [task -]"
+  },
+  "provider-15": {
+   "class": "spec",
+   "causes": [
+    "b01"
+   ],
+   "note": "b01: resilience: Kogen (T66) switches after 2 consecutive overloads (overloads only), caps a request at 4 attempts and jitters backoff (half to full ceiling); spec now follows the code [task -]"
+  },
+  "provider-16": {
+   "class": "spec",
+   "causes": [
+    "b01"
+   ],
+   "note": "b01: resilience: Kogen (T66) switches after 2 consecutive overloads (overloads only), caps a request at 4 attempts and jitters backoff (half to full ceiling); spec now follows the code [task -]"
+  },
+  "provider-17": {
+   "class": "spec",
+   "causes": [
+    "b01"
+   ],
+   "note": "b01: resilience: Kogen (T66) switches after 2 consecutive overloads (overloads only), caps a request at 4 attempts and jitters backoff (half to full ceiling); spec now follows the code [task -]"
+  },
+  "provider-18": {
+   "class": "ref-bug",
+   "causes": [
+    "a22"
+   ],
+   "note": "a22: usage limits pause for a fixed 5 min (scaled) and ignore retry-after; journal says paused, not provider_wait [task 12-usage-limit-retry-after]"
+  },
+  "provider-19": {
+   "class": "ref-bug",
+   "causes": [
+    "a11"
+   ],
+   "note": "a11: stops that should leave the Intent queued (setup failing twice, acceptance runner missing on base, claim held, tampered approval, login, provider exhaustion) end as failed or a bare error line; no skipped line on branch mismatch [task 11-stopped-keeps-intent-queued]"
+  },
+  "provider-20": {
+   "class": "ref-bug",
+   "causes": [
+    "a23"
+   ],
+   "note": "a23: usage with cached_tokens > input_tokens is rejected as malformed instead of clamped [task 38-usage-clamp]"
+  },
+  "provider-21": {
+   "class": "ref-bug",
+   "causes": [
+    "a21",
+    "c01"
+   ],
+   "note": "a21: provider login fails with eaddrinuse when port 1455 is in TIME_WAIT from a previous login [task 27-login-port-reuse]; c01: host.json uuid matched lowercase only; the spec does not pin case (RFC 9562: case-insensitive) [task -]"
+  },
+  "provider-22": {
+   "class": "ref-bug",
+   "causes": [
+    "a21",
+    "a25"
+   ],
+   "note": "a21: provider login fails with eaddrinuse when port 1455 is in TIME_WAIT from a previous login [task 27-login-port-reuse]; a25: two intent shape runs at once in one checkout collide on the staged test directory (environment/acceptance_cleanup_failed eexist) [task 28-concurrent-shapes]"
+  },
+  "provider-24": {
+   "class": "ref-bug",
+   "causes": [
+    "a13"
+   ],
+   "note": "a13: shaping pass ends on the first successful write (generated_file_missing; measured 207 failures) instead of on a reply without tool calls, with no finish guard [task 01-shaping-pass-ends-on-done]"
+  },
+  "provider-26": {
+   "class": "ref-bug",
+   "causes": [
+    "a13"
+   ],
+   "note": "a13: shaping pass ends on the first successful write (generated_file_missing; measured 207 failures) instead of on a reply without tool calls, with no finish guard [task 01-shaping-pass-ends-on-done]"
+  },
+  "custody-01": {
+   "class": "ref-bug",
+   "causes": [
+    "a06"
+   ],
+   "note": "a06: approval baseline records a missing tool as red and refuses a timing-out or tree-mutating check instead of recording unavailable/timeout/mutating [task 21-baseline-statuses]"
+  },
+  "custody-02": {
+   "class": "ref-bug",
+   "causes": [
+    "a06"
+   ],
+   "note": "a06: approval baseline records a missing tool as red and refuses a timing-out or tree-mutating check instead of recording unavailable/timeout/mutating [task 21-baseline-statuses]"
+  },
+  "custody-04": {
+   "class": "R-gap",
+   "causes": [
+    "d15"
+   ],
+   "note": "d15: workspace layout <state root>/<run_id>-<rung> (shell.pid not found) [task 24-journal-and-run-json]"
+  },
+  "custody-05": {
+   "class": "ref-bug",
+   "causes": [
+    "a12"
+   ],
+   "note": "a12: SIGINT during queue start records no interrupted{reason: sigint} [task 34-sigint]"
+  },
+  "custody-07": {
+   "class": "R-gap",
+   "causes": [
+    "d02"
+   ],
+   "note": "d02: Build report §2.10 (verdict, land_policy, advisory_items, rungs R1.., best_candidate, audit, sandbox, budget) [task 25-build-report]"
+  },
+  "custody-08": {
+   "class": "ref-bug",
+   "causes": [
+    "a20"
+   ],
+   "note": "a20: the shell tool passes the model's command in argv (307,284-byte element) [task 10-no-content-in-argv]"
+  },
+  "format-02": {
+   "class": "ref-bug",
+   "causes": [
+    "a07"
+   ],
+   "note": "a07: style lint rules block approval (exit 1) instead of being card warnings; lint lines print 'at line :' [task 08-style-never-blocks]"
+  },
+  "format-03": {
+   "class": "ref-bug",
+   "causes": [
+    "a07"
+   ],
+   "note": "a07: style lint rules block approval (exit 1) instead of being card warnings; lint lines print 'at line :' [task 08-style-never-blocks]"
+  },
+  "format-04": {
+   "class": "ref-bug",
+   "causes": [
+    "a07"
+   ],
+   "note": "a07: style lint rules block approval (exit 1) instead of being card warnings; lint lines print 'at line :' [task 08-style-never-blocks]"
+  },
+  "format-05": {
+   "class": "ref-bug",
+   "causes": [
+    "a01",
+    "a08"
+   ],
+   "note": "a01: mapped error lines: errors print as Elixir terms or exit 70 (config, parse, not_found, acceptance_missing, path conflict, request_unavailable, trailer mismatch, lost CAS, setup wording) [task 22-error-lines]; a08: project.yaml validation: env KOGEN_* and duplicate check names accepted, scalar domain crashes, >1 MiB accepted [task 31-config-validation]"
+  },
+  "format-07": {
+   "class": "R-gap",
+   "causes": [
+    "d09c"
+   ],
+   "note": "d09c: shape output: Feasibility line, usage role, Concerns warnings, 'shaper pass=<n> role=<role>' progress lines [task 35-shape-output-and-concerns]"
+  },
+  "format-08": {
+   "class": "ref-bug",
+   "causes": [
+    "a05"
+   ],
+   "note": "a05: approval card: no Feasibility line, '(test_keep)', blank-line layout, base-red rows not parsed, acceptance-check output not indented [task 30-approval-card]"
+  },
+  "format-09": {
+   "class": "ref-bug",
+   "causes": [
+    "a01"
+   ],
+   "note": "a01: mapped error lines: errors print as Elixir terms or exit 70 (config, parse, not_found, acceptance_missing, path conflict, request_unavailable, trailer mismatch, lost CAS, setup wording) [task 22-error-lines]"
+  },
+  "format-10": {
+   "class": "R-gap",
+   "causes": [
+    "d10"
+   ],
+   "note": "d10: builder messages and feedback (§3.6/§3.7.3): Acceptance on the base, Repairs available, plan rules, Earlier attempts, acceptance/gate lines [task 17-builder-messages]"
+  },
+  "format-11": {
+   "class": "ref-bug",
+   "causes": [
+    "a21"
+   ],
+   "note": "a21: provider login fails with eaddrinuse when port 1455 is in TIME_WAIT from a previous login [task 27-login-port-reuse]"
+  },
+  "exunit-01": {
+   "class": "ref-bug",
+   "causes": [
+    "a24",
+    "d01"
+   ],
+   "note": "a24: ExUnit ledger rows keep the 'test ' prefix [task 39-exunit-ledger-names]; d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]"
+  },
+  "exunit-02": {
+   "class": "ref-bug",
+   "causes": [
+    "a11"
+   ],
+   "note": "a11: stops that should leave the Intent queued (setup failing twice, acceptance runner missing on base, claim held, tampered approval, login, provider exhaustion) end as failed or a bare error line; no skipped line on branch mismatch [task 11-stopped-keeps-intent-queued]"
+  },
+  "exunit-03": {
+   "class": "R-gap",
+   "causes": [
+    "d01",
+    "d10"
+   ],
+   "note": "d01: run dir and journal in the §2.8 shape (schema 2 run.json, ts, plan/rung_started/verification/rung_finished/finished last, R1..R3 names); status/remove cannot read §2.8 run dirs (controller/:invalid_run) [task 24-journal-and-run-json]; d10: builder messages and feedback (§3.6/§3.7.3): Acceptance on the base, Repairs available, plan rules, Earlier attempts, acceptance/gate lines [task 17-builder-messages]"
+  },
+  "exunit-04": {
+   "class": "R-gap",
+   "causes": [
+    "d03"
+   ],
+   "note": "d03: approval.json schema 2 (approval_sha256, witness, baseline exit_status/path/rule/symbol) [task 20-approval-hash-binds-test]"
+  },
+  "exunit-05": {
+   "class": "ref-bug",
+   "causes": [
+    "a13",
+    "d09l"
+   ],
+   "note": "a13: shaping pass ends on the first successful write (generated_file_missing; measured 207 failures) instead of on a reply without tool calls, with no finish guard [task 01-shaping-pass-ends-on-done]; d09l: requirement ledger and coverage check at shaping [task 13-requirement-ledger]"
+  }
+ }
+}

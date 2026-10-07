@@ -1,0 +1,105 @@
+{
+ "id": "state-05",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "Lint error rules (14 rows) give intent/lint, exit 1",
+ "spec": [
+  "§2.2",
+  "data/lint.json"
+ ],
+ "notes": "unsupported_verify_kind is not exercised: the spec does not say which Verify kinds are 'unsupported' rather than unknown.",
+ "rows": [
+  {
+   "label": "missing_brief",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\n\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rx": "\\Aintent/lint: the Intent needs changes\n(  .*\n)*  missing_brief( at line [0-9]+)?: write\\ the\\ Brief\\ as\\ prose\n"
+  },
+  {
+   "label": "list_in_brief",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting.\n\n- name Almir\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rx": "\\Aintent/lint: the Intent needs changes\n(  .*\n)*  list_in_brief( at line [0-9]+)?: the\\ Brief\\ cannot\\ contain\\ lists\n"
+  },
+  {
+   "label": "heading_in_brief",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting.\n\n## Background\nIt says Hello.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rx": "\\Aintent/lint: the Intent needs changes\n(  .*\n)*  heading_in_brief( at line [0-9]+)?: the\\ Brief\\ cannot\\ contain\\ headings\n"
+  },
+  {
+   "label": "code_block_in_brief",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting.\n\n```\nHello, Almir!\n```\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rx": "\\Aintent/lint: the Intent needs changes\n(  .*\n)*  code_block_in_brief( at line [0-9]+)?: the\\ Brief\\ cannot\\ contain\\ code\\ blocks\n"
+  },
+  {
+   "label": "unknown_size",
+   "text": "---\ntitle: Greet Almir by name\nsize: huge\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rx": "\\Aintent/lint: the Intent needs changes\n(  .*\n)*  unknown_size( at line [0-9]+)?: size\\ must\\ be\\ small,\\ medium,\\ or\\ large\n"
+  },
+  {
+   "label": "acceptance_count",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n\n## Verify\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rx": "\\Aintent/lint: the Intent needs changes\n(  .*\n)*  acceptance_count( at line [0-9]+)?: Acceptance\\ needs\\ at\\ least\\ one\\ item\n"
+  },
+  {
+   "label": "missing_title",
+   "text": "---\ntitle: \"\"\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rx": "\\Aintent/lint: the Intent needs changes\n(  .*\n)*  missing_title( at line [0-9]+)?: title\\ is\\ required\n"
+  },
+  {
+   "label": "domain_count",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: []\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rx": "\\Aintent/lint: the Intent needs changes\n(  .*\n)*  domain_count( at line [0-9]+)?: declare\\ between\\ one\\ and\\ four\\ domains\n"
+  },
+  {
+   "label": "duplicate_id",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n- A1: lib/greet.txt has one line.\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rx": "\\Aintent/lint: the Intent needs changes\n(  .*\n)*  duplicate_id( at line [0-9]+)?: Acceptance\\ ids\\ must\\ be\\ unique\n"
+  },
+  {
+   "label": "sequential_ids",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n- A3: lib/greet.txt has one line.\n\n## Verify\n- A1: test\n- A3: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rx": "\\Aintent/lint: the Intent needs changes\n(  .*\n)*  sequential_ids( at line [0-9]+)?: Acceptance\\ ids\\ must\\ be\\ A1\\ through\\ An\\ in\\ order\n"
+  },
+  {
+   "label": "missing_verify",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n- A2: lib/greet.txt has one line.\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rx": "\\Aintent/lint: the Intent needs changes\n(  .*\n)*  missing_verify( at line [0-9]+)?: every\\ Acceptance\\ item\\ needs\\ a\\ Verify\\ kind\n"
+  },
+  {
+   "label": "invalid_verify",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n- A2: lib/greet.txt has one line.\n\n## Verify\n- A1: test\n- A2: manual\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rx": "\\Aintent/lint: the Intent needs changes\n(  .*\n)*  invalid_verify( at line [0-9]+)?: unknown\\ Verify\\ word\\ \"manual\"\n"
+  },
+  {
+   "label": "no_change_item",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test keep\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rx": "\\Aintent/lint: the Intent needs changes\n(  .*\n)*  no_change_item( at line [0-9]+)?: at\\ least\\ one\\ Acceptance\\ item\\ must\\ be\\ a\\ change\\ item\\ \\(test\\)\n"
+  },
+  {
+   "label": "open_question",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir. TBD which punctuation.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Request\nMake the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n",
+   "rx": "\\Aintent/lint: the Intent needs changes\n(  .*\n)*  open_question( at line [0-9]+)?: remove\\ TBD,\\ TODO,\\ FIXME,\\ or\\ unresolved\\ question\\ markers\n"
+  }
+ ],
+ "steps": [
+  {
+   "intent": {
+    "slug": "greet",
+    "intent_text": "{row.text}",
+    "test_text": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 1,
+    "stderr": "",
+    "stdout_regex": "{row.rx}"
+   }
+  }
+ ]
+}

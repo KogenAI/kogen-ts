@@ -1,0 +1,101 @@
+{
+ "id": "build-41",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Two drains on two checkouts of one origin: build_already_claimed",
+ "spec": [
+  "§3.4 B0",
+  "§2.5.3"
+ ],
+ "allow_remaining": true,
+ "script": [
+  {
+   "id": "stall",
+   "expect": {
+    "role": "planner"
+   },
+   "repeat": "always",
+   "first_byte_ms": 900000,
+   "reply": {
+    "text": "Difficulty: easy\n"
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": {
+    "slug": "greet",
+    "push": true
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "git": [
+    "clone",
+    "-q",
+    "{origin}",
+    "{case}/checkout2"
+   ],
+   "in": "case"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "background": "q"
+  },
+  {
+   "wait_until": {
+    "fake_requests": 1,
+    "timeout_s": 60
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "cwd": "{case}/checkout2",
+   "expect": {
+    "exit": 3,
+    "stderr": "",
+    "stdout_regex": [
+     "\\Abuilding greet\n",
+     "(?m)^stopped greet: environment/build_already_claimed; it stays queued$",
+     "(?m)^queue: stopped because greet hit an environment error; 1 Build\\(s\\), 0 landed, 1 not\n\\Z"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "fake_request_count": 1,
+    "refs": {
+     "refs/kogen/claim": true
+    }
+   }
+  },
+  {
+   "signal": {
+    "name": "q",
+    "sig": "TERM",
+    "after_s": 0
+   }
+  },
+  {
+   "wait": {
+    "name": "q",
+    "expect": {
+     "exit": 143,
+     "stderr_any": true
+    }
+   }
+  }
+ ],
+ "notes": "Whether the claim refusal prints a Build id is not specified (B0 runs before B1 creates the run)."
+}

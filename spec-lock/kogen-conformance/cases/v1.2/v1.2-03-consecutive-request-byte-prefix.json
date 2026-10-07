@@ -1,0 +1,36 @@
+{
+ "id": "v1.2-03-consecutive-request-byte-prefix",
+ "profile": "v1.2",
+ "fixture": "exunit-hello",
+ "fake": true,
+ "title": "Consecutive same-model request bodies preserve the exact byte prefix",
+ "notes": "This fixture omits the optional acceptance key and uses the spec v1.2 default adapter, exunit. Installed Kogen b73a0534 rejects the spec-defined acceptance project key as unknown during approval; that is Kogen drift. Approval reads the implementation-advertised digest so this downstream case can proceed despite the hash drift directly tested in v1.2-02.",
+ "spec": ["spec/04-provider.md §4.9.2", "spec/CONFORMANCE-v1.2-CASES.md P3"],
+ "script": [{"include": "v1.2_prefix"}],
+ "steps": [
+  {"intent": {"slug": "greet", "template": "exunit-greet"}},
+  {"run": ["kogen", "intent", "approve", "greet"], "expect": {"exit": 5, "stdout_regex": "SHA-256: [0-9a-f]{64}", "stderr": ""}, "capture": {"approval_hash": "SHA-256: ([0-9a-f]{64})"}},
+  {"run": ["kogen", "intent", "approve", "greet", "{var:approval_hash}"], "expect": {"exit": 0, "stdout_regex": "approved greet [0-9a-f]{8} \\(approval [0-9a-f]{8}\\); it is queued\\n", "stderr": ""}},
+  {"run": ["kogen", "queue", "start"], "background": "drain"},
+  {"wait_until": {"fake_requests": 4, "timeout_s": 60}},
+  {
+   "assert": {
+    "fake_request_sequences": [
+     {
+      "label": "consecutive builder turns",
+      "select": [
+       {"step": "v1.2_prefix.edit"},
+       {"step": "v1.2_prefix.inspect"},
+       {"step": "v1.2_prefix.verify"}
+      ],
+      "byte_prefix": true,
+      "input_prefix": true,
+      "stable_body_fields": ["instructions", "tools", "model", "reasoning.effort", "store", "stream", "include", "prompt_cache_key"]
+     }
+    ]
+   }
+  },
+  {"signal": {"name": "drain", "sig": "KILL", "target": "group"}},
+  {"wait": {"name": "drain", "timeout": 15, "expect": {"exit": 137}}}
+ ]
+}

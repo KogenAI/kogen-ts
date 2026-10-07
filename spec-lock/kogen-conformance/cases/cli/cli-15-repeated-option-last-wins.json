@@ -1,0 +1,48 @@
+{
+ "id": "cli-15",
+ "profile": "cli",
+ "title": "A repeated option: the last one wins",
+ "spec": [
+  "§1.3.2"
+ ],
+ "fixture": "kt",
+ "steps": [
+  {
+   "run": [
+    "kogen",
+    "status",
+    "--project",
+    "{case}/missing",
+    "--project",
+    "{checkout}"
+   ],
+   "cwd": "case",
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "Queue: stopped",
+     "No Intents."
+    ],
+    "stderr": ""
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "--project",
+    "{checkout}",
+    "--project",
+    "{case}/missing"
+   ],
+   "cwd": "case",
+   "expect": {
+    "exit": 3,
+    "stdout_lines": [
+     "environment/project_unavailable: {case}/missing"
+    ],
+    "stderr": ""
+   }
+  }
+ ]
+}

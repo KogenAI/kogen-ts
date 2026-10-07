@@ -1,0 +1,212 @@
+{
+ "id": "provider-22",
+ "profile": "provider",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Two processes refreshing at once make one refresh request",
+ "spec": [
+  "§4.6"
+ ],
+ "script": [
+  {
+   "id": "greet.write",
+   "expect": {
+    "role": "shaper",
+    "turn": 1,
+    "input_contains": "Slug: greet"
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/intents/greet/intent.md",
+       "content": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: replace the single line in lib/greet.txt with the new greeting text.\n"
+      }
+     },
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/acceptance/greet.t.sh",
+       "content": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "greet.done",
+   "expect": {
+    "role": "shaper",
+    "turn": 2,
+    "input_contains": "Slug: greet"
+   },
+   "reply": {
+    "text": "Written."
+   }
+  },
+  {
+   "id": "greet.ledger",
+   "expect": {
+    "role": "requirement_auditor",
+    "input_contains": "instead of Hello!"
+   },
+   "reply": {
+    "text": "{\"rows\": [{\"constraint\": \"the requested line exists\", \"maps_to\": \"A1\"}]}"
+   }
+  },
+  {
+   "id": "greet.audit",
+   "expect": {
+    "role": "test_auditor",
+    "input_contains": "instead of Hello!"
+   },
+   "reply": {
+    "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"ok\"}]}"
+   }
+  },
+  {
+   "id": "farewell.write",
+   "expect": {
+    "role": "shaper",
+    "turn": 1,
+    "input_contains": "Slug: farewell"
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/intents/farewell/intent.md",
+       "content": "---\ntitle: Add a farewell line\nsize: small\ndomains: [app]\n---\nAdd lib/bye.txt with a farewell for Almir.\n\n## Acceptance\n- A1: lib/bye.txt contains the line Bye, Almir!\n\n## Verify\n- A1: test\n\n## Notes\nApproach: add the file lib/bye.txt with the single farewell line for Almir.\n"
+      }
+     },
+     {
+      "name": "write",
+      "arguments": {
+       "path": ".kogen/acceptance/farewell.t.sh",
+       "content": "t_A1() { grep -qx 'Bye, Almir!' lib/bye.txt; }\n"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "farewell.done",
+   "expect": {
+    "role": "shaper",
+    "turn": 2,
+    "input_contains": "Slug: farewell"
+   },
+   "reply": {
+    "text": "Written."
+   }
+  },
+  {
+   "id": "farewell.ledger",
+   "expect": {
+    "role": "requirement_auditor",
+    "input_contains": "Bye, Almir"
+   },
+   "reply": {
+    "text": "{\"rows\": [{\"constraint\": \"the requested line exists\", \"maps_to\": \"A1\"}]}"
+   }
+  },
+  {
+   "id": "farewell.audit",
+   "expect": {
+    "role": "test_auditor",
+    "input_contains": "Bye, Almir"
+   },
+   "reply": {
+    "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"ok\"}]}"
+   }
+  }
+ ],
+ "steps": [
+  {
+   "run": [
+    "kogen",
+    "provider",
+    "login",
+    "chatgpt"
+   ],
+   "timeout": 90,
+   "expect": {
+    "exit": 0
+   }
+  },
+  {
+   "fake": {
+    "config": {
+     "expires_in": 3600
+    }
+   }
+  },
+  {
+   "write": {
+    "path": "{case}/greet.md",
+    "text": "Make the greeting in lib/greet.txt say Hello, Almir! instead of Hello!\n"
+   }
+  },
+  {
+   "write": {
+    "path": "{case}/farewell.md",
+    "text": "Add a file lib/bye.txt that says Bye, Almir!\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "shape",
+    "greet",
+    "{case}/greet.md"
+   ],
+   "background": "g"
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "shape",
+    "farewell",
+    "{case}/farewell.md"
+   ],
+   "background": "f"
+  },
+  {
+   "wait": {
+    "name": "g",
+    "expect": {
+     "exit": 0
+    }
+   }
+  },
+  {
+   "wait": {
+    "name": "f",
+    "expect": {
+     "exit": 0
+    }
+   }
+  },
+  {
+   "assert": {
+    "fake_oauth_count": {
+     "token:refresh_token": 1,
+     "token:authorization_code": 1
+    }
+   }
+  }
+ ],
+ "fake_config": {
+  "expires_in": 100
+ },
+ "notes": "The login token expires in 100 s, inside the 300 s refresh skew, so both shapes must refresh; tokens issued afterwards last an hour.",
+ "needs": [
+  "login"
+ ],
+ "serial": true,
+ "auth": "owned"
+}

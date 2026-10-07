@@ -1,0 +1,252 @@
+{
+ "id": "build-05",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Progress count 4→3→2→1→0 lands after 4 repairs",
+ "spec": [
+  "§3.5"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+   }
+  },
+  {
+   "id": "make",
+   "expect": {
+    "role": "builder",
+    "turn": 1,
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'TODO 1\\n' > lib/t1.txt && printf 'TODO 2\\n' > lib/t2.txt && printf 'TODO 3\\n' > lib/t3.txt && printf 'TODO 4\\n' > lib/t4.txt && printf 'Hello, Almir!\\n' > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "d0",
+   "expect": {
+    "role": "builder",
+    "turn": 2,
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Done."
+   }
+  },
+  {
+   "id": "fix1",
+   "expect": {
+    "role": "builder",
+    "turn": 3,
+    "input_contains": "Greet Almir by name",
+    "last_user_contains": "Kogen's controller reported this failure."
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "rm lib/t1.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "d1",
+   "expect": {
+    "role": "builder",
+    "turn": 4,
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Done."
+   }
+  },
+  {
+   "id": "fix2",
+   "expect": {
+    "role": "builder",
+    "turn": 5,
+    "input_contains": "Greet Almir by name",
+    "last_user_contains": "Kogen's controller reported this failure."
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "rm lib/t2.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "d2",
+   "expect": {
+    "role": "builder",
+    "turn": 6,
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Done."
+   }
+  },
+  {
+   "id": "fix3",
+   "expect": {
+    "role": "builder",
+    "turn": 7,
+    "input_contains": "Greet Almir by name",
+    "last_user_contains": "Kogen's controller reported this failure."
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "rm lib/t3.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "d3",
+   "expect": {
+    "role": "builder",
+    "turn": 8,
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Done."
+   }
+  },
+  {
+   "id": "fix4",
+   "expect": {
+    "role": "builder",
+    "turn": 9,
+    "input_contains": "Greet Almir by name",
+    "last_user_contains": "Kogen's controller reported this failure."
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "rm lib/t4.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "d4",
+   "expect": {
+    "role": "builder",
+    "turn": 10,
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Done."
+   }
+  }
+ ],
+ "notes": "Four lint findings on four paths are four identities (line is not part of an identity, §2.4.4).",
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build {id8:greet}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "count": {
+      "repair": 4
+     },
+     "subsequence": [
+      {
+       "event": "verification",
+       "result": "red",
+       "count": 4
+      },
+      {
+       "event": "repair",
+       "count": 4
+      },
+      {
+       "event": "verification",
+       "result": "red",
+       "count": 3
+      },
+      {
+       "event": "repair",
+       "count": 3
+      },
+      {
+       "event": "verification",
+       "result": "red",
+       "count": 2
+      },
+      {
+       "event": "repair",
+       "count": 2
+      },
+      {
+       "event": "verification",
+       "result": "red",
+       "count": 1
+      },
+      {
+       "event": "repair",
+       "count": 1
+      },
+      {
+       "event": "verification",
+       "result": "green"
+      },
+      {
+       "event": "finished",
+       "status": "landed"
+      }
+     ]
+    }
+   }
+  }
+ ]
+}

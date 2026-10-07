@@ -1,0 +1,14 @@
+[
+ {
+  "id": "plan",
+  "expect": {
+   "role": "planner",
+   "turn": 1,
+   "tools": [],
+   "input_contains": "Greet Almir by name"
+  },
+  "reply": {
+   "text": "Difficulty: hard\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+  }
+ }
+]

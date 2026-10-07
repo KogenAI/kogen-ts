@@ -1,0 +1,11 @@
+{
+  "name": "02-serial-two",
+  "about": "Builds run one at a time, oldest approval first. Both landing exits 0.",
+  "steps": [
+    {"do": ["Enqueue", {"slug": "bravo", "time": 1, "priority": 0}]},
+    {"do": ["Enqueue", {"slug": "alpha", "time": 2, "priority": 0}]},
+    {"do": ["Start"], "expect": {"current": "bravo", "queue": ["alpha"]}},
+    {"do": ["Outcome", {"kind": "landed"}], "expect": {"current": "alpha", "landed": 1, "built": 1, "held": true}},
+    {"do": ["Outcome", {"kind": "landed"}], "expect": {"line": "done", "exit": 0, "held": false, "built": 2, "landed": 2, "queue": []}}
+  ]
+}

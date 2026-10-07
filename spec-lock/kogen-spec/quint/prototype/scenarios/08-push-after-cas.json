@@ -1,0 +1,15 @@
+{
+  "name": "08-push-after-cas",
+  "about": "A push after the base CAS does not disturb the landing.",
+  "steps": [
+    {"do": ["Approve", {"slug": "alpha", "time": 1}]},
+    {"do": ["Start", "r1"]},
+    {"do": ["Gate", true]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["Step"]},
+    {"do": ["PushExternal", "x1"]},
+    {"do": ["Step"]},
+    {"do": ["Step"], "expect": {"base": ["root", "r1", "x1"], "runs": {"r1": {"status": "landed"}}}}
+  ]
+}

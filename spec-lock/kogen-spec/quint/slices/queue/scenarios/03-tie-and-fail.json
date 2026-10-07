@@ -1,0 +1,11 @@
+{
+  "name": "03-tie-and-fail",
+  "about": "Equal approval times break by slug. A failed Build still continues, and the drain exits 1.",
+  "steps": [
+    {"do": ["Enqueue", {"slug": "bravo", "time": 1, "priority": 0}]},
+    {"do": ["Enqueue", {"slug": "alpha", "time": 1, "priority": 0}]},
+    {"do": ["Start"], "expect": {"current": "alpha"}},
+    {"do": ["Outcome", {"kind": "failed"}], "expect": {"current": "bravo", "built": 1, "landed": 0}},
+    {"do": ["Outcome", {"kind": "landed"}], "expect": {"line": "done", "exit": 1, "built": 2, "landed": 1}}
+  ]
+}

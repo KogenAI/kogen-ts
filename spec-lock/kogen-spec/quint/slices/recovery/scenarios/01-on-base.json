@@ -1,0 +1,9 @@
+{
+  "name": "01-on-base",
+  "about": "A dead owner whose candidate commit is on the base is landed and reconciled. The claim and the incoming ref go.",
+  "steps": [
+    {"do": ["Put", {"id": "r1", "status": "running", "alive": false, "onBase": true, "lastEvent": "other", "incoming": true, "queued": false, "claim": true, "reason": ""}],
+     "expect": {"claim": "r1", "line": "stored"}},
+    {"do": ["Recover"], "expect": {"line": "reconciled", "claim": "", "runs": {"r1": {"status": "landed", "reason": "reconciled", "incoming": false, "queued": false, "onBase": true}}}}
+  ]
+}

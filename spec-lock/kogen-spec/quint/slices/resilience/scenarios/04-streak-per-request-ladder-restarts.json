@@ -1,0 +1,134 @@
+{
+ "name": "04-streak-per-request-ladder-restarts",
+ "about": "Consecutive errors are counted on one request: two overloads, a success, then a new request does not switch; each new request restarts the backoff ladder at 2 s.",
+ "steps": [
+  {
+   "do": [
+    "Stage",
+    {
+     "name": "build",
+     "mode": "build",
+     "model": "luna",
+     "fallback": "sol",
+     "owned": true
+    }
+   ]
+  },
+  {
+   "do": [
+    "Request"
+   ]
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "overload",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ]
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "overload",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ]
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "ok",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "success",
+     "delay_ms": 0,
+     "reason": "",
+     "model": "luna"
+    }
+   }
+  },
+  {
+   "do": [
+    "Request"
+   ],
+   "expect": {
+    "attempts": 0,
+    "retries": 0
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "timeout",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "retry",
+     "delay_ms": 2000,
+     "reason": "timeout",
+     "model": "luna"
+    }
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "overload",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "retry",
+     "delay_ms": 4000,
+     "reason": "overload",
+     "model": "luna"
+    },
+    "model": "luna",
+    "consec": 2
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "ok",
+     "retry_after_ms": -1,
+     "elapsed_ms": 1000,
+     "first_byte_ms": 500,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "model": "luna",
+    "switched": false
+   }
+  }
+ ]
+}

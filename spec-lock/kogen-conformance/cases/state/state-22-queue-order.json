@@ -1,0 +1,131 @@
+{
+ "id": "state-22",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "Queue order",
+ "spec": [
+  "§2.11",
+  "§3.11"
+ ],
+ "steps": [
+  {
+   "intent": {
+    "slug": "bravo",
+    "template": "greet",
+    "replace": {
+     "Greet Almir by name": "Intent bravo"
+    },
+    "commit": true
+   }
+  },
+  {
+   "intent": {
+    "slug": "alpha",
+    "template": "greet",
+    "replace": {
+     "Greet Almir by name": "Intent alpha"
+    },
+    "commit": true
+   }
+  },
+  {
+   "intent": {
+    "slug": "charlie",
+    "template": "greet",
+    "replace": {
+     "Greet Almir by name": "Intent charlie"
+    },
+    "commit": true
+   }
+  },
+  {
+   "approve": "bravo"
+  },
+  {
+   "sleep": 1.1
+  },
+  {
+   "approve": "charlie"
+  },
+  {
+   "sleep": 1.1
+  },
+  {
+   "approve": "alpha"
+  },
+  {
+   "run": [
+    "kogen",
+    "status"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "Queue: stopped, 3 waiting; start it with kogen queue start",
+     "Queued:",
+     "~  bravo(  +\\S.*)?",
+     "~  charlie(  +\\S.*)?",
+     "~  alpha(  +\\S.*)?"
+    ]
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "alpha",
+    "--json"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_json": {
+     "slug": "alpha",
+     "status": "$str",
+     "build_id": null,
+     "landed_sha": null
+    }
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "--json"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_jsonl": [
+     {
+      "slug": "alpha",
+      "status": "$str",
+      "build_id": null,
+      "landed_sha": null
+     },
+     {
+      "slug": "bravo",
+      "status": "$str",
+      "build_id": null,
+      "landed_sha": null
+     },
+     {
+      "slug": "charlie",
+      "status": "$str",
+      "build_id": null,
+      "landed_sha": null
+     }
+    ]
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "charlie"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout": "charlie: queued, 2 of 3\n"
+   }
+  }
+ ]
+}

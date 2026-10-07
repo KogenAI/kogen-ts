@@ -1,0 +1,120 @@
+{
+ "id": "approval-23",
+ "profile": "approval",
+ "fixture": "kt",
+ "title": "remove without --force (approved, failed, parked, interrupted), then with --force",
+ "spec": [
+  "§1.7.3"
+ ],
+ "rows": [
+  {
+   "label": "approved",
+   "pre": [],
+   "rx": "\\Aintent/remove_requires_force: Intent approved or queued; pass --force to discard the approval and remove its files\n\\Z"
+  },
+  {
+   "label": "failed",
+   "pre": [
+    {
+     "synthetic_run": {
+      "slug": "greet",
+      "run_id": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+      "status": "failed",
+      "reason": "repair_cap",
+      "verdict": "unverified"
+     }
+    }
+   ],
+   "rx": "\\Aintent/remove_requires_force: Intent still has a failed Build approval; pass --force to discard the approval and remove its files\n\\Z"
+  },
+  {
+   "label": "parked",
+   "pre": [
+    {
+     "synthetic_run": {
+      "slug": "greet",
+      "run_id": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+      "status": "parked",
+      "reason": "landing_retries",
+      "verdict": "green"
+     }
+    }
+   ],
+   "rx": "\\Aintent/remove_requires_force: Intent still has a parked Build approval; pass --force to discard the approval and remove its files\n\\Z"
+  },
+  {
+   "label": "interrupted",
+   "pre": [
+    {
+     "synthetic_run": {
+      "slug": "greet",
+      "run_id": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+      "status": "failed",
+      "reason": "interrupted",
+      "verdict": "none"
+     }
+    }
+   ],
+   "rx": "\\Aintent/remove_requires_force: Intent still has an approval ref; pass --force to discard the approval and remove its files\n\\Z"
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  "{*row.pre}",
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "remove",
+    "greet"
+   ],
+   "expect": {
+    "exit": 2,
+    "stderr": "",
+    "stdout_regex": "{row.rx}"
+   }
+  },
+  {
+   "assert": {
+    "files": {
+     ".kogen/intents/greet/intent.md": true
+    },
+    "refs": {
+     "refs/kogen/intents/greet": true
+    }
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "remove",
+    "greet",
+    "--force"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_lines": [
+     "removed: greet",
+     "~commit: [0-9a-f]+"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "files": {
+     ".kogen/intents/greet": false
+    },
+    "refs": {
+     "refs/kogen/intents/greet": false
+    }
+   }
+  }
+ ]
+}

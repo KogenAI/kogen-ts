@@ -1,0 +1,94 @@
+[
+  {
+    "id": "plan",
+    "expect": {
+      "role": "planner",
+      "turn": 1,
+      "tools": [
+        "finish",
+        "shell",
+        "tool_output"
+      ],
+      "input_contains": "Greet Almir by name"
+    },
+    "reply": {
+      "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+    }
+  },
+  {
+    "id": "claim1",
+    "expect": {
+      "role": "builder",
+      "turn": 1,
+      "tools": [
+        "finish",
+        "shell",
+        "tool_output"
+      ]
+    },
+    "reply": {
+      "calls": [
+        {
+          "name": "finish",
+          "arguments": {}
+        }
+      ]
+    }
+  },
+  {
+    "id": "claim2",
+    "expect": {
+      "role": "builder",
+      "turn": 2,
+      "tools": [
+        "finish",
+        "shell",
+        "tool_output"
+      ],
+      "last_output_contains": "Kogen found no changed files"
+    },
+    "reply": {
+      "calls": [
+        {
+          "name": "finish",
+          "arguments": {}
+        }
+      ]
+    }
+  },
+  {
+    "id": "audit",
+    "expect": {
+      "role": "test_auditor",
+      "tools": [
+        "finish",
+        "shell",
+        "tool_output"
+      ]
+    },
+    "reply": {
+      "text": "{\"items\":[{\"id\":\"A1\",\"verdict\":\"valid\",\"reason\":\"The test follows the Request.\"}]}"
+    }
+  },
+  {
+    "id": "claim3",
+    "expect": {
+      "role": "builder",
+      "last_user_contains": "Kogen's controller reported this failure.",
+      "tools": [
+        "finish",
+        "shell",
+        "tool_output"
+      ]
+    },
+    "reply": {
+      "calls": [
+        {
+          "name": "finish",
+          "arguments": {}
+        }
+      ]
+    },
+    "repeat": "always"
+  }
+]

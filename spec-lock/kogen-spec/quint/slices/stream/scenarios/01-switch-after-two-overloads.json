@@ -1,0 +1,14 @@
+{
+  "name": "01-switch-after-two-overloads",
+  "about": "Two consecutive overloads on the builder switch at once to sol. The next success keeps that model.",
+  "steps": [
+    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+     "expect": {"last": "ok", "phase": "open", "attempt": 1, "model": "luna", "queued": true, "exit": 0}},
+    {"do": ["Result", {"kind": "overload", "items": false}],
+     "expect": {"decision": "retry", "delay": 2000, "attempt": 2, "overloads": 1, "model": "luna", "reason": "provider/overload", "continued": false, "exit": 0}},
+    {"do": ["Result", {"kind": "overload", "items": false}],
+     "expect": {"decision": "switch", "delay": 0, "attempt": 3, "overloads": 0, "model": "sol", "role": "builder", "reason": "provider/overload", "continued": false}},
+    {"do": ["Result", {"kind": "ok", "items": false}],
+     "expect": {"decision": "success", "phase": "idle", "model": "sol", "attempt": 3, "exit": 0, "queued": true, "failed": false}}
+  ]
+}

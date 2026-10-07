@@ -1,0 +1,53 @@
+{
+ "id": "build-42",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Branch mismatch gives skipped; the exit code is unaffected",
+ "spec": [
+  "§3.4 B0",
+  "§1.7.4"
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "git": [
+    "branch",
+    "other",
+    "main"
+   ],
+   "in": "origin"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start",
+    "--base",
+    "other"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_regex": [
+     "\\Askipped greet: environment/approval_branch_mismatch\n",
+     "\nqueue: nothing to build\n\\Z"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "fake_request_count": 0,
+    "glob_count": {
+     "{state_root}/runs/*": 0
+    }
+   }
+  }
+ ],
+ "notes": "Settled (v1.1): a drain that only skipped prints queue: nothing to build."
+}

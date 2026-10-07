@@ -1,0 +1,115 @@
+{
+ "id": "state-04",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "Intent parse errors (16 rows) give intent/parse, exit 1",
+ "spec": [
+  "§2.1.2",
+  "§1.5"
+ ],
+ "notes": "Settled (v1.1): a missing closing --- is reported on the line after the last line; a missing required key and a non-map frontmatter on line 2 (the first frontmatter line).",
+ "rows": [
+  {
+   "label": "no-frontmatter",
+   "text": "title: x\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n",
+   "rx": "\\Aintent/parse: the Intent cannot be read\n(  line [0-9]+: .*\n)*  line 1: frontmatter\\ must\\ start\\ with\\ `\\-\\-\\-`\n"
+  },
+  {
+   "label": "no-closing",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n",
+   "rx": "\\Aintent/parse: the Intent cannot be read\n(  line [0-9]+: .*\n)*  line 12: frontmatter\\ is\\ missing\\ its\\ closing\\ `\\-\\-\\-`\n"
+  },
+  {
+   "label": "unknown-key",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\nowner: me\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n",
+   "rx": "\\Aintent/parse: the Intent cannot be read\n(  line [0-9]+: .*\n)*  line 5: unknown\\ frontmatter\\ key\\ \"owner\"\n"
+  },
+  {
+   "label": "title-not-string",
+   "text": "---\ntitle: [a, b]\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n",
+   "rx": "\\Aintent/parse: the Intent cannot be read\n(  line [0-9]+: .*\n)*  line 2: frontmatter\\ `title`\\ must\\ be\\ a\\ string\n"
+  },
+  {
+   "label": "domains-not-list",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: app\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n",
+   "rx": "\\Aintent/parse: the Intent cannot be read\n(  line [0-9]+: .*\n)*  line 4: frontmatter\\ `domains`\\ must\\ be\\ a\\ list\n"
+  },
+  {
+   "label": "domains-not-strings",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [{a: b}]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n",
+   "rx": "\\Aintent/parse: the Intent cannot be read\n(  line [0-9]+: .*\n)*  line 4: frontmatter\\ `domains`\\ must\\ contain\\ only\\ strings\n"
+  },
+  {
+   "label": "missing-size",
+   "text": "---\ntitle: Greet Almir by name\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n",
+   "rx": "\\Aintent/parse: the Intent cannot be read\n(  line [0-9]+: .*\n)*  line 2: frontmatter\\ is\\ missing\\ required\\ key\\ `size`\n"
+  },
+  {
+   "label": "changes-gate",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\nchanges_gate: maybe\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n",
+   "rx": "\\Aintent/parse: the Intent cannot be read\n(  line [0-9]+: .*\n)*  line 5: frontmatter\\ `changes_gate`\\ must\\ be\\ true\\ or\\ false\n"
+  },
+  {
+   "label": "not-a-map",
+   "text": "---\n- a\n- b\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n",
+   "rx": "\\Aintent/parse: the Intent cannot be read\n(  line [0-9]+: .*\n)*  line 2: frontmatter\\ must\\ be\\ a\\ YAML\\ map\n"
+  },
+  {
+   "label": "yaml-error",
+   "text": "---\ntitle: \"Greet Almir\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n",
+   "rx": "\\Aintent/parse: the Intent cannot be read\n(  line [0-9]+: .*\n)*  line 2: unterminated\\ quoted\\ string\n"
+  },
+  {
+   "label": "unknown-section",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Extras\nmore\n",
+   "rx": "\\Aintent/parse: the Intent cannot be read\n(  line [0-9]+: .*\n)*  line 15: unknown\\ Intent\\ section\\ \"Extras\"\n"
+  },
+  {
+   "label": "duplicate-section",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n\n## Verify\n- A1: test\n",
+   "rx": "\\Aintent/parse: the Intent cannot be read\n(  line [0-9]+: .*\n)*  line 15: duplicate\\ Verify\\ section\n"
+  },
+  {
+   "label": "acceptance-entry",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting.\n\n## Acceptance\n- A1 lib/greet.txt contains Hello, Almir!\n\n## Verify\n- A1: test\n",
+   "rx": "\\Aintent/parse: the Intent cannot be read\n(  line [0-9]+: .*\n)*  line 9: Acceptance\\ entries\\ use\\ `\\-\\ A<n>:\\ one\\ sentence`\\ on\\ one\\ line\n"
+  },
+  {
+   "label": "verify-entry",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting.\n\n## Acceptance\n- A1: lib/greet.txt contains Hello, Almir!\n\n## Verify\n- verify A1\n",
+   "rx": "\\Aintent/parse: the Intent cannot be read\n(  line [0-9]+: .*\n)*  line 12: Verify\\ entries\\ use\\ `\\-\\ A<n>:\\ test`\\ or\\ `\\-\\ A<n>:\\ test\\ keep`\n"
+  },
+  {
+   "label": "duplicate-verify",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n- A1: test keep\n",
+   "rx": "\\Aintent/parse: the Intent cannot be read\n(  line [0-9]+: .*\n)*  line 13: duplicate\\ Verify\\ entry\\ for\\ A1\n"
+  },
+  {
+   "label": "verify-without-item",
+   "text": "---\ntitle: Greet Almir by name\nsize: small\ndomains: [app]\n---\nChange the greeting in lib/greet.txt so that it names Almir.\n\n## Acceptance\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Verify\n- A1: test\n- A2: test\n",
+   "rx": "\\Aintent/parse: the Intent cannot be read\n(  line [0-9]+: .*\n)*  line 13: Verify\\ entry\\ A2\\ has\\ no\\ Acceptance\\ item\n"
+  }
+ ],
+ "steps": [
+  {
+   "intent": {
+    "slug": "greet",
+    "intent_text": "{row.text}",
+    "test_text": "t_A1() { grep -qx 'Hello, Almir!' lib/greet.txt; }\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 1,
+    "stderr": "",
+    "stdout_regex": "{row.rx}"
+   }
+  }
+ ]
+}

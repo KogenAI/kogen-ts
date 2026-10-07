@@ -1,0 +1,146 @@
+{
+ "ladder-01": {
+  "class": "R-gap",
+  "note": "R1 lands, but the journal has no rung_started and finished lacks rung/verdict (journal shape, APPENDIX Formats)"
+ },
+ "ladder-02": {
+  "class": "R-gap",
+  "note": "R-gap: no ladder/auditor/selector (APPENDIX 'Not built yet'); R1 failure ends the Build"
+ },
+ "ladder-03": {
+  "class": "R-gap",
+  "note": "Difficulty entry rule not built: R1 Luna runs instead of R2 Sol (unmatched request)"
+ },
+ "ladder-04": {
+  "class": "R-gap",
+  "note": "R-gap: build.ladder/land/budget_ms keys rejected (no ladder recipe, APPENDIX Build)"
+ },
+ "ladder-05": {
+  "class": "R-gap",
+  "note": "No build auditor or advisory landing; 'unchanged' ends the Build (APPENDIX Build)"
+ },
+ "ladder-06": {
+  "class": "R-gap",
+  "note": "R-gap: build.ladder/land/budget_ms keys rejected (no ladder recipe, APPENDIX Build)"
+ },
+ "ladder-07": {
+  "class": "R-gap",
+  "note": "R-gap: build.ladder/land/budget_ms keys rejected (no ladder recipe, APPENDIX Build)"
+ },
+ "ladder-08": {
+  "class": "R-gap",
+  "note": "No build auditor or advisory landing; 'unchanged' ends the Build"
+ },
+ "ladder-09": {
+  "class": "R-gap",
+  "note": "R-gap: build.ladder/land/budget_ms keys rejected (no ladder recipe, APPENDIX Build)"
+ },
+ "ladder-10": {
+  "class": "R-gap",
+  "note": "R-gap: build.ladder/land/budget_ms keys rejected (no ladder recipe, APPENDIX Build)"
+ },
+ "ladder-11": {
+  "class": "R-gap",
+  "note": "R-gap: no ladder/auditor/selector (APPENDIX 'Not built yet'); R1 failure ends the Build"
+ },
+ "ladder-12": {
+  "class": "R-gap",
+  "note": "R-gap: no ladder/auditor/selector (APPENDIX 'Not built yet'); R1 failure ends the Build"
+ },
+ "ladder-13": {
+  "class": "R-gap",
+  "note": "No selection or best-candidate emission (APPENDIX 'Not built yet')"
+ },
+ "ladder-14": {
+  "class": "R-gap",
+  "note": "No selector (APPENDIX 'Not built yet')"
+ },
+ "ladder-15": {
+  "class": "R-gap",
+  "note": "R-gap: build.ladder/land/budget_ms keys rejected (no ladder recipe, APPENDIX Build)"
+ },
+ "ladder-16": {
+  "class": "R-gap",
+  "note": "No selector (APPENDIX 'Not built yet')"
+ },
+ "ladder-17": {
+  "class": "R-gap",
+  "note": "R-gap: build.ladder/land/budget_ms keys rejected (no ladder recipe, APPENDIX Build)"
+ },
+ "ladder-18": {
+  "class": "R-gap",
+  "note": "build.budget_ms rejected; no Build budget"
+ },
+ "ladder-19": {
+  "class": "R-gap",
+  "note": "Moved-base conflict parks immediately (no integration repairs, no landing allowance); drain stops with exit 70 (APPENDIX)"
+ },
+ "ladder-20": {
+  "class": "R-gap",
+  "note": "'unchanged' ends the Build instead of moving to R2 (APPENDIX Build)"
+ },
+ "ladder-21": {
+  "class": "R-gap",
+  "note": "turn cap ends the Build instead of moving to R2 (APPENDIX Build)"
+ },
+ "ladder-22": {
+  "class": "R-gap",
+  "note": "Lands after retrying, but the journal has no rung_started/provider_retry in the spec shape (delays jittered, no rung field)"
+ },
+ "ladder-23": {
+  "class": "R-gap",
+  "note": "R-gap: no ladder/auditor/selector (APPENDIX 'Not built yet'); R1 failure ends the Build"
+ },
+ "ladder-24": {
+  "class": "R-gap",
+  "note": "R-gap: no ladder/auditor/selector (APPENDIX 'Not built yet'); R1 failure ends the Build"
+ },
+ "ladder-25": {
+  "class": "R-gap",
+  "note": "R-gap: build.ladder/land/budget_ms keys rejected (no ladder recipe, APPENDIX Build)"
+ },
+ "ladder-26": {
+  "class": "R-gap",
+  "note": "R-gap: no ladder/auditor/selector (APPENDIX 'Not built yet'); R1 failure ends the Build"
+ },
+ "ladder-27": {
+  "class": "R-gap",
+  "note": "R-gap: no ladder/auditor/selector (APPENDIX 'Not built yet'); R1 failure ends the Build"
+ },
+ "ladder-28": {
+  "class": "R-gap",
+  "note": "R-gap: no ladder/auditor/selector (APPENDIX 'Not built yet'); R1 failure ends the Build"
+ },
+ "ladder-29": {
+  "class": "ref-bug",
+  "note": "Repair feedback lacks the 'acceptance A2: fail…' line of §3.7.3, so the scripted repair turn is unmatched"
+ },
+ "ladder-30": {
+  "class": "R-gap",
+  "note": "First red verification ends the Build (done_gate_red); no R2 or earlier-attempts summary"
+ },
+ "ladder-31": {
+  "class": "R-gap",
+  "note": "R-gap: no ladder/auditor/selector (APPENDIX 'Not built yet'); R1 failure ends the Build"
+ },
+ "ladder-32": {
+  "class": "R-gap",
+  "note": "shaping.proof: witness not built (project key rejected)"
+ },
+ "ladder-33": {
+  "class": "R-gap",
+  "note": "shaping.proof: witness not built (project key rejected)"
+ },
+ "ladder-34": {
+  "class": "R-gap",
+  "note": "R-gap: build.ladder/land/budget_ms keys rejected (no ladder recipe, APPENDIX Build)"
+ },
+ "ladder-35": {
+  "class": "R-gap",
+  "note": "No usage-limit wait (APPENDIX Build: no wait on usage limits); also no R2"
+ },
+ "ladder-36": {
+  "class": "R-gap",
+  "note": "No outage handling: overload fails the Build ('failed … provider/overload') instead of stopped after the 30-minute window"
+ }
+}

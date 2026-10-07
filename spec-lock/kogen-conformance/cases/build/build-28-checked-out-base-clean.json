@@ -1,0 +1,78 @@
+{
+ "id": "build-28",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Checked-out base, clean: updated",
+ "spec": [
+  "§3.9.3 step 5"
+ ],
+ "script": [
+  {
+   "include": "r1_happy"
+  }
+ ],
+ "rows": [
+  {
+   "label": "non-bare origin",
+   "topology": "nonbare",
+   "wt": "{origin}"
+  },
+  {
+   "label": "checkout is the origin",
+   "topology": "single",
+   "wt": "{checkout}"
+  }
+ ],
+ "topology": "{row.topology}",
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build {id8:greet}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "files": {
+     "{row.wt}/lib/greet.txt": {
+      "text": "Hello, Almir!\n"
+     }
+    },
+    "git": [
+     {
+      "args": [
+       "status",
+       "--porcelain",
+       "--untracked-files=no"
+      ],
+      "stdout": ""
+     },
+     {
+      "args": [
+       "rev-parse",
+       "HEAD"
+      ],
+      "stdout_regex": "\\A{ref:refs/heads/main}\n"
+     }
+    ]
+   }
+  }
+ ]
+}

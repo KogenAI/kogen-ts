@@ -1,0 +1,94 @@
+{
+ "id": "custody-05",
+ "profile": "custody",
+ "fixture": "kt",
+ "title": "SIGTERM gives exit 143 and status Interrupted; SIGINT gives exit 130",
+ "spec": [
+  "§1.8",
+  "§5.5.5"
+ ],
+ "fake": true,
+ "allow_remaining": true,
+ "script": [
+  {
+   "id": "stall",
+   "expect": {
+    "role": "planner"
+   },
+   "repeat": "always",
+   "first_byte_ms": 900000,
+   "reply": {
+    "text": "Difficulty: easy\n"
+   }
+  }
+ ],
+ "rows": [
+  {
+   "label": "TERM",
+   "sig": "TERM",
+   "code": 143,
+   "reason": "sigterm"
+  },
+  {
+   "label": "INT",
+   "sig": "INT",
+   "code": 130,
+   "reason": "sigint"
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "signal": {
+    "sig": "{row.sig}",
+    "when": {
+     "fake_requests": 1,
+     "timeout_s": 60
+    }
+   },
+   "expect": {
+    "exit": "{row.code}",
+    "stdout": "building greet\n",
+    "stderr": ""
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "contains": [
+      {
+       "event": "interrupted",
+       "reason": "{row.reason}"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_lines": [
+     "Queue: stopped",
+     "Interrupted:",
+     "  greet  interrupted (Build {id8:greet})"
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "05-three-entry-lru",
+  "about": "The cache retains the three most recently used entries; a hit refreshes recency.",
+  "steps": [
+    {"do": ["Run", {"base":"a","variant":"","tracked":false,"input":"","enabled":true,"stable":true,"ok":true,"payload":"a"}], "expect": {"entryCount":1,"setupRuns":1}},
+    {"do": ["Run", {"base":"b","variant":"","tracked":false,"input":"","enabled":true,"stable":true,"ok":true,"payload":"b"}], "expect": {"entryCount":2,"setupRuns":2}},
+    {"do": ["Run", {"base":"c","variant":"","tracked":false,"input":"","enabled":true,"stable":true,"ok":true,"payload":"c"}], "expect": {"entryCount":3,"setupRuns":3}},
+    {"do": ["Run", {"base":"a","variant":"","tracked":false,"input":"","enabled":true,"stable":true,"ok":true,"payload":"ignored"}], "expect": {"reused":true,"setupRuns":3}},
+    {"do": ["Run", {"base":"d","variant":"","tracked":false,"input":"","enabled":true,"stable":true,"ok":true,"payload":"d"}], "expect": {"entryCount":3,"setupRuns":4}},
+    {"do": ["Run", {"base":"b","variant":"","tracked":false,"input":"","enabled":true,"stable":true,"ok":true,"payload":"b-again"}], "expect": {"entryCount":3,"reused":false,"setupRuns":5,"work":"b-again"}}
+  ]
+}

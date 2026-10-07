@@ -1,0 +1,137 @@
+{
+ "id": "build-24",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "Base moved mid-Build (side effect): rebase, re-verify, land",
+ "spec": [
+  "§3.9.2"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+   }
+  },
+  {
+   "id": "edit",
+   "expect": {
+    "role": "builder",
+    "turn": 1,
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "done",
+   "expect": {
+    "role": "builder",
+    "turn": 2,
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Done."
+   },
+   "side_effect_sh": "git clone -q \"$ORIGIN\" \"$CASE_DIR/mover\" && cd \"$CASE_DIR/mover\" && printf 'moved mid-Build\\n' > README.md && git add -A && git commit -q -m 'Move the base mid-Build' && git push -q origin HEAD:refs/heads/main"
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build {id8:greet}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "git": [
+     {
+      "args": [
+       "log",
+       "-1",
+       "--format=%s",
+       "main~1"
+      ],
+      "stdout": "Move the base mid-Build\n"
+     },
+     {
+      "args": [
+       "log",
+       "-1",
+       "--format=%s",
+       "main"
+      ],
+      "stdout": "Greet Almir by name\n"
+     },
+     {
+      "args": [
+       "log",
+       "-1",
+       "--format=%P",
+       "main"
+      ],
+      "stdout_regex": "\\A[0-9a-f]+\n\\Z"
+     },
+     {
+      "args": [
+       "cat-file",
+       "-p",
+       "main:README.md"
+      ],
+      "stdout": "moved mid-Build\n"
+     },
+     {
+      "args": [
+       "cat-file",
+       "-p",
+       "main:lib/greet.txt"
+      ],
+      "stdout": "Hello, Almir!\n"
+     }
+    ],
+    "events": {
+     "slug": "greet",
+     "count": {
+      "verification": {
+       "$ge": 2
+      }
+     },
+     "last": {
+      "event": "finished",
+      "status": "landed"
+     }
+    }
+   }
+  }
+ ]
+}

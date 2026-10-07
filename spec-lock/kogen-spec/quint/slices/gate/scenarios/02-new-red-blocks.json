@@ -1,0 +1,10 @@
+{
+  "name": "02-new-red-blocks",
+  "about": "A green baseline that is red now is not excused. The verdict is unverified and not landable.",
+  "steps": [
+    {"do": ["Baseline", {"name": "c1", "status": "green"}]},
+    {"do": ["Now", {"name": "c1", "status": "red", "hasIds": true, "subset": true, "sameExit": false}], "expect": {"excused": {"c1": false}}},
+    {"do": ["Rows", {"id": "A1", "kind": "change", "report": "ok", "runnerDown": false, "exit0": true, "mutated": false, "failed": 0, "rows": 1}]},
+    {"do": ["Score", {"policy": "green-or-advisory"}], "expect": {"verdict": "unverified", "landable": false}}
+  ]
+}

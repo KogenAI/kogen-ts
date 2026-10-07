@@ -1,0 +1,9 @@
+{
+  "name": "04-live-owner",
+  "about": "A live owner is left alone, including its claim. Only the dead sibling is closed.",
+  "steps": [
+    {"do": ["Put", {"id": "r1", "status": "running", "alive": true, "onBase": false, "lastEvent": "interrupted", "incoming": true, "queued": false, "claim": true, "reason": ""}]},
+    {"do": ["Put", {"id": "r2", "status": "running", "alive": false, "onBase": false, "lastEvent": "other", "incoming": true, "queued": false, "claim": false, "reason": ""}]},
+    {"do": ["Recover"], "expect": {"line": "crashed", "claim": "r1", "runs": {"r1": {"status": "running", "alive": true, "incoming": true}, "r2": {"status": "failed", "reason": "crashed", "incoming": false}}}}
+  ]
+}

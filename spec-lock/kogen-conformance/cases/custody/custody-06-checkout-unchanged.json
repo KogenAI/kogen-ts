@@ -1,0 +1,91 @@
+{
+ "id": "custody-06",
+ "profile": "custody",
+ "fixture": "kt",
+ "title": "A check writing into the checkout fails (when confined), and in every case the checkout is unchanged after the Build",
+ "spec": [
+  "§5.3",
+  "§5.5.6"
+ ],
+ "fake": true,
+ "script": [
+  {
+   "include": "r1_happy"
+  }
+ ],
+ "allow_remaining": true,
+ "project": {
+  "checks": [
+   {
+    "name": "lint",
+    "argv": [
+     "sh",
+     "checks/lint.sh"
+    ],
+    "timeout_ms": 60000
+   },
+   {
+    "name": "unit",
+    "argv": [
+     "sh",
+     "checks/unit.sh"
+    ],
+    "timeout_ms": 60000
+   },
+   {
+    "name": "escape",
+    "argv": [
+     "sh",
+     "checks/escape.sh"
+    ],
+    "timeout_ms": 60000
+   }
+  ]
+ },
+ "notes": "Settled (v1.1): on a host that confines, the escaping write fails and the Build still lands (exit 0); exit 70 applies only when confinement is unavailable and the write is detected.",
+ "steps": [
+  {
+   "write": {
+    "path": "checks/escape.sh",
+    "text": "#!/bin/sh\n# Tries to write into the user's checkout from a Build workspace.\nc=\"{checkout}\"\nif [ \"$(pwd -P)\" != \"$c\" ]; then ( printf 'escaped\\n' >> \"$c/lib/greet.txt\" ) 2>/dev/null; ( true > \"$c/escaped.txt\" ) 2>/dev/null; fi\nexit 0\n"
+   }
+  },
+  {
+   "commit": {
+    "message": "Add the escape check",
+    "push": true
+   }
+  },
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "snapshot": "before"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr_any": true
+   }
+  },
+  {
+   "assert": {
+    "files": {
+     "lib/greet.txt": {
+      "text": "Hello!\n"
+     },
+     "escaped.txt": false
+    },
+    "checkout_unchanged": "before"
+   }
+  }
+ ]
+}

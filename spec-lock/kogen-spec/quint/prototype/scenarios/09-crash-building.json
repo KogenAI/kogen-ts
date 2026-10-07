@@ -1,0 +1,10 @@
+{
+  "name": "09-crash-building",
+  "about": "SIGKILL during the Build: stale claim shows building until recovery fails the run as interrupted.",
+  "steps": [
+    {"do": ["Approve", {"slug": "alpha", "time": 1}]},
+    {"do": ["Start", "r1"]},
+    {"do": ["Crash"], "expect": {"status": {"alpha": "building"}, "claim": "r1", "proc": {"rid": "", "phase": ""}}},
+    {"do": ["Recover"], "expect": {"claim": "", "runs": {"r1": {"status": "failed", "reason": "interrupted"}}, "status": {"alpha": "interrupted"}, "queue": []}}
+  ]
+}

@@ -1,0 +1,83 @@
+{
+ "id": "state-17",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "Status: landed beats a stale failed run",
+ "spec": [
+  "§2.11"
+ ],
+ "steps": [
+  {
+   "intent": {
+    "slug": "greet",
+    "push": true
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "synthetic_run": {
+    "slug": "greet",
+    "run_id": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+    "status": "failed",
+    "reason": "repair_cap",
+    "verdict": "unverified"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "greet"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_starts_lines": [
+     "greet: failed, repair_cap"
+    ]
+   }
+  },
+  {
+   "sh": "git commit -q --allow-empty -m 'Greet Almir by name' -m 'Kogen-Intent: greet' && git push -q origin HEAD:refs/heads/main"
+  },
+  {
+   "git": [
+    "rev-parse",
+    "main"
+   ],
+   "in": "origin",
+   "capture": {
+    "landed": "^([0-9a-f]{8})"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "greet"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_starts_lines": [
+     "greet: landed {var:landed}"
+    ]
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "Queue: stopped",
+     "Landed (1):",
+     "  greet  {var:landed}"
+    ]
+   }
+  }
+ ]
+}

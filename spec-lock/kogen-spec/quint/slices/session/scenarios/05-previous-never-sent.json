@@ -1,0 +1,10 @@
+{
+  "name": "05-previous-never-sent",
+  "about": "previous_response_id is never sent. Asking for it changes nothing except the refusal.",
+  "steps": [
+    {"do": ["Bind", {"stage": "develop", "attempt": "builder", "rung": "builder"}],
+     "expect": {"previous": false, "version": "v2"}},
+    {"do": ["Previous"],
+     "expect": {"last": "never_sent", "previous": false, "version": "v2", "stage": "develop", "attempt": "builder", "keyChanged": false}}
+  ]
+}

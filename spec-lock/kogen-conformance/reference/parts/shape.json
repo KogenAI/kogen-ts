@@ -1,0 +1,102 @@
+{
+ "shape-01": {
+  "class": "R-gap",
+  "note": "no requirement-ledger/shaping-audit requests (ledger.json absent); also no Feasibility line, usage lines lack the role, and stderr progress is `shaper attempt=… ` not `shaper pass=<n> role=<role> <event>` (§3.2.6)"
+ },
+ "shape-02": {
+  "class": "R-gap",
+  "note": "--json lacks feasibility; usage has no role and only shaper calls (ledger/audit not built)"
+ },
+ "shape-03": {
+  "class": "ref-bug",
+  "note": "CRLF in a stdin Request is normalised to LF in intent.md; the spec keeps Request bytes exactly"
+ },
+ "shape-04": {
+  "class": "ref-bug",
+  "note": "non-UTF-8 Request bytes are re-encoded (0xff becomes U+00FF) instead of kept byte for byte"
+ },
+ "shape-05": {
+  "class": "ref-bug",
+  "note": "prints `task input unavailable stdin: :empty` instead of `intent/request_unavailable: stdin: empty`"
+ },
+ "shape-06": {
+  "class": "ref-bug",
+  "note": "first message omits `run-acceptance.sh` (acceptance.run program) from the effective gate paths; stderr progress is `shaper attempt=… ` not `shaper pass=<n> role=<role> <event>` (§3.2.6)"
+ },
+ "shape-07": {
+  "class": "R-gap",
+  "note": "a pass ends on the first successful write (APPENDIX), so separate-turn writes cost a repair round"
+ },
+ "shape-08": {
+  "class": "R-gap",
+  "note": "no finish guard; a pass ends on the first write"
+ },
+ "shape-09": {
+  "class": "R-gap",
+  "note": "pass ends on the first write, ledger/audit not built (the out-of-scope ERROR text itself matches)"
+ },
+ "shape-10": {
+  "class": "R-gap",
+  "note": "pass ends on the first write, so the round count is 3 not 2; stderr progress is `shaper attempt=… ` not `shaper pass=<n> role=<role> <event>` (§3.2.6)"
+ },
+ "shape-11": {
+  "class": "R-gap",
+  "note": "style findings are not repaired outside the cap; no lint_* leftover warnings"
+ },
+ "shape-12": {
+  "class": "R-gap",
+  "note": "no fallback_shaper conversation for passes 4-6"
+ },
+ "shape-13": {
+  "class": "R-gap",
+  "note": "no fallback conversation and no 6-pass limit line"
+ },
+ "shape-14": {
+  "class": "R-gap",
+  "note": "reclassification works, but the ledger and shaping audit are not built"
+ },
+ "shape-15": {
+  "class": "R-gap",
+  "note": "pass ends on the first write, so all_items_keep repair takes 3 rounds"
+ },
+ "shape-16": {
+  "class": "R-gap",
+  "note": "red row: pass ends on the first write (3 rounds); 127 row: exit 3 but no done turn and different wording"
+ },
+ "shape-17": {
+  "class": "R-gap",
+  "note": "pass ends on the first write, so the undeclared-gate repair takes 3 rounds"
+ },
+ "shape-18": {
+  "class": "ref-bug",
+  "note": "a missing `format` executable produces no stderr warning"
+ },
+ "shape-19": {
+  "class": "R-gap",
+  "note": "requirement ledger and coverage check not built"
+ },
+ "shape-20": {
+  "class": "R-gap",
+  "note": "shaping test audit not built"
+ },
+ "shape-21": {
+  "class": "R-gap",
+  "note": "shaping test audit not built; pass ends on the first write"
+ },
+ "shape-22": {
+  "class": "R-gap",
+  "note": "Concerns: parsing and feasibility_concern warnings not built"
+ },
+ "shape-23": {
+  "class": "R-gap",
+  "note": "model/effort resolution is correct, but the pass ends on the first write; stderr progress is `shaper attempt=… ` not `shaper pass=<n> role=<role> <event>` (§3.2.6)"
+ },
+ "shape-24": {
+  "class": "R-gap",
+  "note": "the retry succeeds, but the pass ends on the first write; stderr progress is `shaper attempt=… ` not `shaper pass=<n> role=<role> <event>` (§3.2.6)"
+ },
+ "shape-26": {
+  "class": "R-gap",
+  "note": "witness mode (`shaping: {proof: witness}`) and `build.ladder` are not built"
+ }
+}

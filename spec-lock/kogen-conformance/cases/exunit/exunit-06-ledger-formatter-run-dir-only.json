@@ -1,0 +1,102 @@
+{
+ "id": "exunit-06",
+ "profile": "exunit",
+ "fixture": "exunit-hello",
+ "fake": true,
+ "needs": [
+  "elixir"
+ ],
+ "acceptance_ext": "_test.exs",
+ "title": "The ledger formatter is written only in the run dir",
+ "spec": [
+  "§2.4.3"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "tools": []
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: Hello.greet/0 returns Hello, Almir!\n\n## Technical approach\nChange the return value.\n\n## Implementation steps\n1. Edit lib/hello.ex.\n"
+   }
+  },
+  {
+   "id": "edit",
+   "expect": {
+    "role": "builder",
+    "turn": 1,
+    "tools": [
+     "shell"
+    ]
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'defmodule Hello do\\n  def greet, do: \"Hello, Almir!\"\\nend\\n' > lib/hello.ex"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "done",
+   "expect": {
+    "role": "builder",
+    "turn": 2
+   },
+   "reply": {
+    "text": "Done."
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": {
+    "slug": "greet",
+    "template": "exunit-greet"
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "timeout": 600,
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "files": {
+     "{run_dir:greet}/ledger_formatter.ex": true
+    },
+    "git": [
+     {
+      "args": [
+       "ls-tree",
+       "-r",
+       "--name-only",
+       "main"
+      ],
+      "stdout": ".formatter.exs\n.gitignore\n.kogen/intents/greet/intent.md\n.kogen/project.yaml\nlib/hello.ex\nmix.exs\ntest/acceptance/greet_test.exs\ntest/test_helper.exs\n"
+     }
+    ],
+    "checkout_clean": true
+   }
+  }
+ ]
+}

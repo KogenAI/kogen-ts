@@ -1,0 +1,17 @@
+{
+	"compilerOptions": {
+		"target": "ES2023",
+		"module": "Preserve",
+		"moduleResolution": "Bundler",
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"exactOptionalPropertyTypes": true,
+		"useUnknownInCatchVariables": true,
+		"noFallthroughCasesInSwitch": true,
+		"noEmit": true,
+		"types": ["bun", "node"],
+		"skipLibCheck": true
+	},
+	"include": ["packages/**/*.ts", "tools/**/*.ts", "tests/**/*.ts"],
+	"exclude": ["node_modules", "dist", "spec-lock"]
+}

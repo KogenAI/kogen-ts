@@ -1,0 +1,16 @@
+{
+  "name": "04-wall-bounds-the-retry",
+  "about": "A retry whose ceiling does not fit in the remaining wall is not made. First byte and the 20 min cap are timeouts.",
+  "steps": [
+    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 1000, "mode": "build"}],
+     "expect": {"wall": 1000, "attempt": 1}},
+    {"do": ["Result", {"kind": "timeout", "items": false}],
+     "expect": {"decision": "stop", "exit": 4, "reason": "provider/timeout", "attempt": 1, "delay": 0, "queued": true, "failed": false, "wall": 1000}},
+    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 5000, "mode": "build"}],
+     "expect": {"phase": "open", "wall": 5000, "attempt": 1, "exit": 0}},
+    {"do": ["Result", {"kind": "first_byte", "items": false}],
+     "expect": {"decision": "retry", "delay": 2000, "attempt": 2, "reason": "provider/timeout", "continued": false, "wall": 5000}},
+    {"do": ["Result", {"kind": "total", "items": false}],
+     "expect": {"decision": "retry", "delay": 4000, "attempt": 3, "reason": "provider/timeout", "continued": false, "wall": 5000}}
+  ]
+}

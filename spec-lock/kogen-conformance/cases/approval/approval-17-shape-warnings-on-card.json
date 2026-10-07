@@ -1,0 +1,49 @@
+{
+ "id": "approval-17",
+ "profile": "approval",
+ "fixture": "kt",
+ "title": "Shape warnings, including feasibility_concern, appear on the card",
+ "spec": [
+  "§1.7.2",
+  "§2.4.5",
+  "§3.2.6"
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "write": {
+    "path": ".kogen/intents/greet/shape-warnings.json",
+    "text": "{\"approval_sha256\":\"{hash64:greet}\",\"warnings\":[{\"code\":\"feasibility_concern\",\"item_ids\":[],\"message\":\"The kt fixture cannot render emoji\"},{\"code\":\"coverage_gap\",\"item_ids\":[\"A1\"],\"message\":\"Hello! is not covered\"}]}"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 5,
+    "stderr": "",
+    "stdout_contains": "\n\nWarnings\n  - feasibility_concern: - — The kt fixture cannot render emoji\n  - coverage_gap: A1 — Hello! is not covered\n\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet",
+    "{hash8:greet}"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_regex": "\\AWarnings\n  - feasibility_concern: - — The kt fixture cannot render emoji\n  - coverage_gap: A1 — Hello! is not covered\n\n?approved greet [0-9a-f]{8} \\(approval [0-9a-f]{8}\\); it is queued\nNext: kogen queue start \\(does nothing if the queue is already running\\)\n\\Z"
+   }
+  }
+ ]
+}

@@ -1,0 +1,83 @@
+{
+ "id": "approval-08",
+ "profile": "approval",
+ "fixture": "kt",
+ "title": "A red baseline check gives the warning block plus a baseline row",
+ "spec": [
+  "§1.7.2",
+  "§3.3",
+  "§2.5.1"
+ ],
+ "fixture_files": {
+  "lib/greet.txt": "Hello!\nTODO polish\n"
+ },
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 5,
+    "stderr": "",
+    "stdout_regex": [
+     "\n\nWarning: configured checks are already red on the base:\n  - lint: \\[lint/todo\\] lib/greet\\.txt:2: greet\\.txt: TODO found\nHint: fix the base first, or scope the check, e.g\\. a changed-files format argv\\.\n\nApprove with:\n"
+    ]
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet",
+    "{hash8:greet}"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_contains": "approved greet"
+   }
+  },
+  {
+   "assert": {
+    "git": [
+     {
+      "args": [
+       "cat-file",
+       "-p",
+       "refs/kogen/intents/greet:.kogen/intents/greet/approval.json"
+      ],
+      "json": {
+       "check_baseline": [
+        {
+         "name": "lint",
+         "status": "red",
+         "exit_status": 1,
+         "findings": [
+          {
+           "path": "lib/greet.txt",
+           "rule": "lint/todo",
+           "symbol": "$str",
+           "message": "~.*TODO found"
+          }
+         ]
+        },
+        {
+         "name": "unit",
+         "status": "green",
+         "exit_status": 0,
+         "findings": []
+        }
+       ]
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

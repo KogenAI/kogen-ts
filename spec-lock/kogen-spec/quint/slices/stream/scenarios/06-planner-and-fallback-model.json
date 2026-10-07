@@ -1,0 +1,29 @@
+{
+  "name": "06-planner-and-fallback-model",
+  "about": "The planner does not switch, nor a builder already on sol. With fallback off, overload keeps the model while the wall can pay.",
+  "steps": [
+    {"do": ["Open", {"role": "planner", "model": "luna", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+     "expect": {"role": "planner", "model": "luna"}},
+    {"do": ["Result", {"kind": "overload", "items": false}],
+     "expect": {"decision": "retry", "delay": 2000, "model": "luna", "overloads": 1, "attempt": 2}},
+    {"do": ["Result", {"kind": "overload", "items": false}],
+     "expect": {"decision": "retry", "delay": 4000, "model": "luna", "overloads": 2, "attempt": 3}},
+    {"do": ["Result", {"kind": "ok", "items": false}],
+     "expect": {"decision": "success", "phase": "idle", "model": "luna"}},
+    {"do": ["Open", {"role": "builder", "model": "sol", "fallbackOn": true, "refreshable": true, "bounded": true, "wall": 100000, "mode": "build"}],
+     "expect": {"model": "sol", "attempt": 1}},
+    {"do": ["Result", {"kind": "overload", "items": false}],
+     "expect": {"decision": "retry", "delay": 2000, "model": "sol", "overloads": 1}},
+    {"do": ["Result", {"kind": "overload", "items": false}],
+     "expect": {"decision": "retry", "delay": 4000, "model": "sol", "overloads": 2, "attempt": 3}},
+    {"do": ["Result", {"kind": "ok", "items": false}],
+     "expect": {"decision": "success", "phase": "idle", "model": "sol"}},
+    {"do": ["Open", {"role": "builder", "model": "luna", "fallbackOn": false, "refreshable": true, "bounded": true, "wall": 10000000, "mode": "build"}],
+     "expect": {"fallbackOn": false, "attempt": 1, "model": "luna"}},
+    {"do": ["Result", {"kind": "overload", "items": false}], "expect": {"decision": "retry", "delay": 2000, "attempt": 2, "model": "luna"}},
+    {"do": ["Result", {"kind": "overload", "items": false}], "expect": {"decision": "retry", "delay": 4000, "attempt": 3, "model": "luna"}},
+    {"do": ["Result", {"kind": "overload", "items": false}], "expect": {"decision": "retry", "delay": 8000, "attempt": 4, "model": "luna"}},
+    {"do": ["Result", {"kind": "overload", "items": false}],
+     "expect": {"decision": "retry", "delay": 16000, "attempt": 5, "overloads": 4, "model": "luna", "phase": "open", "exit": 0}}
+  ]
+}

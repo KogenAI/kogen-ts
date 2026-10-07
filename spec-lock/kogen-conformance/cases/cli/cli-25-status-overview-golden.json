@@ -1,0 +1,329 @@
+{
+ "id": "cli-25",
+ "profile": "cli",
+ "title": "Status overview golden: every section, padding, and k earlier",
+ "spec": [
+  "§1.7.5",
+  "§2.11"
+ ],
+ "fixture": "kt",
+ "fake": true,
+ "allow_remaining": true,
+ "script": [
+  {
+   "id": "stall",
+   "expect": {
+    "role": "planner"
+   },
+   "repeat": "always",
+   "first_byte_ms": 900000,
+   "reply": {
+    "text": "Difficulty: easy\n"
+   }
+  }
+ ],
+ "steps": [
+  {
+   "sh": "mkdir -p .kogen/intents/land-a && sed 's/Greet Almir by name/Land land-a/' \"{templates}/intents/greet/intent.md\" > .kogen/intents/land-a/intent.md && git add .kogen/intents/land-a && git commit -q -m 'Land land-a' -m 'Kogen-Intent: land-a' && mkdir -p .kogen/intents/land-b && sed 's/Greet Almir by name/Land land-b/' \"{templates}/intents/greet/intent.md\" > .kogen/intents/land-b/intent.md && git add .kogen/intents/land-b && git commit -q -m 'Land land-b' -m 'Kogen-Intent: land-b' && mkdir -p .kogen/intents/land-c && sed 's/Greet Almir by name/Land land-c/' \"{templates}/intents/greet/intent.md\" > .kogen/intents/land-c/intent.md && git add .kogen/intents/land-c && git commit -q -m 'Land land-c' -m 'Kogen-Intent: land-c' && mkdir -p .kogen/intents/land-d && sed 's/Greet Almir by name/Land land-d/' \"{templates}/intents/greet/intent.md\" > .kogen/intents/land-d/intent.md && git add .kogen/intents/land-d && git commit -q -m 'Land land-d' -m 'Kogen-Intent: land-d' && mkdir -p .kogen/intents/land-e && sed 's/Greet Almir by name/Land land-e/' \"{templates}/intents/greet/intent.md\" > .kogen/intents/land-e/intent.md && git add .kogen/intents/land-e && git commit -q -m 'Land land-e' -m 'Kogen-Intent: land-e' && mkdir -p .kogen/intents/land-f && sed 's/Greet Almir by name/Land land-f/' \"{templates}/intents/greet/intent.md\" > .kogen/intents/land-f/intent.md && git add .kogen/intents/land-f && git commit -q -m 'Land land-f' -m 'Kogen-Intent: land-f' && mkdir -p .kogen/intents/land-g && sed 's/Greet Almir by name/Land land-g/' \"{templates}/intents/greet/intent.md\" > .kogen/intents/land-g/intent.md && git add .kogen/intents/land-g && git commit -q -m 'Land land-g' -m 'Kogen-Intent: land-g' && git push -q origin HEAD:refs/heads/main"
+  },
+  {
+   "git": [
+    "rev-parse",
+    "main~0"
+   ],
+   "in": "origin",
+   "capture": {
+    "land-g": "^([0-9a-f]{8})"
+   }
+  },
+  {
+   "git": [
+    "rev-parse",
+    "main~1"
+   ],
+   "in": "origin",
+   "capture": {
+    "land-f": "^([0-9a-f]{8})"
+   }
+  },
+  {
+   "git": [
+    "rev-parse",
+    "main~2"
+   ],
+   "in": "origin",
+   "capture": {
+    "land-e": "^([0-9a-f]{8})"
+   }
+  },
+  {
+   "git": [
+    "rev-parse",
+    "main~3"
+   ],
+   "in": "origin",
+   "capture": {
+    "land-d": "^([0-9a-f]{8})"
+   }
+  },
+  {
+   "git": [
+    "rev-parse",
+    "main~4"
+   ],
+   "in": "origin",
+   "capture": {
+    "land-c": "^([0-9a-f]{8})"
+   }
+  },
+  {
+   "git": [
+    "rev-parse",
+    "main~5"
+   ],
+   "in": "origin",
+   "capture": {
+    "land-b": "^([0-9a-f]{8})"
+   }
+  },
+  {
+   "git": [
+    "rev-parse",
+    "main~6"
+   ],
+   "in": "origin",
+   "capture": {
+    "land-a": "^([0-9a-f]{8})"
+   }
+  },
+  {
+   "intent": {
+    "slug": "greet",
+    "template": "greet",
+    "replace": {
+     "Greet Almir by name": "Intent greet"
+    },
+    "commit": true
+   }
+  },
+  {
+   "intent": {
+    "slug": "queue-b",
+    "template": "greet",
+    "replace": {
+     "Greet Almir by name": "Intent queue-b"
+    },
+    "commit": true
+   }
+  },
+  {
+   "intent": {
+    "slug": "queue-cc",
+    "template": "greet",
+    "replace": {
+     "Greet Almir by name": "Intent queue-cc"
+    },
+    "commit": true
+   }
+  },
+  {
+   "intent": {
+    "slug": "fail-a",
+    "template": "greet",
+    "replace": {
+     "Greet Almir by name": "Intent fail-a"
+    },
+    "commit": true
+   }
+  },
+  {
+   "intent": {
+    "slug": "park-bb",
+    "template": "greet",
+    "replace": {
+     "Greet Almir by name": "Intent park-bb"
+    },
+    "commit": true
+   }
+  },
+  {
+   "intent": {
+    "slug": "intr-a",
+    "template": "greet",
+    "replace": {
+     "Greet Almir by name": "Intent intr-a"
+    },
+    "commit": true
+   }
+  },
+  {
+   "intent": {
+    "slug": "draft-a",
+    "template": "greet",
+    "replace": {
+     "Greet Almir by name": "Intent draft-a"
+    },
+    "commit": true
+   }
+  },
+  {
+   "intent": {
+    "slug": "draft-bbb",
+    "template": "greet",
+    "replace": {
+     "Greet Almir by name": "Intent draft-bbb"
+    },
+    "commit": true
+   }
+  },
+  {
+   "approve": "fail-a"
+  },
+  {
+   "approve": "park-bb"
+  },
+  {
+   "approve": "intr-a"
+  },
+  {
+   "synthetic_run": {
+    "slug": "fail-a",
+    "run_id": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+    "status": "failed",
+    "reason": "repair_cap",
+    "verdict": "unverified"
+   }
+  },
+  {
+   "synthetic_run": {
+    "slug": "park-bb",
+    "run_id": "b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+    "status": "parked",
+    "reason": "landing_retries",
+    "verdict": "green"
+   }
+  },
+  {
+   "synthetic_run": {
+    "slug": "intr-a",
+    "run_id": "c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+    "status": "failed",
+    "reason": "interrupted",
+    "verdict": "none"
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "sleep": 1.1
+  },
+  {
+   "approve": "queue-b"
+  },
+  {
+   "sleep": 1.1
+  },
+  {
+   "approve": "queue-cc"
+  },
+  {
+   "run": [
+    "kogen",
+    "status"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_lines": [
+     "Queue: stopped, 3 waiting; start it with kogen queue start",
+     "Queued:",
+     "  greet",
+     "  queue-b",
+     "  queue-cc",
+     "Failed:",
+     "  fail-a  repair_cap (Build a1a1a1a1)",
+     "Parked:",
+     "  park-bb  landing_retries (Build b2b2b2b2)",
+     "Interrupted:",
+     "  intr-a  interrupted (Build c3c3c3c3)",
+     "Drafts:",
+     "  draft-a",
+     "  draft-bbb",
+     "Landed (7):",
+     "  land-g  {var:land-g}",
+     "  land-f  {var:land-f}",
+     "  land-e  {var:land-e}",
+     "  land-d  {var:land-d}",
+     "  land-c  {var:land-c}",
+     "  and 2 earlier"
+    ]
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "background": "q"
+  },
+  {
+   "wait_until": {
+    "fake_requests": 1,
+    "role": "planner",
+    "timeout_s": 60
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_lines": [
+     "~Queue: running \\(pid [0-9]+\\)",
+     "Building:",
+     "~  greet  \\S.*\\(Build [0-9a-f]{8}\\)",
+     "Queued:",
+     "  queue-b",
+     "  queue-cc",
+     "Failed:",
+     "  fail-a  repair_cap (Build a1a1a1a1)",
+     "Parked:",
+     "  park-bb  landing_retries (Build b2b2b2b2)",
+     "Interrupted:",
+     "  intr-a  interrupted (Build c3c3c3c3)",
+     "Drafts:",
+     "  draft-a",
+     "  draft-bbb",
+     "Landed (7):",
+     "  land-g  {var:land-g}",
+     "  land-f  {var:land-f}",
+     "  land-e  {var:land-e}",
+     "  land-d  {var:land-d}",
+     "  land-c  {var:land-c}",
+     "  and 2 earlier"
+    ]
+   }
+  },
+  {
+   "signal": {
+    "name": "q",
+    "sig": "TERM",
+    "after_s": 0
+   }
+  },
+  {
+   "wait": {
+    "name": "q",
+    "expect": {
+     "exit": 143,
+     "stderr_any": true
+    }
+   }
+  }
+ ]
+}

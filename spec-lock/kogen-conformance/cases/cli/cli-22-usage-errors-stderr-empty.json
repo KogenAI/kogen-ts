@@ -1,0 +1,95 @@
+{
+ "id": "cli-22",
+ "profile": "cli",
+ "title": "Usage errors leave stderr empty",
+ "spec": [
+  "§1.1",
+  "§1.3.4"
+ ],
+ "fixture": "kt",
+ "rows": [
+  {
+   "label": "frob",
+   "argv": [
+    "frob"
+   ]
+  },
+  {
+   "label": "intent frob",
+   "argv": [
+    "intent",
+    "frob"
+   ]
+  },
+  {
+   "label": "status --bogus",
+   "argv": [
+    "status",
+    "--bogus"
+   ]
+  },
+  {
+   "label": "intent approve",
+   "argv": [
+    "intent",
+    "approve"
+   ]
+  },
+  {
+   "label": "version x",
+   "argv": [
+    "version",
+    "x"
+   ]
+  },
+  {
+   "label": "status --project",
+   "argv": [
+    "status",
+    "--project"
+   ]
+  },
+  {
+   "label": "status --json=1",
+   "argv": [
+    "status",
+    "--json=1"
+   ]
+  },
+  {
+   "label": "intent approve greet XYZ",
+   "argv": [
+    "intent",
+    "approve",
+    "greet",
+    "XYZ"
+   ]
+  },
+  {
+   "label": "build",
+   "argv": [
+    "build"
+   ]
+  },
+  {
+   "label": "help nope",
+   "argv": [
+    "help",
+    "nope"
+   ]
+  }
+ ],
+ "steps": [
+  {
+   "run": [
+    "kogen",
+    "{*row.argv}"
+   ],
+   "expect": {
+    "exit": 2,
+    "stderr": "",
+    "stdout_regex": "\\Akogen"
+   }
+  }
+ ]
+}

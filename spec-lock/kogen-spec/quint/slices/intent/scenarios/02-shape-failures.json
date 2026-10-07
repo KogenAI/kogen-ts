@@ -1,0 +1,9 @@
+{
+  "name": "02-shape-failures",
+  "about": "Empty request exits 2, a failed shape exits 1, a provider stop exits 4. None of them writes a ref.",
+  "steps": [
+    {"do": ["Shape", {"slug": "alpha", "result": "empty"}], "expect": {"last": "intent/request_unavailable", "exit": 2, "life": {}}},
+    {"do": ["Shape", {"slug": "alpha", "result": "failed"}], "expect": {"last": "candidate/repair_limit", "exit": 1, "refs": {}}},
+    {"do": ["Shape", {"slug": "alpha", "result": "provider"}], "expect": {"last": "provider/overload", "exit": 4, "life": {}}}
+  ]
+}

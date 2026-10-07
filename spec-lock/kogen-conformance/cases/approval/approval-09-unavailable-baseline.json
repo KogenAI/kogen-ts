@@ -1,0 +1,84 @@
+{
+ "id": "approval-09",
+ "profile": "approval",
+ "fixture": "kt",
+ "title": "An unavailable baseline check gives an unavailable row",
+ "spec": [
+  "§3.3",
+  "§3.7.2"
+ ],
+ "project": {
+  "checks": [
+   {
+    "name": "lint",
+    "argv": [
+     "sh",
+     "checks/lint.sh"
+    ],
+    "timeout_ms": 60000
+   },
+   {
+    "name": "ghost",
+    "argv": [
+     "kogen-conformance-missing-tool",
+     "--check"
+    ],
+    "timeout_ms": 60000
+   }
+  ]
+ },
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "expect": {
+    "exit": 5,
+    "stderr": "",
+    "stdout_contains": "ghost"
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "assert": {
+    "git": [
+     {
+      "args": [
+       "cat-file",
+       "-p",
+       "refs/kogen/intents/greet:.kogen/intents/greet/approval.json"
+      ],
+      "json": {
+       "check_baseline": [
+        {
+         "name": "lint",
+         "status": "green"
+        },
+        {
+         "name": "ghost",
+         "status": "unavailable",
+         "exit_status": {
+          "$any_of": [
+           null,
+           126,
+           127
+          ]
+         },
+         "findings": []
+        }
+       ]
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

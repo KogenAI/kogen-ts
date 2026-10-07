@@ -1,0 +1,114 @@
+{
+  "id": "v1.2-10-cli-06-missing-positionals",
+  "profile": "v1.2",
+  "fixture": "none",
+  "title": "v1.2 replacement for cli-06: Missing positionals and route-disallowed options",
+  "spec": [
+    "§1.2",
+    "§1.3",
+    "§1.4"
+  ],
+  "rows": [
+    {
+      "label": "approve <slug>",
+      "argv": [
+        "intent",
+        "approve"
+      ],
+      "path": "intent approve",
+      "name": "<slug>",
+      "page": "kogen-intent-approve",
+      "error": "kogen intent approve: missing <slug>"
+    },
+    {
+      "label": "remove <slug>",
+      "argv": [
+        "intent",
+        "remove",
+        "--force"
+      ],
+      "path": "intent remove",
+      "name": "<slug>",
+      "page": "kogen-intent-remove",
+      "error": "kogen intent remove: missing <slug>"
+    },
+    {
+      "label": "shape <slug>",
+      "argv": [
+        "intent",
+        "shape"
+      ],
+      "path": "intent shape",
+      "name": "<slug>",
+      "page": "kogen-intent-shape",
+      "error": "kogen intent shape: missing <slug>"
+    },
+    {
+      "label": "shape <file|->",
+      "argv": [
+        "intent",
+        "shape",
+        "greet",
+        "--json"
+      ],
+      "path": "intent shape",
+      "name": "<file|->",
+      "page": "kogen-intent-shape",
+      "error": "kogen intent shape: unknown option '--json'"
+    },
+    {
+      "label": "login <provider>",
+      "argv": [
+        "provider",
+        "login"
+      ],
+      "path": "provider login",
+      "name": "<provider>",
+      "page": "kogen-provider-login",
+      "error": "kogen provider login: missing <provider>"
+    },
+    {
+      "label": "logout <provider>",
+      "argv": [
+        "provider",
+        "logout",
+        "--as",
+        "work"
+      ],
+      "path": "provider logout",
+      "name": "<provider>",
+      "page": "kogen-provider-logout",
+      "error": "kogen provider logout: unknown option '--as'"
+    },
+    {
+      "label": "use <provider>",
+      "argv": [
+        "provider",
+        "use"
+      ],
+      "path": "provider use",
+      "name": "<provider>",
+      "page": "kogen-provider-use",
+      "error": "kogen provider use: missing <provider>"
+    }
+  ],
+  "steps": [
+    {
+      "run": [
+        "kogen",
+        "{*row.argv}"
+      ],
+      "expect": {
+        "exit": 2,
+        "stdout": [
+          "{row.error}\n\n",
+          {
+            "data": "v1.2/help/{row.page}.txt"
+          }
+        ],
+        "stderr": ""
+      }
+    }
+  ],
+  "notes": "The v1.2 CLI rejects route-disallowed --json and --as before reporting missing positionals; help bytes follow §1.4."
+}

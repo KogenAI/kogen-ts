@@ -1,0 +1,127 @@
+{
+ "name": "05-deadlines-are-timeouts",
+ "about": "Missing first byte (>120 s), idle gap (>120 s) or total (>600 s) is a timeout even if the response would have been ok; exactly at the limits is within the deadline. Three timeouts switch.",
+ "steps": [
+  {
+   "do": [
+    "Stage",
+    {
+     "name": "build",
+     "mode": "build",
+     "model": "luna",
+     "fallback": "sol",
+     "owned": true
+    }
+   ]
+  },
+  {
+   "do": [
+    "Request"
+   ]
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "ok",
+     "retry_after_ms": -1,
+     "elapsed_ms": 130000,
+     "first_byte_ms": 120001,
+     "max_gap_ms": 0
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "retry",
+     "delay_ms": 2000,
+     "reason": "timeout",
+     "model": "luna"
+    },
+    "journal": [
+     {
+      "event": "provider_retry",
+      "stage": "build",
+      "rung": 1,
+      "reason": "timeout",
+      "ms": 2000,
+      "from_model": "",
+      "to_model": ""
+     },
+     {
+      "event": "provider_wait",
+      "stage": "",
+      "rung": 0,
+      "reason": "timeout",
+      "ms": 2000,
+      "from_model": "",
+      "to_model": ""
+     }
+    ],
+    "budget_ms": 130000
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "ok",
+     "retry_after_ms": -1,
+     "elapsed_ms": 200000,
+     "first_byte_ms": 100,
+     "max_gap_ms": 120001
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "retry",
+     "delay_ms": 4000,
+     "reason": "timeout",
+     "model": "luna"
+    }
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "ok",
+     "retry_after_ms": -1,
+     "elapsed_ms": 600001,
+     "first_byte_ms": 100,
+     "max_gap_ms": 100
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "switch",
+     "delay_ms": 8000,
+     "reason": "timeout",
+     "model": "sol"
+    },
+    "model": "sol",
+    "switched": true
+   }
+  },
+  {
+   "do": [
+    "Attempt",
+    {
+     "result": "ok",
+     "retry_after_ms": -1,
+     "elapsed_ms": 600000,
+     "first_byte_ms": 120000,
+     "max_gap_ms": 120000
+    }
+   ],
+   "expect": {
+    "decision": {
+     "kind": "success",
+     "delay_ms": 0,
+     "reason": "",
+     "model": "sol"
+    },
+    "budget_ms": 1530001
+   }
+  }
+ ]
+}

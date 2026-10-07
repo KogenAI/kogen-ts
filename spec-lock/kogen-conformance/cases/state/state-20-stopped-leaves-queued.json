@@ -1,0 +1,55 @@
+{
+ "id": "state-20",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "Status: a stopped run leaves the Intent queued",
+ "spec": [
+  "§2.11",
+  "§3.0"
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "synthetic_run": {
+    "slug": "greet",
+    "run_id": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+    "status": "stopped",
+    "reason": "provider/login",
+    "verdict": "none"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "greet"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_starts_lines": [
+     "greet: queued, 1 of 1"
+    ]
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "Queue: stopped, 1 waiting; start it with kogen queue start",
+     "Queued:",
+     "~  greet(  +\\S.*)?"
+    ]
+   }
+  }
+ ]
+}

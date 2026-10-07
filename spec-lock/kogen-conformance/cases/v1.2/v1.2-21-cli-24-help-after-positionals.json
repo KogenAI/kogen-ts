@@ -1,0 +1,200 @@
+{
+  "id": "v1.2-21-cli-24-help-after-positionals",
+  "profile": "v1.2",
+  "fixture": "none",
+  "title": "v1.2 replacement for cli-24: --help is a usage error",
+  "spec": [
+    "§1.2",
+    "§1.3",
+    "§1.4"
+  ],
+  "rows": [
+    {
+      "label": "status greet --help",
+      "argv": [
+        "status",
+        "greet",
+        "--help"
+      ],
+      "page": "kogen-status",
+      "path": "status",
+      "option": "--help"
+    },
+    {
+      "label": "status greet --json --help",
+      "argv": [
+        "status",
+        "greet",
+        "--json",
+        "--help"
+      ],
+      "page": "kogen-status",
+      "path": "status",
+      "option": "--help"
+    },
+    {
+      "label": "intent shape greet req.md --help",
+      "argv": [
+        "intent",
+        "shape",
+        "greet",
+        "req.md",
+        "--help"
+      ],
+      "page": "kogen-intent-shape",
+      "path": "intent shape",
+      "option": "--help"
+    },
+    {
+      "label": "intent approve greet abcdef12 --help",
+      "argv": [
+        "intent",
+        "approve",
+        "greet",
+        "abcdef12",
+        "--help"
+      ],
+      "page": "kogen-intent-approve",
+      "path": "intent approve",
+      "option": "--help"
+    },
+    {
+      "label": "intent approve greet --by x --help",
+      "argv": [
+        "intent",
+        "approve",
+        "greet",
+        "--by",
+        "x",
+        "--help"
+      ],
+      "page": "kogen-intent-approve",
+      "path": "intent approve",
+      "option": "--help"
+    },
+    {
+      "label": "intent remove greet --help",
+      "argv": [
+        "intent",
+        "remove",
+        "greet",
+        "--help"
+      ],
+      "page": "kogen-intent-remove",
+      "path": "intent remove",
+      "option": "--help"
+    },
+    {
+      "label": "queue start --detach --help",
+      "argv": [
+        "queue",
+        "start",
+        "--detach",
+        "--help"
+      ],
+      "page": "kogen-queue-start",
+      "path": "queue start",
+      "option": "--help"
+    },
+    {
+      "label": "queue stop --help",
+      "argv": [
+        "queue",
+        "stop",
+        "--help"
+      ],
+      "page": "kogen-queue-stop",
+      "path": "queue stop",
+      "option": "--help"
+    },
+    {
+      "label": "provider list --help",
+      "argv": [
+        "provider",
+        "list",
+        "--help"
+      ],
+      "page": "kogen-provider-list",
+      "path": "provider list",
+      "option": "--help"
+    },
+    {
+      "label": "provider login chatgpt --help",
+      "argv": [
+        "provider",
+        "login",
+        "chatgpt",
+        "--help"
+      ],
+      "page": "kogen-provider-login",
+      "path": "provider login",
+      "option": "--help"
+    },
+    {
+      "label": "provider logout chatgpt --as w --help",
+      "argv": [
+        "provider",
+        "logout",
+        "chatgpt",
+        "--help"
+      ],
+      "page": "kogen-provider-logout",
+      "path": "provider logout",
+      "option": "--help"
+    },
+    {
+      "label": "provider use chatgpt --help",
+      "argv": [
+        "provider",
+        "use",
+        "chatgpt",
+        "--help"
+      ],
+      "page": "kogen-provider-use",
+      "path": "provider use",
+      "option": "--help"
+    },
+    {
+      "label": "version --help",
+      "argv": [
+        "version",
+        "--help"
+      ],
+      "page": "kogen-version",
+      "path": "version",
+      "option": "--help"
+    },
+    {
+      "label": "intent shape greet - --json --help",
+      "argv": [
+        "intent",
+        "shape",
+        "greet",
+        "-",
+        "--help"
+      ],
+      "page": "kogen-intent-shape",
+      "path": "intent shape",
+      "option": "--help"
+    }
+  ],
+  "steps": [
+    {
+      "run": [
+        "kogen",
+        "{*row.argv}"
+      ],
+      "expect": {
+        "exit": 2,
+        "stdout": [
+          "kogen {row.path}: unknown option '{row.option}'\n\n",
+          {
+            "data": "v1.2/help/{row.page}.txt"
+          }
+        ],
+        "stderr": ""
+      }
+    }
+  ],
+  "notes": "--help is not a help route: each command reports an unknown option and prints the meant v1.2 page (§1.2–1.4)."
+}

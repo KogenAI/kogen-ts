@@ -1,0 +1,9 @@
+{
+  "name": "01-landed-and-interrupted-precedence",
+  "about": "A landed trailer wins; a dead interrupted owner and recovered interruption override ordinary states.",
+  "steps": [
+    {"do":["Raw",{"slug":"alpha","trailer":true,"claimed":true,"runStatus":"running","event":"interrupted","alive":false,"approved":true,"reason":"","same":true,"blocks":"","priority":0,"at":0}],"expect":{"alpha":"landed"}},
+    {"do":["Raw",{"slug":"bravo","trailer":false,"claimed":true,"runStatus":"running","event":"interrupted","alive":false,"approved":true,"reason":"","same":true,"blocks":"","priority":0,"at":0}],"expect":{"bravo":"interrupted"}},
+    {"do":["Raw",{"slug":"charlie","trailer":false,"claimed":false,"runStatus":"failed","event":"finished","alive":false,"approved":true,"reason":"interrupted","same":true,"blocks":"","priority":0,"at":0}],"expect":{"charlie":"interrupted","sections":["Interrupted","Landed"]}}
+  ]
+}

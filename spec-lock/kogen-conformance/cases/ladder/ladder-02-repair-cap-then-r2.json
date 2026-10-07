@@ -1,0 +1,230 @@
+{
+ "id": "ladder-02",
+ "profile": "ladder",
+ "fixture": "kt",
+ "fake": true,
+ "title": "R1 hits the repair cap: auditor request with the citation inputs; R2 runs with rung2, fresh workspace, no plan, summary without a diff",
+ "spec": [
+  "§3.1",
+  "§3.5",
+  "§3.8.2",
+  "§3.6"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "tools": []
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+   }
+  },
+  {
+   "id": "r1.start",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "turn": 1
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "n=$(cat lib/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > lib/n; printf 'Hi R1 %s\\n' $n > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r1.again",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "last_item_type": "message"
+   },
+   "repeat": "always",
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "n=$(cat lib/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > lib/n; printf 'Hi R1 %s\\n' $n > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r1.claim",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6-luna",
+    "effort": "max",
+    "last_item_type": "function_call_output"
+   },
+   "repeat": "always",
+   "reply": {
+    "text": "Done."
+   }
+  },
+  {
+   "id": "audit",
+   "expect": {
+    "role": "auditor",
+    "tools": []
+   },
+   "reply": {
+    "text": "{\"items\": [{\"id\": \"A1\", \"verdict\": \"valid\", \"citation\": \"\", \"reason\": \"The test follows the Request.\"}]}"
+   }
+  },
+  {
+   "id": "r2.edit",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6.1-sol",
+    "effort": "medium",
+    "turn": 1,
+    "tools": [
+     "shell"
+    ]
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "test ! -e lib/n && echo fresh-workspace; pwd; printf 'Hello, Almir!\\n' > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "r2.done",
+   "expect": {
+    "role": "builder",
+    "model": "gpt-6.1-sol",
+    "effort": "medium",
+    "turn": 2,
+    "last_output_contains": "fresh-workspace"
+   },
+   "reply": {
+    "text": "Done."
+   }
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "fake_requests": [
+     {
+      "select": {
+       "step": "audit"
+      },
+      "match": {
+       "body": {
+        "tools": "$absent"
+       }
+      },
+      "input_contains": [
+       "Make the greeting in lib/greet.txt say Hello, Almir! instead of Hello!",
+       "## Acceptance",
+       "t_A1()",
+       "A1"
+      ],
+      "input_regex": "diff --git"
+     },
+     {
+      "select": {
+       "step": "r2.edit"
+      },
+      "input_contains": [
+       "No implementation plan was supplied.",
+       "Earlier attempts:",
+       "Repairs available: 2."
+      ],
+      "input_not_contains": [
+       "diff --git",
+       "## Technical approach"
+      ],
+      "input_regex": "^R1 gpt-6-luna\\b"
+     },
+     {
+      "select": {
+       "step": "r2.done"
+      },
+      "input_contains": "{run_id:greet}-R2"
+     }
+    ],
+    "events": {
+     "slug": "greet",
+     "subsequence": [
+      {
+       "event": "rung_started",
+       "rung": "R1",
+       "model": "gpt-6-luna",
+       "effort": "max"
+      },
+      {
+       "event": "rung_finished",
+       "rung": "R1",
+       "reason": "repair_cap"
+      },
+      {
+       "event": "audit",
+       "rung": "R1",
+       "items": [
+        {
+         "id": "A1",
+         "verdict": "valid",
+         "citation": "$any",
+         "reason": "$any"
+        }
+       ]
+      },
+      {
+       "event": "rung_started",
+       "rung": "R2",
+       "model": "gpt-6.1-sol",
+       "effort": "medium"
+      },
+      {
+       "event": "finished",
+       "status": "landed",
+       "rung": "R2"
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "notes": "The auditor input must carry the rung's diff (§3.8.2); asserted as a 'diff --git' substring, the usual unified-diff header."
+}

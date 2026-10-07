@@ -1,0 +1,120 @@
+{
+  "id": "v1.2-63-build-29",
+  "profile": "v1.2",
+  "fixture": "kt",
+  "fake": true,
+  "title": "v1.2 replacement for build-29: Checked-out base, dirty: warning on stderr",
+  "spec": [
+    "§3.9.3 step 5",
+    "§1.1",
+    "§3.6",
+    "§4.7"
+  ],
+  "script": [
+    {
+      "id": "r1_happy.plan",
+      "expect": {
+        "role": "planner",
+        "turn": 1,
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+      }
+    },
+    {
+      "id": "r1_happy.edit",
+      "expect": {
+        "role": "builder",
+        "turn": 1,
+        "tools": [
+          "shell",
+          "finish",
+          "tool_output"
+        ],
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "shell",
+            "arguments": {
+              "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r1_happy.done",
+      "expect": {
+        "role": "builder",
+        "turn": 2,
+        "last_output_contains": "exit 0",
+        "input_contains": "Greet Almir by name"
+      },
+      "reply": {
+        "calls": [
+          {
+            "name": "finish",
+            "arguments": {}
+          }
+        ]
+      }
+    }
+  ],
+  "topology": "nonbare",
+  "steps": [
+    {
+      "intent": "greet"
+    },
+    {
+      "approve": "greet"
+    },
+    {
+      "write": {
+        "path": "{origin}/.gitignore",
+        "text": "/build/\n# local edit in the origin worktree\n"
+      }
+    },
+    {
+      "run": [
+        "kogen",
+        "queue",
+        "start"
+      ],
+      "expect": {
+        "exit": 0,
+        "stdout_lines": [
+          "building greet",
+          "~\\~landed greet [0-9a-f]{8} \\(Build {id8:greet}\\)",
+          "queue: done; 1 Build(s), 1 landed, 0 not"
+        ],
+        "stderr_regex": "\\Aland: warning: landed [0-9a-f]{40}([0-9a-f]{24})? on main; your checkout at {origin} has local changes and was not updated; run `git reset --keep [0-9a-f]+`, or merge it yourself\n\\Z"
+      }
+    },
+    {
+      "assert": {
+        "events": {
+          "slug": "greet",
+          "contains": [
+            {
+              "event": "landing_warning",
+              "path": "{origin}",
+              "detail": "$any"
+            }
+          ]
+        },
+        "files": {
+          "{origin}/.gitignore": {
+            "text": "/build/\n# local edit in the origin worktree\n"
+          },
+          "{origin}/lib/greet.txt": {
+            "text": "Hello!\n"
+          }
+        }
+      }
+    }
+  ],
+  "notes": "v1.2 replacement for build-29. Text-only builder replies are progress; completion requires finish alone with {} (§3.6). Shell-recipe builders expose shell, finish, and tool_output (§4.7)."
+}

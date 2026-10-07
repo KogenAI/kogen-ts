@@ -1,0 +1,23 @@
+{
+ "id": "cli-20",
+ "profile": "cli",
+ "fixture": "none",
+ "title": "version format, outside any repo",
+ "spec": [
+  "§1.7.7"
+ ],
+ "steps": [
+  {
+   "run": [
+    "kogen",
+    "version"
+   ],
+   "cwd": "nowhere",
+   "expect": {
+    "exit": 0,
+    "stdout_regex": "\\Akogen [0-9a-f]{8} \\([0-9]{4}-[0-9]{2}-[0-9]{2}(, uncommitted changes)?\\)\n\\Z",
+    "stderr": ""
+   }
+  }
+ ]
+}

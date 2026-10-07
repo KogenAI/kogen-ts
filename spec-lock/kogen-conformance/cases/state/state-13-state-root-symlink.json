@@ -1,0 +1,70 @@
+{
+ "id": "state-13",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "State-root key for a symlinked checkout",
+ "spec": [
+  "§2.7"
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "symlink": {
+    "path": "{case}/link to checkout",
+    "target": "{checkout}"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet",
+    "--project",
+    "{case}/link to checkout"
+   ],
+   "cwd": "case",
+   "expect": {
+    "exit": 5
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet"
+   ],
+   "cwd": "{case}/link to checkout",
+   "expect": {
+    "exit": 5
+   }
+  },
+  {
+   "assert": {
+    "glob_count": {
+     "{home}/.kogen/workspaces/*": 1
+    },
+    "files": {
+     "{state_root}": {
+      "exists": true
+     }
+    },
+    "vars": {}
+   }
+  },
+  {
+   "assert": {
+    "files": {
+     "{home}/.kogen/workspaces": {
+      "entries": [
+       "~checkout-[0-9a-f]{10}"
+      ]
+     }
+    }
+   }
+  }
+ ]
+}

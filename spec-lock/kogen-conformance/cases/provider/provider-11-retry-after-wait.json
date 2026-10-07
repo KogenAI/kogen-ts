@@ -1,0 +1,76 @@
+{
+ "id": "provider-11",
+ "profile": "provider",
+ "fixture": "kt",
+ "fake": true,
+ "title": "429 with retry-after: provider_wait.wait_ms equals it",
+ "spec": [
+  "§4.4",
+  "§4.5"
+ ],
+ "script": [
+  {
+   "id": "limit",
+   "expect": {
+    "role": "planner"
+   },
+   "reply": {
+    "http": {
+     "status": 429,
+     "headers": {
+      "retry-after": "30"
+     },
+     "body": {
+      "error": {
+       "message": "slow down"
+      }
+     }
+    }
+   }
+  },
+  {
+   "include": "r1_happy"
+  }
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "events": {
+     "slug": "greet",
+     "contains": [
+      {
+       "event": "provider_wait",
+       "reason": "~(provider/)?usage_limit",
+       "wait_ms": 30000,
+       "budget_paused": true
+      }
+     ],
+     "absent": [
+      "provider_retry"
+     ]
+    }
+   }
+  }
+ ]
+}

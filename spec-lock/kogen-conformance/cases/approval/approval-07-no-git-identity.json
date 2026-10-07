@@ -1,0 +1,42 @@
+{
+ "id": "approval-07",
+ "profile": "approval",
+ "fixture": "kt",
+ "title": "No git identity gives exit 2",
+ "spec": [
+  "§1.7.2",
+  "§1.5"
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "write": {
+    "path": "{case}/gitconfig",
+    "text": "[user]\n\tuseConfigOnly = true\n[init]\n\tdefaultBranch = main\n[commit]\n\tgpgsign = false\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "intent",
+    "approve",
+    "greet",
+    "{hash8:greet}"
+   ],
+   "expect": {
+    "exit": 2,
+    "stderr": "",
+    "stdout": "intent/approval_identity_unavailable: configure git user.name and user.email\n"
+   }
+  },
+  {
+   "assert": {
+    "refs": {
+     "refs/kogen/intents/greet": false
+    }
+   }
+  }
+ ]
+}

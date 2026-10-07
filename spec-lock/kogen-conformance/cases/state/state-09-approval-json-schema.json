@@ -1,0 +1,90 @@
+{
+ "id": "state-09",
+ "profile": "state",
+ "fixture": "kt",
+ "title": "approval.json schema and trailers",
+ "spec": [
+  "§2.5.1"
+ ],
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "assert": {
+    "git": [
+     {
+      "args": [
+       "cat-file",
+       "-p",
+       "refs/kogen/intents/greet:.kogen/intents/greet/approval.json"
+      ],
+      "json": {
+       "schema": 2,
+       "slug": "greet",
+       "approval_sha256": "{hash64:greet}",
+       "intent_sha256": "{intent_sha:greet}",
+       "target_branch": "main",
+       "base_sha": "{base_sha}",
+       "domains": [
+        "app"
+       ],
+       "acceptance_paths": [".kogen/acceptance/greet.t.sh"],
+       "protected_manifest": "$obj",
+       "witness": null,
+       "by": "Kogen Test <test@kogen.invalid>",
+       "at": "~[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-]00:00)",
+       "check_baseline": [
+        {
+         "name": "lint",
+         "status": "green",
+         "exit_status": 0,
+         "findings": []
+        },
+        {
+         "name": "unit",
+         "status": "green",
+         "exit_status": 0,
+         "findings": []
+        }
+       ]
+      }
+     },
+     {
+      "args": [
+       "log",
+       "-1",
+       "--format=%B",
+       "refs/kogen/intents/greet"
+      ],
+      "stdout_regex": "\\AKogen immutable approval package\n\nKogen-Approval: greet\nKogen-Approved-By: Kogen Test <test@kogen.invalid>\nKogen-Approved-Hash: {hash64:greet}\nKogen-Approved-At: [0-9]{4}-[0-9]{2}-[0-9]{2}T[^\n]+\n+\\Z"
+     },
+     {
+      "args": [
+       "ls-tree",
+       "-r",
+       "refs/kogen/intents/greet"
+      ],
+      "stdout_regex": [
+       "\\A(100644 blob [0-9a-f]+\t[^\n]+\n){3}\\Z",
+       "\t\\.kogen/intents/greet/intent\\.md\n",
+       "\t\\.kogen/intents/greet/approval\\.json\n",
+       "\t\\.kogen/acceptance/greet\\.t\\.sh\n"
+      ]
+     },
+     {
+      "args": [
+       "rev-list",
+       "--count",
+       "refs/kogen/intents/greet"
+      ],
+      "stdout": "1\n"
+     }
+    ]
+   }
+  }
+ ]
+}

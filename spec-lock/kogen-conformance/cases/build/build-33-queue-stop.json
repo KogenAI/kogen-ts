@@ -1,0 +1,144 @@
+{
+ "id": "build-33",
+ "profile": "build",
+ "fixture": "kt",
+ "fake": true,
+ "title": "queue stop",
+ "spec": [
+  "§1.7.4",
+  "§3.11"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: lib/greet.txt contains the line Hello, Almir!\n\n## Technical approach\nReplace the single line in lib/greet.txt.\n\n## Implementation steps\n1. Write Hello, Almir! to lib/greet.txt.\n"
+   },
+   "first_byte_ms": 60000
+  },
+  {
+   "id": "edit",
+   "expect": {
+    "role": "builder",
+    "turn": 1,
+    "input_contains": "Greet Almir by name"
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'Hello, Almir!\\n' > lib/greet.txt"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "done",
+   "expect": {
+    "role": "builder",
+    "turn": 2,
+    "input_contains": "Greet Almir by name",
+    "last_output_contains": "exit 0"
+   },
+   "reply": {
+    "text": "Done."
+   }
+  }
+ ],
+ "notes": "The planner answers after 600 ms (60000 ms unscaled, under the first-byte deadline), leaving time for queue stop.",
+ "steps": [
+  {
+   "intent": "greet"
+  },
+  {
+   "intent": "farewell"
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "sleep": 1.1
+  },
+  {
+   "approve": "farewell"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "background": "q"
+  },
+  {
+   "wait_until": {
+    "fake_requests": 1,
+    "timeout_s": 60
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "stop"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout_regex": "\\Aqueue: stopping after the current Build \\(pid [0-9]+\\)\n\\Z"
+   }
+  },
+  {
+   "assert": {
+    "files": {
+     "{state_root}/queue.stop": {
+      "text": "stop\n"
+     }
+    }
+   }
+  },
+  {
+   "wait": {
+    "name": "q",
+    "expect": {
+     "exit": 0,
+     "stderr": "",
+     "stdout_lines": [
+      "building greet",
+      "~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+      "queue: stopped on request; 1 Build(s), 1 landed, 0 not"
+     ]
+    }
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "stop"
+   ],
+   "expect": {
+    "exit": 0,
+    "stderr": "",
+    "stdout": "queue: not running\n"
+   }
+  },
+  {
+   "run": [
+    "kogen",
+    "status",
+    "farewell"
+   ],
+   "expect": {
+    "exit": 0,
+    "stdout": "farewell: queued, 1 of 1\n"
+   }
+  }
+ ]
+}

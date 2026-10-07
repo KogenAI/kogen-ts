@@ -1,0 +1,140 @@
+{
+ "id": "exunit-03",
+ "profile": "exunit",
+ "fixture": "exunit-hello",
+ "fake": true,
+ "needs": [
+  "elixir"
+ ],
+ "acceptance_ext": "_test.exs",
+ "title": "A compile failure gives acceptance_compile_failed and a repair",
+ "spec": [
+  "§2.4.1",
+  "§3.5"
+ ],
+ "script": [
+  {
+   "id": "plan",
+   "expect": {
+    "role": "planner",
+    "tools": []
+   },
+   "reply": {
+    "text": "Difficulty: easy\n\n## Acceptance criteria\n- A1: Hello.greet/0 returns Hello, Almir!\n\n## Technical approach\nChange the return value.\n\n## Implementation steps\n1. Edit lib/hello.ex.\n"
+   }
+  },
+  {
+   "id": "edit",
+   "expect": {
+    "role": "builder",
+    "turn": 1
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'defmodule Hello do\\n  def greet, do: \"Hello, Almir!\"\\n' > lib/hello.ex"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "done",
+   "expect": {
+    "role": "builder",
+    "turn": 2
+   },
+   "reply": {
+    "text": "Done."
+   }
+  },
+  {
+   "id": "fix",
+   "expect": {
+    "role": "builder",
+    "turn": 3,
+    "last_user_contains": "Kogen's controller reported this failure."
+   },
+   "reply": {
+    "calls": [
+     {
+      "name": "shell",
+      "arguments": {
+       "cmd": "printf 'defmodule Hello do\\n  def greet, do: \"Hello, Almir!\"\\nend\\n' > lib/hello.ex"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "done2",
+   "expect": {
+    "role": "builder",
+    "turn": 4
+   },
+   "reply": {
+    "text": "Fixed the missing end."
+   }
+  }
+ ],
+ "notes": "Where acceptance_compile_failed appears (feedback line, journal item status) is not pinned; the case requires the repair feedback to name it or the failing item A1, and the Build to repair and land.",
+ "steps": [
+  {
+   "intent": {
+    "slug": "greet",
+    "template": "exunit-greet"
+   }
+  },
+  {
+   "approve": "greet"
+  },
+  {
+   "run": [
+    "kogen",
+    "queue",
+    "start"
+   ],
+   "timeout": 600,
+   "expect": {
+    "exit": 0,
+    "stdout_lines": [
+     "building greet",
+     "~landed greet [0-9a-f]{8} \\(Build [0-9a-f]{8}\\)",
+     "queue: done; 1 Build(s), 1 landed, 0 not"
+    ]
+   }
+  },
+  {
+   "assert": {
+    "fake_requests": [
+     {
+      "select": {
+       "step": "fix"
+      },
+      "input_regex": "(?m)(acceptance_compile_failed|^acceptance A1: )"
+     }
+    ],
+    "events": {
+     "slug": "greet",
+     "subsequence": [
+      {
+       "event": "verification",
+       "result": "red"
+      },
+      "repair",
+      {
+       "event": "verification",
+       "result": "green"
+      },
+      {
+       "event": "finished",
+       "status": "landed"
+      }
+     ]
+    }
+   }
+  }
+ ]
+}

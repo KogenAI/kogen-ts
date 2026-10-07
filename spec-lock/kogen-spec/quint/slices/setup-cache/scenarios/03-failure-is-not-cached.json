@@ -1,0 +1,9 @@
+{
+  "name": "03-failure-is-not-cached",
+  "about": "Failed setup runs do not publish an entry; a later success can be cached and reused.",
+  "steps": [
+    {"do": ["Run", {"base":"a","variant":"","tracked":false,"input":"","enabled":true,"stable":true,"ok":false,"payload":"bad"}], "expect": {"entryCount":0,"reused":false,"setupRuns":1,"last":"failed","present":false}},
+    {"do": ["Run", {"base":"a","variant":"","tracked":false,"input":"","enabled":true,"stable":true,"ok":true,"payload":"good"}], "expect": {"entryCount":1,"reused":false,"setupRuns":2,"last":"miss"}},
+    {"do": ["Run", {"base":"a","variant":"","tracked":false,"input":"","enabled":true,"stable":true,"ok":true,"payload":"ignored"}], "expect": {"entryCount":1,"reused":true,"setupRuns":2,"work":"good"}}
+  ]
+}
