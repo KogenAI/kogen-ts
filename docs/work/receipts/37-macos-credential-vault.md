@@ -4,14 +4,17 @@ Status: **IMPLEMENTED, AWAITING INTEGRATION ACCEPTANCE**
 
 Base SHA: `5585601ad1be8cac5b8daa8e3cda92078399d5e8`
 
-Implementation head SHA: `740b5ce` (`Implement macOS credential vault`)
+Implementation commit: `604b772` (`Implement macOS credential vault`, rebased).
+Latest validated branch head: `ac84f7a0141077688db790c5984a9a5ef30d99c6`.
+Rebase base: `3da7beee2f2eff4feba911143ea46931a86a7057` (`main`).
 
 Branch: `kts/37-macos-credential-vault`
 
 Target: spec v1.3-draft `e19dd1c21c19c5be1201c3b6a42c59c28b5c2887`; frozen
 conformance suite v1.2.
 
-Active effort: approximately 10 minutes; automated check wait excluded. Model:
+Active effort: approximately 18 minutes total, including the integration
+diagnosis/rebase and receipt update; automated check wait excluded. Model:
 GPT-6 Codex; exact served variant and token count are not exposed by this worker
 interface.
 
@@ -56,23 +59,28 @@ gate remains unavailable as described in its receipt.
 
 ## Validation
 
-- Named local acceptance:
+- Named local acceptance at the rebased branch head:
   `GIT_CONFIG_GLOBAL=/dev/null bun --no-install test --max-concurrency 1 ./tests/vault`
   — **PASS**, 6 cases, 25 assertions. Coverage: encrypted round-trip and private
   envelope, modified-tag rejection, missing-key refusal without key recreation,
   provider separation and associated-data binding, file-seam bypass, and framed
   native request encoding.
-- Final required `GIT_CONFIG_GLOBAL=/dev/null make check` — **PASS**, 346 passed,
-  1 skipped, 0 failed; 2,997 assertions. Biome, TypeScript, frozen input,
+- Required `GIT_CONFIG_GLOBAL=/dev/null make check` at the latest validated
+  branch head `ac84f7a0141077688db790c5984a9a5ef30d99c6` — **PASS**, 351 passed,
+  1 skipped, 0 failed; 3,055 assertions. Biome, TypeScript, frozen input,
   dispatcher validation, warning-as-error native compilation, and isolated
   tests passed. The skip is the existing Linux-only real-mount case on this
   macOS host. `native/keychain.c` compiled cleanly; no real Keychain operation
   was invoked.
-- The first required full-check run during implementation finished with 344
-  passed, 1 skipped, and 1 unrelated failure: the host-bridge parent-kill test
-  read a partial JSON report and raised `SyntaxError: Unexpected EOF`. The final
-  full check passed that same test. The failure was retained in this receipt; no
-  source outside this packet's allowlist was changed.
+- The integration log's check at `073160db85aa3db8abf005720dc5a1886d665ae5`
+  had 345 passed, 1 skipped, and 1 unrelated failure: `tests/host-bridge/host.test.ts`
+  raised `SyntaxError: Unexpected EOF` parsing `parent-report.json`. The test
+  waits for the report path to exist, then reads it while its driver writes the
+  JSON file. A required full-check rerun at that head passed (346 passed,
+  1 skipped, 0 failed; 2,997 assertions). After rebasing onto the current main
+  tip, the named vault cases and full check passed again at the latest head.
+  This packet changed no files outside its allowlist; the host-bridge test and
+  driver remain with their owner if the report-read race recurs.
 - `git diff --cached --check`: **PASS** for the implementation commit.
 - No directly assigned B-set. Conformance cases: **0 assigned / 0 run**;
   expanded instances: **0**; unmatched fake provider requests: **0**. The
