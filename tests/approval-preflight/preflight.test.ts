@@ -532,6 +532,71 @@ test("cached baseline is reused only for its exact checked-base identity", async
 	expect(cache.lookups.at(-1)?.checkedBaseTree).toBe("d".repeat(40));
 });
 
+test("two approvals interleave at scratch creation, staging, and cleanup without sharing scratch bytes", async () => {
+	function barrier() {
+		let arrivals = 0;
+		let release: () => void = () => {};
+		const ready = new Promise<void>((resolve) => {
+			release = resolve;
+		});
+		return async () => {
+			arrivals += 1;
+			if (arrivals === 2) release();
+			await ready;
+		};
+	}
+	const atCreate = barrier();
+	const atStage = barrier();
+	const atCleanup = barrier();
+	const fixtures = [requestFixture(), requestFixture()];
+	for (const [index, fixture] of fixtures.entries()) {
+		const scratchRoot = `/tmp/approval-preflight-race-${index}`;
+		const originalCreate = fixture.workspace.createScratch.bind(
+			fixture.workspace,
+		);
+		fixture.workspace.createScratch = async (request) => {
+			const created = await originalCreate(request);
+			if (!created.ok) return created;
+			await atCreate();
+			return {
+				ok: true,
+				value: {
+					...created.value,
+					remove: async () => {
+						await atCleanup();
+						return created.value.remove();
+					},
+				},
+			};
+		};
+		const originalWrite = fixture.filesystem.writeFileAtomically.bind(
+			fixture.filesystem,
+		);
+		fixture.filesystem.writeFileAtomically = async (request) => {
+			const result = await originalWrite(request);
+			if (request.path === "test/acceptance/greet.t.sh") await atStage();
+			return result;
+		};
+		Object.assign(fixture.request, { scratchRoot });
+	}
+	const results = await Promise.all(
+		fixtures.map(({ request }) => preflightApproval(request)),
+	);
+	expect(results.every((result) => result.ok)).toBe(true);
+	expect(
+		results.map((result) => (result.ok ? result.value.approvalSha256 : null)),
+	).toEqual([
+		hashApprovalBytes(INTENT, ACCEPTANCE),
+		hashApprovalBytes(INTENT, ACCEPTANCE),
+	]);
+	expect(fixtures.map((fixture) => fixture.workspace.removeCount)).toEqual([
+		1, 1,
+	]);
+	expect(fixtures.map((fixture) => fixture.filesystem.files.size)).toEqual([
+		2, 2,
+	]);
+});
+
 test("matching shape warnings are shown and stale warning bytes are ignored", async () => {
 	const digest = hashApprovalBytes(INTENT, ACCEPTANCE);
 	const fresh = requestFixture({

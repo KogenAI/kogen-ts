@@ -158,12 +158,13 @@ test("three appended requests keep the exact raw-byte prefix and retries are ide
 	const third = encodeSessionRequest(state);
 	expect(hasAppendedInputPrefix(second.body, third.body)).toBe(true);
 	const input = third.inputItems.map(text);
-	expect(input[0]).toContain("You are Kogen's builder.");
-	expect(input[1]).toContain('"text":"task"');
-	expect(input[2]).toContain('"id":"msg_1"');
-	expect(input[3]).toContain('"call_id":"call_1"');
-	expect(input[4]).toContain("The controller check completed.");
-	expect(input[5]).toContain('"id":"msg_2"');
+	expect(input[0]).toContain('"prompt_cache_breakpoint"');
+	expect(input[1]).toContain("You are Kogen's builder.");
+	expect(input[2]).toContain('"text":"task"');
+	expect(input[3]).toContain('"id":"msg_1"');
+	expect(input[4]).toContain('"call_id":"call_1"');
+	expect(input[5]).toContain("The controller check completed.");
+	expect(input[6]).toContain('"id":"msg_2"');
 });
 
 test("history copies raw items on append and on read", () => {
@@ -200,12 +201,23 @@ test("owned requests keep complete schemas in input and tool-less roles disable 
 			type: "additional_tools",
 		},
 		{
+			role: "developer",
+			content: [
+				{
+					type: "input_text",
+					text: "Follow the shared Kogen request protocol.",
+					prompt_cache_breakpoint: { mode: "explicit" },
+				},
+			],
+		},
+		{
 			type: "message",
 			role: "developer",
 			content: [{ type: "input_text", text: "You are Kogen's planner." }],
 		},
 	]);
 	expect(body.prompt_cache_key).toBe(state.cacheKey);
+	expect(body.prompt_cache_options).toEqual({ mode: "implicit" });
 	expect(request.headers["session-id"]).toBe(state.cacheKey);
 	expect(request.headers["thread-id"]).toBe(state.threadId);
 	expect(state.prefix.toolNames).toEqual(["shell", "finish"]);
@@ -295,6 +307,20 @@ test("separate Shape and Build runs retain byte-identical versioned static prefi
 	expect(shape.threadId).not.toBe(build.threadId);
 	expect(encodeSessionRequest(shape).staticPrefixSha256).toBe(
 		encodeSessionRequest(build).staticPrefixSha256,
+	);
+	const shapeWire = encodeSessionRequest(shape);
+	const buildWire = encodeSessionRequest(build);
+	expect(shapeWire.inputItems[0]).toEqual(buildWire.inputItems[0]);
+	const shared = JSON.parse(
+		text(shapeWire.inputItems[0] ?? new Uint8Array()),
+	) as {
+		content: { prompt_cache_breakpoint?: { mode: string } }[];
+	};
+	expect(shared.content[0]?.prompt_cache_breakpoint).toEqual({
+		mode: "explicit",
+	});
+	expect(text(shapeWire.body)).toContain(
+		'"prompt_cache_options":{"mode":"implicit"}',
 	);
 });
 

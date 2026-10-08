@@ -17,8 +17,9 @@ import {
 	type GrokRefreshReason,
 	refreshGrokCredential,
 } from "../auth/grok/refresh";
-import { HttpDeadlineError } from "../http/deadline";
+import { createHttpDeadline, HttpDeadlineError } from "../http/deadline";
 import {
+	HttpTransport,
 	MAX_HTTP_ERROR_BODY_BYTES,
 	resolveProviderEndpoint,
 } from "../http/transport";
@@ -398,32 +399,69 @@ export function createGrokAttemptSender(
 				"Grok request adapter received a non-Grok session.",
 			);
 		const effectiveSignal = signal ?? options.signal;
-		const current = await refreshCredential(options, effectiveSignal);
-		if (!current.ok) return { ok: false, error: current.error };
-		const sent = await sendHttpAttempt(
-			options,
-			endpoint,
-			request,
-			session,
-			current.value,
-			effectiveSignal,
-		);
+		const beginDeadline = () =>
+			options.http instanceof HttpTransport
+				? createHttpDeadline(
+						options.clock,
+						{
+							firstByteTimeoutMilliseconds:
+								GROK_REQUEST_FIRST_BYTE_TIMEOUT_MILLISECONDS,
+							idleTimeoutMilliseconds: GROK_REQUEST_IDLE_TIMEOUT_MILLISECONDS,
+							totalTimeoutMilliseconds: GROK_REQUEST_TOTAL_TIMEOUT_MILLISECONDS,
+						},
+						effectiveSignal,
+					)
+				: null;
+		const firstDeadline = beginDeadline();
+		let current: Awaited<ReturnType<typeof refreshCredential>>;
+		let sent: HttpAttemptResult;
+		try {
+			current = await refreshCredential(
+				options,
+				firstDeadline?.signal ?? effectiveSignal,
+			);
+			if (firstDeadline?.error)
+				return failure("timeout", "Grok request timed out.");
+			if (!current.ok) return { ok: false, error: current.error };
+			sent = await sendHttpAttempt(
+				options,
+				endpoint,
+				request,
+				session,
+				current.value,
+				firstDeadline?.signal ?? effectiveSignal,
+			);
+		} finally {
+			firstDeadline?.complete();
+		}
 		if (sent.kind === "failure") return { ok: false, error: sent.error };
 		if (sent.kind === "response") return sent.response;
 
-		const refreshed = await refreshCredential(options, effectiveSignal, {
-			kind: "unauthorized",
-			rejectedAccessToken: current.value.access_token,
-		});
-		if (!refreshed.ok) return { ok: false, error: refreshed.error };
-		const replay = await sendHttpAttempt(
-			options,
-			endpoint,
-			request,
-			session,
-			refreshed.value,
-			effectiveSignal,
-		);
+		const replayDeadline = beginDeadline();
+		let replay: HttpAttemptResult;
+		try {
+			const refreshed = await refreshCredential(
+				options,
+				replayDeadline?.signal ?? effectiveSignal,
+				{
+					kind: "unauthorized",
+					rejectedAccessToken: current.value.access_token,
+				},
+			);
+			if (replayDeadline?.error)
+				return failure("timeout", "Grok request timed out.");
+			if (!refreshed.ok) return { ok: false, error: refreshed.error };
+			replay = await sendHttpAttempt(
+				options,
+				endpoint,
+				request,
+				session,
+				refreshed.value,
+				replayDeadline?.signal ?? effectiveSignal,
+			);
+		} finally {
+			replayDeadline?.complete();
+		}
 		if (replay.kind === "failure") return { ok: false, error: replay.error };
 		if (replay.kind === "response") return replay.response;
 		return failure(

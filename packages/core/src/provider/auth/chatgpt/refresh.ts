@@ -10,6 +10,8 @@ import type {
 	RandomPort,
 } from "../../../contracts/ports";
 import { isAccountLabel } from "../../accounts/format";
+import { createHttpDeadline, type HttpDeadline } from "../../http/deadline";
+import { HttpTransport } from "../../http/transport";
 import {
 	CHATGPT_AUTH_BASE_URL,
 	CHATGPT_CREDENTIAL_KEY,
@@ -971,29 +973,54 @@ export async function sendChatGptAuthenticatedRequest(
 	let auth: ChatGptRequestAuth = options.auth;
 	const ownedRefresh = "refresh" in options ? options.refresh : null;
 	const signal = combineSignals(ownedRefresh?.signal, options.signal);
+	const beginDeadline = (): HttpDeadline | null =>
+		ownedRefresh !== null && options.http instanceof HttpTransport
+			? createHttpDeadline(ownedRefresh.clock, options.request, signal)
+			: null;
+	const firstDeadline = beginDeadline();
+	const firstSignal = firstDeadline?.signal ?? signal;
 	const refreshOptions =
 		ownedRefresh === null
 			? null
-			: { ...ownedRefresh, ...(signal === undefined ? {} : { signal }) };
+			: {
+					...ownedRefresh,
+					...(firstSignal === undefined ? {} : { signal: firstSignal }),
+				};
 	if (refreshOptions !== null) {
 		const ensured = await refreshChatGptCredential(refreshOptions);
-		if (!ensured.ok) return ensured;
+		if (firstDeadline?.error) {
+			const error = firstDeadline.error;
+			firstDeadline.complete();
+			return portFailure({
+				code: "timeout",
+				message: error.message,
+				retryable: true,
+				cause: error,
+			});
+		}
+		if (!ensured.ok) {
+			firstDeadline?.complete();
+			return ensured;
+		}
 		auth = { source: "owned", credential: ensured.value.credential };
 	}
 	const first = await send(
 		options.http,
 		withHeaders(options.request, auth, options.version),
-		signal,
+		firstSignal,
 	);
+	if (!first.ok) firstDeadline?.complete();
 	if (!first.ok) return first;
 	if (first.value.status === 403) {
 		const drained = await discardBody(first.value);
+		firstDeadline?.complete();
 		return drained.ok
 			? { ok: false, error: providerLogin(CHATGPT_PROVIDER_LOGIN_MESSAGE) }
 			: drained;
 	}
 	if (first.value.status !== 401) return first;
 	const drained = await discardBody(first.value);
+	firstDeadline?.complete();
 	if (!drained.ok) return drained;
 	if (auth.source === "injected")
 		return {
@@ -1005,11 +1032,32 @@ export async function sendChatGptAuthenticatedRequest(
 			ok: false,
 			error: providerLogin(CHATGPT_PROVIDER_LOGIN_MESSAGE),
 		};
-	const forced = await refreshChatGptCredential(refreshOptions, {
-		kind: "unauthorized",
-		rejectedAccessToken: auth.credential.access_token,
-	});
-	if (!forced.ok) return forced;
+	const replayDeadline = beginDeadline();
+	const replaySignal = replayDeadline?.signal ?? signal;
+	const forced = await refreshChatGptCredential(
+		{
+			...refreshOptions,
+			...(replaySignal === undefined ? {} : { signal: replaySignal }),
+		},
+		{
+			kind: "unauthorized",
+			rejectedAccessToken: auth.credential.access_token,
+		},
+	);
+	if (replayDeadline?.error) {
+		const error = replayDeadline.error;
+		replayDeadline.complete();
+		return portFailure({
+			code: "timeout",
+			message: error.message,
+			retryable: true,
+			cause: error,
+		});
+	}
+	if (!forced.ok) {
+		replayDeadline?.complete();
+		return forced;
+	}
 	const replay = await send(
 		options.http,
 		withHeaders(
@@ -1017,11 +1065,13 @@ export async function sendChatGptAuthenticatedRequest(
 			{ source: "owned", credential: forced.value.credential },
 			options.version,
 		),
-		signal,
+		replaySignal,
 	);
+	if (!replay.ok) replayDeadline?.complete();
 	if (!replay.ok) return replay;
 	if (replay.value.status === 401 || replay.value.status === 403) {
 		const replayDrained = await discardBody(replay.value);
+		replayDeadline?.complete();
 		return replayDrained.ok
 			? { ok: false, error: providerLogin(CHATGPT_PROVIDER_LOGIN_MESSAGE) }
 			: replayDrained;

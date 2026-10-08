@@ -25,6 +25,7 @@ import {
 	refreshChatGptCredential,
 	sendChatGptAuthenticatedRequest,
 } from "../../packages/core/src/provider/auth/chatgpt/refresh";
+import { HttpTransport } from "../../packages/core/src/provider/http/transport";
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -191,6 +192,7 @@ interface LockRow {
 
 class MemoryRefreshLocks implements ChatGptRefreshLockPort {
 	readonly rows = new Map<string, LockRow>();
+	onExists: (() => void) | null = null;
 
 	private key(root: string, path: string): string {
 		return `${root}\0${path}`;
@@ -201,7 +203,10 @@ class MemoryRefreshLocks implements ChatGptRefreshLockPort {
 		path: string,
 	): Promise<Result<"created" | "exists">> {
 		const key = this.key(root, path);
-		if (this.rows.has(key)) return ok("exists");
+		if (this.rows.has(key)) {
+			this.onExists?.();
+			return ok("exists");
+		}
 		this.rows.set(key, { ownerBytes: null, modifiedAt: NOW_MS });
 		return ok("created");
 	}
@@ -276,6 +281,7 @@ class FakeAuthHttp implements HttpPort {
 	refreshCount = 0;
 	revokeCount = 0;
 	refreshGate: Promise<void> | null = null;
+	onRefreshStart: (() => void) | null = null;
 
 	async request(request: HttpRequest): Promise<Result<HttpResponse>> {
 		this.requests.push({
@@ -294,6 +300,7 @@ class FakeAuthHttp implements HttpPort {
 			);
 		if (url.pathname === "/api/accounts/oauth/token") {
 			this.refreshCount += 1;
+			this.onRefreshStart?.();
 			if (this.refreshGate !== null) await this.refreshGate;
 			return ok(
 				response(200, {
@@ -361,15 +368,25 @@ function responseRequest(): HttpRequest {
 }
 
 test("concurrent expiring-token refreshes reread and rotate only once", async () => {
-	const { options, credentials, http } = refreshFixture();
+	const { options, credentials, locks, http } = refreshFixture();
 	let releaseRefresh: () => void = () => {};
+	let refreshStarted: () => void = () => {};
+	let waiterObserved: () => void = () => {};
+	const started = new Promise<void>((resolve) => {
+		refreshStarted = resolve;
+	});
+	const waiting = new Promise<void>((resolve) => {
+		waiterObserved = resolve;
+	});
+	http.onRefreshStart = refreshStarted;
+	locks.onExists = waiterObserved;
 	http.refreshGate = new Promise<void>((resolve) => {
 		releaseRefresh = resolve;
 	});
 	const first = refreshChatGptCredential(options);
-	await new Promise((resolve) => setTimeout(resolve, 10));
+	await started;
 	const second = refreshChatGptCredential(options);
-	await new Promise((resolve) => setTimeout(resolve, 20));
+	await waiting;
 	releaseRefresh();
 	const results = await Promise.all([first, second]);
 	expect(results.every((result) => result.ok)).toBe(true);
@@ -409,6 +426,54 @@ test("owned 401 refreshes once and replays the same body with owned headers", as
 	expect(responses[1]?.headers["user-agent"]).toBe("kogen/0.1");
 	expect(responses[1]?.headers["session-id"]).toBe("cache-key");
 	expect(responses[1]?.headers["thread-id"]).toBe("thread-id");
+});
+
+test("owned credential loading spends the response first-byte deadline", async () => {
+	let now = 0;
+	const clock: ClockPort = {
+		monotonicMilliseconds: () => now,
+		unixMilliseconds: () => NOW_MS,
+		sleep: (_milliseconds, signal) =>
+			new Promise<void>((_resolve, reject) => {
+				signal?.addEventListener("abort", () => reject(signal.reason), {
+					once: true,
+				});
+			}),
+	};
+	const saved = new MemoryCredentials();
+	const credential = testCredential({
+		expires_at: Math.floor(NOW_MS / 1000) + 3600,
+	});
+	saved.put(credential);
+	const credentials: CredentialPort = {
+		read: async (key) => {
+			now = 120_001;
+			return saved.read(key);
+		},
+		write: (key, value) => saved.write(key, value),
+		remove: (key) => saved.remove(key),
+	};
+	let sends = 0;
+	const http = new HttpTransport(clock, {
+		fetch: async () => {
+			sends += 1;
+			return new Response("ok");
+		},
+	});
+	const fixture = refreshFixture({ credentials, clock });
+	const result = await sendChatGptAuthenticatedRequest({
+		http,
+		request: responseRequest(),
+		auth: { source: "owned", credential },
+		refresh: fixture.options,
+	});
+	expect(result.ok).toBe(false);
+	if (!result.ok) {
+		expect(result.error.kind).toBe("port");
+		if (result.error.kind === "port")
+			expect(result.error.error.code).toBe("timeout");
+	}
+	expect(sends).toBe(0);
 });
 
 test("injected 401 is a provider login outcome without credential reads or refresh", async () => {

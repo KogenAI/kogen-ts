@@ -90,11 +90,22 @@ export function parseWorktreeList(bytes: Uint8Array): Result<
 	const fields = decoded.value.split("\0");
 	if (fields.at(-1) === "") fields.pop();
 	const rows: { path: string; head: string; branch: string | null }[] = [];
-	let current: { path?: string; head?: string; branch: string | null } = {
+	let current: {
+		path?: string;
+		head?: string;
+		branch: string | null;
+		bare?: boolean;
+	} = {
 		branch: null,
 	};
 	const finish = (): boolean => {
 		if (current.path === undefined && current.head === undefined) return true;
+		if (current.bare === true) {
+			const valid =
+				current.path?.startsWith("/") === true && current.head === undefined;
+			current = { branch: null };
+			return valid;
+		}
 		if (
 			current.path === undefined ||
 			!current.path.startsWith("/") ||
@@ -120,6 +131,7 @@ export function parseWorktreeList(bytes: Uint8Array): Result<
 			continue;
 		}
 		if (field.startsWith("worktree ")) current.path = field.slice(9);
+		else if (field === "bare") current.bare = true;
 		else if (field.startsWith("HEAD ")) current.head = field.slice(5);
 		else if (field.startsWith("branch ")) current.branch = field.slice(7);
 	}

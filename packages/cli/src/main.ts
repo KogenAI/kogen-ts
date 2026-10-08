@@ -3,6 +3,8 @@ import { parseArgv } from "./argv";
 import { createControllerRuntime, validateProjectCommand } from "./composition";
 import { classifyCliException } from "./errors";
 import { runI1Command } from "./i1";
+import { runI2QueueCommand } from "./i2";
+import { runI2ProviderCommand } from "./i2-auth";
 import {
 	type CliOutput,
 	renderErrorLine,
@@ -39,6 +41,27 @@ async function run(): Promise<CliOutput> {
 		const runtime = await createControllerRuntime();
 		try {
 			return await runI1Command(command, runtime);
+		} finally {
+			await runtime.close();
+		}
+	}
+	if (command.name === "queue start" || command.name === "queue stop") {
+		const runtime = await createControllerRuntime();
+		try {
+			return await runI2QueueCommand(command, runtime);
+		} finally {
+			await runtime.close();
+		}
+	}
+	if (
+		command.name === "provider list" ||
+		command.name === "provider login" ||
+		command.name === "provider logout" ||
+		command.name === "provider use"
+	) {
+		const runtime = await createControllerRuntime();
+		try {
+			return await runI2ProviderCommand(command, runtime);
 		} finally {
 			await runtime.close();
 		}

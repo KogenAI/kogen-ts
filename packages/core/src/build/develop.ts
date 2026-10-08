@@ -4,8 +4,10 @@ import type { ModelProvider, ResolvedRole } from "../project/roles";
 import type { RecipeName } from "../project/schema";
 import type { ProviderFailureClass } from "../provider/retry/transition";
 import { userMessageBytes } from "../provider/session/history";
+import type { CanonicalToolSchema } from "../provider/session/prefix";
 import {
 	createSession,
+	type RoleToolAuthorization,
 	type SessionAuthMode,
 	type SessionState,
 	stepSession,
@@ -128,6 +130,9 @@ export interface CreateBuilderSessionInput extends BuildFirstMessageInput {
 	readonly cacheKey?: string;
 	readonly promptVersion: string;
 	readonly adapterVersion: string;
+	readonly genericInstructions?: string;
+	readonly toolSchemas?: readonly CanonicalToolSchema[];
+	readonly roleToolAuthorization?: RoleToolAuthorization;
 	readonly securityNamespace?: string;
 }
 
@@ -152,15 +157,18 @@ export function createBuilderSession(
 		attempt: input.attempt,
 		rung: input.rung,
 		roleInstructions: BUILD_BUILDER_INSTRUCTIONS,
-		genericInstructions: BUILD_GENERIC_INSTRUCTIONS,
-		toolSchemas: CANONICAL_TOOL_SCHEMAS,
+		genericInstructions:
+			input.genericInstructions ?? BUILD_GENERIC_INSTRUCTIONS,
+		toolSchemas: input.toolSchemas ?? CANONICAL_TOOL_SCHEMAS,
 		toolSchemaVersion: TOOL_SCHEMA_VERSION,
 		promptVersion: input.promptVersion,
 		adapterVersion: input.adapterVersion,
 		...(input.securityNamespace === undefined
 			? {}
 			: { securityNamespace: input.securityNamespace }),
-		roleToolAuthorization: roleToolAuthorizationForRecipe(input.recipe),
+		roleToolAuthorization:
+			input.roleToolAuthorization ??
+			roleToolAuthorizationForRecipe(input.recipe),
 		...(input.cacheKey === undefined ? {} : { cacheKey: input.cacheKey }),
 		initialItems: [
 			{

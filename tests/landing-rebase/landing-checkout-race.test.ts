@@ -145,3 +145,42 @@ test("a checkout edit made after the sync plan is retained", async () => {
 		rmSync(root, { recursive: true, force: true });
 	}
 });
+
+test("landing preflight skips a bare origin's pseudo-worktree", async () => {
+	const root = mkdtempSync(join(tmpdir(), "kogen-landing-bare-"));
+	const home = join(root, "home");
+	const origin = join(root, "origin.git");
+	const checkout = join(root, "checkout");
+	mkdirSync(home, { recursive: true, mode: 0o700 });
+	mkdirSync(origin);
+	const git = testGitPort(home);
+	try {
+		await gitText(git, origin, [
+			"init",
+			"--bare",
+			"--initial-branch=main",
+			".",
+		]);
+		await gitText(git, root, ["clone", origin, checkout]);
+		await gitText(git, checkout, ["config", "user.name", "Landing Test"]);
+		await gitText(git, checkout, [
+			"config",
+			"user.email",
+			"landing@example.invalid",
+		]);
+		writeFileSync(join(checkout, "greet.txt"), "Hello!\n");
+		await gitText(git, checkout, ["add", "greet.txt"]);
+		await gitText(git, checkout, ["commit", "-m", "base"]);
+		await gitText(git, checkout, ["push", "origin", "HEAD:main"]);
+		const base = await gitText(git, checkout, ["rev-parse", "HEAD"]);
+		const plan = await planLandingCheckoutSync(git, {
+			origin,
+			branch: "main",
+			expectedParent: base,
+			candidateCommit: base,
+		});
+		expect(plan).toMatchObject({ ok: true, value: { checkouts: [] } });
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});
