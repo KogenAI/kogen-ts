@@ -144,3 +144,44 @@ link operation `0x0304`, and `packages/cli/src/composition.ts` does not select
 owns that wiring. I6 still needs the isolated explicit OS-Keychain fixture;
 Linux remains file-backed, and packet 02's Linux helper design gate remains
 unavailable. No public CLI or cross-OS Keychain acceptance is claimed.
+
+## Integration scope follow-up — 8 October 2026
+
+The supplied integration log lists unrelated changes from already integrated
+packages. This branch is already rebased on `main`: `git rebase main` reported
+up to date, there is no rebase in progress, and `git merge-base HEAD main` is
+`79f3ef53e5852685a5c628404b38f5ffb5310179`. The log's 99-path set matches a
+comparison from the original packet base `5585601ad1be8cac5b8daa8e3cda92078399d5e8`,
+which includes changes merged into `main`. Comparing from the current integration
+base gives only the five paths in this receipt's allowlist. The dispatcher
+recheck must use `79f3ef53e5852685a5c628404b38f5ffb5310179` as its base.
+
+- Dependencies are present in the rebased history: packet 02 (`e3c4d16`, host
+  bridge), packet 04 (`ab18393`, safe publication), and packet 34 (`1fc8a66`,
+  accounts/file credentials). Packet 02's Linux design gate remains unavailable.
+- Review findings assigned to packet 37: none.
+- Scope check against the current main base:
+  `GIT_CONFIG_GLOBAL=/dev/null bun tools/dispatch-scope.ts 37-macos-credential-vault "$PWD" 79f3ef53e5852685a5c628404b38f5ffb5310179`
+  — **PASS**. The tracked diff from that base contains only this receipt,
+  `native/keychain.c`, `native/keychain.h`,
+  `packages/core/src/provider/auth/vault.ts`, and `tests/vault/vault.test.ts`.
+- `GIT_CONFIG_GLOBAL=/dev/null make check` — **PASS**, 482 passed, 1 existing
+  Linux-only mount skip, 0 failed, 3,777 assertions across 59 files. Native
+  `keychain.c` compiled with warnings as errors; no real Keychain item was used.
+- `GIT_CONFIG_GLOBAL=/dev/null bun --no-install test --max-concurrency 1 ./tests/vault`
+  — **PASS**, 6 tests, 25 assertions. No fake provider requests were made.
+- No B-set is assigned: 0 external cases run, 0 expanded instances, 0 unmatched
+  fake requests. Replay remains unassigned: 0 hand scenarios; seeds 17/23/41
+  not run; first divergence not applicable.
+
+This follow-up changed only this receipt. The tested source head was
+`b9c9d0651a01dd338cc6e4fe3561e80e197b1c38`; this follow-up is approximately
+40 active minutes total including the earlier 28-minute implementation/rebase
+receipt, with automated check wait excluded. Model: GPT-6 Codex; exact served
+variant and token count are not exposed.
+
+Remaining I6 gaps are unchanged: coordinator-owned `native/main.c` registration
+and auth composition, directory provisioning, and the isolated explicit
+OS-Keychain fixture. No public-wiring, real-Keychain, Linux-Keychain, or v1.3
+oracle acceptance is claimed. Next owner: coordinator/integrator; packet 37 is
+ready for dispatcher recheck with the rebased main base above.
