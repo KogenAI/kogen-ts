@@ -50,3 +50,13 @@ mkdir -p "$RESULTS/work"
 - Host: macOS 26.7.1 arm64; the Linux-only mount test remains unverified on Linux. The frozen suite identifies itself as v1.2, so this run provides no v1.3 conformance evidence.
 
 Successful worker checks do not constitute integration acceptance.
+
+## Post-rebase integration follow-up
+
+- Rebased dependency base: `b1a2f6bf50da40db125280aa0441c8eefcb68aec`; tested B40 code head: `0cb54b20f2b99b87a5e04d1e4ff07331132c2883`.
+- Active follow-up effort: approximately 4 minutes. Model: GPT-6-based Codex; exact serving variant and token telemetry are unavailable.
+- `GIT_CONFIG_GLOBAL=/dev/null bun test --max-concurrency 1 tests/landing-cas`: **10 passed, 0 failed, 87 expectations**.
+- `GIT_CONFIG_GLOBAL=/dev/null make check`: **PASS**, 457 passed, 1 skipped, 0 failed, 3,702 expectations. The Linux mount skip remains platform-specific.
+- Integration's preceding full check failed once in `tests/host-bridge/host.test.ts` while parsing `parent-report.json` (`Unexpected EOF`); this file and test are outside B40's owned files. The driver writes the report directly to its final path while the test proceeds as soon as `existsSync` observes it, so the failure is consistent with a visibility race. The subsequent full check passed; no out-of-scope files were changed. Packet 02/coordinator owns any test repair if the race recurs.
+- The required `v1.2-67-build-43` command was run once after rebase: **0 passed, 0 failed, 1 error, 0 skipped; 1 instance**. The harness could not start because `dist/kogen` is absent. Result: `/var/folders/8f/khnp6qk51mvgk_jkxz169nr40000gn/T/kts-40-15cmuL/results.jsonl`. No provider request reached the fake server; unmatched fake requests: **0**. This remains pending CLI integration, not a pass.
+- No B40 production files changed in this follow-up. Mandatory replay remains unassigned to B40; hand counts, seeds 17/23/41, and first divergence remain not run/not observed. Linux parity and v1.3 conformance remain unverified/pending integration.
