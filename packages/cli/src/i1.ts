@@ -131,12 +131,15 @@ async function projectContext(
 		path: ".kogen/project.yaml",
 		maxBytes: 1024 * 1024 + 1,
 	});
-	if (!bytes.ok)
+	if (!bytes.ok) {
+		const configOutput = await validateProjectCommand(command, runtime);
+		if (configOutput !== undefined) return configOutput;
 		return readableFailure(
 			"environment/project_config_invalid",
 			bytes.error.message,
 			3,
 		);
+	}
 	const config = parseProjectConfig(bytes.value);
 	if (!config.ok)
 		return readableFailure(
@@ -144,16 +147,17 @@ async function projectContext(
 			`${initial.value.checkout}/.kogen/project.yaml\n${formatConfigDiagnostics(config.diagnostics).join("\n")}`,
 			3,
 		);
-	const resolution = await resolveProject(
-		{
-			...command,
-			cwd: process.cwd(),
-			...(config.value.base === undefined
-				? {}
-				: { configuredBase: config.value.base }),
-		},
-		{ git: runtime.git, paths: nodeProjectPathPort },
-	);
+	const resolution =
+		config.value.base === undefined
+			? initial
+			: await resolveProject(
+					{
+						...command,
+						cwd: process.cwd(),
+						configuredBase: config.value.base,
+					},
+					{ git: runtime.git, paths: nodeProjectPathPort },
+				);
 	if (!resolution.ok)
 		return readableFailure(
 			`environment/${resolution.error.code}`,
@@ -328,7 +332,10 @@ async function approve(
 						3,
 					);
 			}
-			if (preflight.error.code === "intent/lint_failed") {
+			if (
+				preflight.error.code === "intent/lint_failed" ||
+				preflight.error.code === "intent/parse_failed"
+			) {
 				const lintOutput = await validateProjectCommand(command, runtime);
 				if (lintOutput !== undefined) return lintOutput;
 			}
