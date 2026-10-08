@@ -79,3 +79,23 @@ Successful worker checks do not constitute integration acceptance.
 - The failure is outside B40's allowlist. With `GIT_CONFIG_GLOBAL=/dev/null`, `git config --get user.name` and `git config --get user.email` return no configured values, while `git var GIT_AUTHOR_IDENT` still returns `Almir Sarajčić <almirsarajcic@Almirs-Mac-Studio.local>` from the host account. `packages/core/src/approval/commit.ts` uses that `git var` result, so `commitApprovalPackage` succeeds and contradicts the test's expected refusal. B21 owns the approval source and test; no B40-only change can repair this failure. Next owner: packet 21/coordinator integration owner to make the identity behavior and hermetic assertion agree with the contract.
 - The exact required `v1.2-67-build-43` command was run once with the specified profiles, jobs and time scale. Result: **0 passed, 0 failed, 1 error, 0 skipped, 0 unimplemented; 1 instance**. The harness could not start because `dist/kogen` is absent (`FileNotFoundError`), so this is pending CLI wiring, not a pass. The fake request record has no received requests (`requests: []`, `oauth: []`): **0 unmatched requests**; its three expected `r1_happy` responses remained unconsumed because the executable did not start. Result file: `/var/folders/8f/khnp6qk51mvgk_jkxz169nr40000gn/T/kts-40-bFW8gD/results.jsonl`.
 - B40 has no assigned mandatory xspec slice. Hand counts, seeds 17/23/41 and first divergence remain not run/not observed. Host is macOS 26.7.1 arm64 with Git 2.54.0 and Bun 1.4.2; Linux behavior remains unverified here. The frozen suite is v1.2, so this provides no v1.3 conformance evidence. Next owner for B40's public case: coordinator/I2 CLI wiring, then rerun under the integrated executable.
+
+## Retained branch repair — 8 October 2026
+
+The latest dispatcher integration check at 458 tests failed only in
+`tests/custody/supervise.test.ts:286`: the parent-SIGKILL test read its report
+after the shell created the file but before the shell had written both PIDs.
+The observed one-PID report was a test readiness race, unrelated to B40's
+landing code. The coordinator fixed that shared test on main by waiting for a
+complete two-PID report; packet 40 cannot own the custody file under its scope
+rule. The dispatcher fixture also received a 30-second test timeout on main
+because it runs many real Git operations and sometimes exceeded Bun's default
+five-second timeout. Neither scope rule needed alteration.
+
+Rebased onto main `95b91a36cb69d16273a49922af6145f6f8cfda46`.
+`GIT_CONFIG_GLOBAL=/dev/null make check` with the pinned Git 2.54.0 selected
+through `GIT_TOOL`: **PASS, 457 passed, 1 Linux-only skip, 0 failed, 3,702
+assertions across 55 files**. Log: `~/cx/kts/logs/40-manual-final-check.log`.
+The branch's three-dot diff contains only B40's four landing modules,
+`tests/landing-cas/**`, and this receipt. It remains retained for dispatcher
+integration and was not merged.
