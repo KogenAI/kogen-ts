@@ -16,11 +16,14 @@ import type {
 } from "../../core/src/approval/preflight";
 import type { Result } from "../../core/src/contracts/errors";
 import type { ProcessPort } from "../../core/src/contracts/ports";
+import type { FileSystemHostRequest } from "../../core/src/fs/read";
 import type {
 	GateTreePort,
 	GateTreeSnapshot,
 } from "../../core/src/gate/checks";
+import { createPrivateGitRepository } from "../../core/src/git/repository";
 import { cloneFreshWorkspace } from "../../core/src/workspace/clone";
+import { snapshotWorkspace } from "../../core/src/workspace/snapshot";
 
 function failure(message: string): Result<never> {
 	return {
@@ -138,7 +141,7 @@ export function createApprovalWorkspace(
 	checkoutPath: string,
 	origin: string,
 	process: Pick<ProcessPort, "run">,
-	baseTree: string,
+	filesystemHost: FileSystemHostRequest,
 	stageDirectory: string,
 ): ApprovalWorkspacePort {
 	const checkoutTree: GateTreePort = {
@@ -178,16 +181,34 @@ export function createApprovalWorkspace(
 					recursive: true,
 					mode: 0o700,
 				});
+			const metadata = join(
+				request.scratchRoot,
+				`base-metadata-${request.slug}`,
+			);
+			mkdirSync(metadata, { mode: 0o700 });
+			const repository = await createPrivateGitRepository(process, {
+				sourceRepository: origin,
+				gitDirectory: metadata,
+				workTree: destination,
+			});
+			if (!repository.ok) return repository;
+			const actual = await snapshotWorkspace({
+				repository: repository.value,
+				sourceRepository: origin,
+				baseCommit: request.baseCommit,
+				filesystem: filesystemHost,
+			});
+			if (!actual.ok) return actual;
 			const tree = new ScratchTree(
 				destination,
 				join(request.scratchRoot, "snapshots"),
-				baseTree,
+				actual.value.tree,
 			);
 			return {
 				ok: true,
 				value: {
 					path: destination,
-					baseTree: request.expectedTree,
+					baseTree: actual.value.tree,
 					tree,
 					async remove(): Promise<Result<void>> {
 						try {

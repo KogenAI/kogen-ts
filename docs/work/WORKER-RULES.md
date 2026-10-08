@@ -1,5 +1,7 @@
 # Worker rules
 
+Before starting, read docs/work/REVIEW-MIDBUILD.md and fix every finding assigned to your package or gate; record each in your receipt.
+
 Read your brief, PLAN.md, QUEUE.md, and frozen spec CLI-RULE.txt before editing.
 The spec v1.3-draft e19dd1c is authority; Rust is read-only structure/failure evidence.
 The frozen v1.2 suite is read-only. Report exact incompatible old assertions;

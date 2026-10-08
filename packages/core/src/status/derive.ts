@@ -59,6 +59,7 @@ export interface StatusRun {
 	readonly events: readonly JournalEvent[];
 	readonly journalPath: string;
 	readonly ownerLiveness: OwnerLiveness;
+	readonly journalIncompleteTail?: boolean;
 	readonly candidateDiffPath?: string | null;
 	readonly candidateChecks?: readonly string[];
 	readonly contextContinuations?: number;

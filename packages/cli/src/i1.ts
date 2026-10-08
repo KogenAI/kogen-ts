@@ -3,7 +3,6 @@ import {
 	mkdirSync,
 	mkdtempSync,
 	readdirSync,
-	readFileSync,
 	rmSync,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
@@ -34,24 +33,23 @@ import {
 	type ProjectConfig,
 	parseProjectConfig,
 } from "../../core/src/project/schema";
-import type { JournalEvent } from "../../core/src/run/journal";
-import type { RunRecord } from "../../core/src/run/store";
 import {
 	deriveStatus,
 	landingsFromReachableCommits,
 	type StatusInput,
 	type StatusIntent,
-	type StatusRun,
 } from "../../core/src/status/derive";
 import {
 	renderStatusJsonLines,
 	renderStatusText,
 } from "../../core/src/status/render";
 import { watchStatus } from "../../core/src/status/watch";
+import { createApprovalProcess } from "./approval-process";
 import { createApprovalWorkspace } from "./approval-workspace";
 import type { ParsedCommand } from "./argv";
 import { type ControllerRuntime, validateProjectCommand } from "./composition";
 import { type CliOutput, renderErrorLine } from "./output";
+import { readStatusRuns } from "./status-runs";
 
 type ProjectCommand = Extract<
 	ParsedCommand,
@@ -216,10 +214,11 @@ async function approverIdentity(
 	return name && email ? `${name} <${email}>` : null;
 }
 
-async function approve(
+async function approveCore(
 	command: Extract<ProjectCommand, { name: "intent approve" }>,
 	runtime: ControllerRuntime,
 	context: ProjectContext,
+	onSandboxWarning: (warning: string | null) => void,
 ): Promise<CliOutput> {
 	const { resolution, config } = context;
 	const adapted = commandAdapter(config);
@@ -270,6 +269,21 @@ async function approve(
 				? {}
 				: { miseBinaryPath: null }),
 		});
+		const sandbox = createApprovalProcess({
+			raw: runtime.process,
+			platform: process.platform,
+			probe: config.sandbox
+				? await runtime.probeSandbox()
+				: { available: false, reason: "disabled" },
+			enabled: config.sandbox,
+			hostEnvironment: process.env,
+			checkout: resolution.checkout,
+			origin: resolution.origin,
+			workspace: join(scratchRoot, `base-${command.slug}`),
+			runDirectory,
+			home: process.env.HOME ?? homedir(),
+		});
+		onSandboxWarning(sandbox.warning);
 		const preflight = await preflightApproval({
 			slug: command.slug,
 			intentPath: `.kogen/intents/${command.slug}/intent.md`,
@@ -296,13 +310,13 @@ async function approve(
 				adapterVersion: "command-v1",
 			},
 			adapter,
-			process: runtime.process,
+			process: sandbox.process,
 			filesystem: runtime.filesystem,
 			workspace: createApprovalWorkspace(
 				resolution.checkout,
 				resolution.origin,
 				runtime.process,
-				baseTree,
+				runtime.filesystemHost,
 				config.acceptance.candidateDirectory ?? "test/acceptance",
 			),
 		});
@@ -477,12 +491,18 @@ async function approve(
 	}
 }
 
-function readJsonFile(path: string): unknown | null {
-	try {
-		return JSON.parse(readFileSync(path, "utf8"));
-	} catch {
-		return null;
-	}
+async function approve(
+	command: Extract<ProjectCommand, { name: "intent approve" }>,
+	runtime: ControllerRuntime,
+	context: ProjectContext,
+): Promise<CliOutput> {
+	let warning: string | null = null;
+	const output = await approveCore(command, runtime, context, (value) => {
+		warning = value;
+	});
+	return warning === null
+		? output
+		: { ...output, stderr: `${warning}\n${output.stderr}` };
 }
 
 function object(value: unknown): Record<string, unknown> | null {
@@ -493,90 +513,6 @@ function object(value: unknown): Record<string, unknown> | null {
 
 function string(value: unknown): string | null {
 	return typeof value === "string" ? value : null;
-}
-
-function number(value: unknown): number | null {
-	return typeof value === "number" && Number.isSafeInteger(value)
-		? value
-		: null;
-}
-
-function readRuns(stateRoot: string): StatusRun[] {
-	const root = join(stateRoot, "runs");
-	if (!existsSync(root)) return [];
-	const runs: StatusRun[] = [];
-	for (const runId of readdirSync(root)) {
-		if (!/^[0-9a-f]{32}$/u.test(runId)) continue;
-		const directory = join(root, runId);
-		const row = object(readJsonFile(join(directory, "run.json")));
-		if (row === null || row.schema !== 2 || row.run_id !== runId) continue;
-		const slug = string(row.slug);
-		const approvalSha256 = string(row.approval_sha256);
-		const approvalCommit = string(row.approval_commit);
-		const targetBranch = string(row.target_branch);
-		const status = string(row.status);
-		const ownerPid = number(row.owner_pid);
-		const ownerStarted = number(row.owner_started_ms);
-		const started = number(row.started_ms);
-		if (
-			!slug ||
-			!approvalSha256 ||
-			!approvalCommit ||
-			!targetBranch ||
-			(status !== "running" &&
-				status !== "landed" &&
-				status !== "failed" &&
-				status !== "parked" &&
-				status !== "stopped") ||
-			ownerPid === null ||
-			ownerStarted === null ||
-			started === null
-		)
-			continue;
-		const record: RunRecord = {
-			schema: 2,
-			run_id: runId,
-			slug,
-			approval_sha256: approvalSha256,
-			approval_commit: approvalCommit,
-			target_branch: targetBranch,
-			status,
-			landing: null,
-			owner_pid: ownerPid,
-			owner_started_ms: ownerStarted,
-			started_ms: started,
-			recovery: [],
-			cleanup_pending: false,
-		};
-		const events: JournalEvent[] = [];
-		try {
-			const lines = readFileSync(join(directory, "events.jsonl"), "utf8").split(
-				"\n",
-			);
-			for (const line of lines) {
-				if (line.trim() === "") continue;
-				const event = object(JSON.parse(line));
-				if (
-					event &&
-					typeof event.event === "string" &&
-					number(event.ts) !== null
-				)
-					events.push(event as unknown as JournalEvent);
-			}
-		} catch {
-			continue;
-		}
-		runs.push({
-			record,
-			events,
-			journalPath: directory,
-			ownerLiveness: "dead",
-			...(existsSync(join(directory, "candidate.diff"))
-				? { candidateDiffPath: join(directory, "candidate.diff") }
-				: {}),
-		});
-	}
-	return runs;
 }
 
 async function statusInput(
@@ -687,7 +623,7 @@ async function statusInput(
 	return {
 		intents,
 		reachableLandings: landingsFromReachableCommits(commits),
-		runs: readRuns(stateRoot),
+		runs: await readStatusRuns(stateRoot),
 		claimRunId: null,
 		queuePid: null,
 		agents: [],

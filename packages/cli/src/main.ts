@@ -1,6 +1,7 @@
 import { isValidIntentSlug } from "../../core/src/intent/parse";
 import { parseArgv } from "./argv";
 import { createControllerRuntime, validateProjectCommand } from "./composition";
+import { classifyCliException } from "./errors";
 import { runI1Command } from "./i1";
 import {
 	type CliOutput,
@@ -64,8 +65,7 @@ try {
 	process.stderr.write(output.stderr);
 	process.exitCode = output.exitCode;
 } catch (error) {
-	process.stdout.write(
-		`environment/host_unavailable: ${error instanceof Error ? error.message : String(error)}\n`,
-	);
-	process.exitCode = 3;
+	const output = classifyCliException(error);
+	process.stdout.write(output.stdout);
+	process.exitCode = output.exitCode;
 }
