@@ -110,3 +110,21 @@ gate remains unavailable as described in its receipt.
 Next owner: coordinator/integrator for native operation registration, auth
 composition and directory provisioning, then the isolated I6 OS-Keychain
 fixture.
+
+## Retained branch repair — 8 October 2026
+
+The scope rejection was caused by branch ancestry. Packet 37 was originally
+forked from packet 35 at `3da7bee` before packet 35 reached main. The
+dispatcher compared that history with a newer main where 35 had already been
+integrated, so 35's login files appeared in the three-dot diff. Rebasing onto
+main `95b91a36cb69d16273a49922af6145f6f8cfda46` removed that ancestry
+from the diff. The scope tool itself needed no change. The branch now changes
+only this receipt, `native/keychain.{c,h}`, `vault.ts`, and `tests/vault/**`.
+
+The required `GIT_CONFIG_GLOBAL=/dev/null make check` after the rebase passed
+with the pinned Git 2.54.0 selected through `GIT_TOOL`: **453 passed, 1
+Linux-only skip, 0 failed, 3,640 assertions across 55 files**. The log is
+`~/cx/kts/logs/37-manual-final-check.log`. An earlier check on the rebased
+branch encountered the unrelated five-second dispatcher fixture timeout; the
+coordinator corrected that shared test on main before this passing recheck.
+The branch remains retained for dispatcher integration; it was not merged.
