@@ -115,6 +115,7 @@ integration and was not merged.
 ## Supplied integration scope failure follow-up — 8 October 2026
 
 - Started at `3f3f9daeeab8cad3bf574aa7521f2fdb99dbc171` with a clean worktree on `kts/40-guarded-commit-and-landing-cas`; no rebase was in progress. The supplied integration log reported out-of-scope paths that are already present on current `main`, so its comparison base was stale relative to the integrated commits. The B40 branch diff against current `main` contained only the six B40-owned paths listed above.
+- Reviewed `REVIEW-MIDBUILD.md`: its open findings are assigned to packages 23, 29, 30, 33, 36, 38, 44, 47, 54 and I1; none is assigned to B40, so there was no B40 mid-build finding to repair.
 - Rebased the seven B40 commits onto current `main` at `79f3ef53e5852685a5c628404b38f5ffb5310179` with `GIT_EDITOR=true git rebase main`; it completed without conflicts. Tested source HEAD: `97ce523f0e1c3bbdbc296d37ea15f8b5b02da29d`. `bun tools/dispatch-scope.ts 40-guarded-commit-and-landing-cas "$PWD" "$(git rev-parse main)"`: **PASS**, scope contains only B40 files. No production or test contents changed during this integration repair.
 - Active effort for this follow-up: approximately 11 minutes; cumulative B40 effort estimate approximately 72 minutes, within the 90-minute packet limit. Model: GPT-6-based Codex; exact serving variant and token telemetry are unavailable.
 - `GIT_CONFIG_GLOBAL=/dev/null bun test --max-concurrency 1 tests/landing-cas`: **10 passed, 0 failed, 87 expectations**.
