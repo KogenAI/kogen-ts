@@ -4,6 +4,7 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { createCommandAdapter } from "../../core/src/adapters/command";
 import type { AcceptanceAdapter } from "../../core/src/adapters/interface";
+import { observeBuildAudit } from "../../core/src/build/audit";
 import { BuildBudget } from "../../core/src/build/budget";
 import {
 	type BuildControllerResult,
@@ -12,7 +13,6 @@ import {
 	runBuild,
 } from "../../core/src/build/controller";
 import {
-	BUILD_BUILDER_INSTRUCTIONS,
 	BUILD_GENERIC_INSTRUCTIONS,
 	createBuilderSession,
 } from "../../core/src/build/develop";
@@ -38,6 +38,7 @@ import {
 	type GateTreeSnapshot,
 	runGateCommand,
 } from "../../core/src/gate/checks";
+import { formatGateFeedback } from "../../core/src/gate/feedback";
 import { runAcceptanceLedger } from "../../core/src/gate/ledger";
 import {
 	buildProtectedManifest,
@@ -94,6 +95,8 @@ import { createI2CredentialPort } from "./i2-auth";
 const decoder = new TextDecoder("utf-8", { fatal: true });
 const plannerInstructions =
 	"You are Kogen's planner. Write a one-shot implementation plan for a cheaper coding agent.";
+const buildAuditorInstructions =
+	'You are Kogen\'s acceptance test auditor. Explain each failing approved acceptance item. Return only JSON: {"items":[{"id":string,"verdict":"valid|over_strict|contradicts","reason":string}]}. Your advice is observational and cannot remove a gate.';
 
 export function buildToolSchemas(recipe: ProjectConfig["build"]["recipe"]) {
 	const allowed = new Set(roleToolAuthorizationForRecipe(recipe).builder);
@@ -620,7 +623,7 @@ export async function executePublicBuild(request: {
 						effort: input.role.effective.effort,
 						stage: "plan",
 						roleInstructions: plannerInstructions,
-						genericInstructions: `${BUILD_GENERIC_INSTRUCTIONS}\n\n${plannerInstructions}`,
+						genericInstructions: BUILD_GENERIC_INSTRUCTIONS,
 						toolSchemas: buildToolSchemas(config.build.recipe),
 						toolSchemaVersion: TOOL_SCHEMA_VERSION,
 						promptVersion: "build-prompt-v1",
@@ -920,7 +923,7 @@ export async function executePublicBuild(request: {
 							? {}
 							: { earlierAttempts: input.earlierAttempts }),
 						repairsLeft: 6,
-						genericInstructions: `${BUILD_GENERIC_INSTRUCTIONS}\n\n${BUILD_BUILDER_INSTRUCTIONS}`,
+						genericInstructions: BUILD_GENERIC_INSTRUCTIONS,
 						toolSchemas: buildToolSchemas(config.build.recipe),
 						roleToolAuthorization: buildToolAuthorization(config.build.recipe),
 					});
@@ -1078,8 +1081,122 @@ export async function executePublicBuild(request: {
 							},
 						},
 						audit: {
-							async advise() {
-								return { ok: true as const, value: { items: [] } };
+							async advise(auditInput) {
+								const parsed = parseIntent(auditInput.request);
+								if (!parsed.ok)
+									return {
+										ok: false as const,
+										error: effect(
+											"controller/approval_invalid",
+											"Approved Intent is invalid.",
+											70,
+										),
+									};
+								const diff = await repositoryValue.command(
+									[
+										"diff",
+										"--no-ext-diff",
+										"--no-textconv",
+										auditInput.baseCommit,
+										auditInput.candidateTree,
+									],
+									{ outputLimitBytes: 512 * 1024 },
+								);
+								if (
+									!diff.ok ||
+									diff.value.exitCode !== 0 ||
+									diff.value.timedOut
+								)
+									return {
+										ok: false as const,
+										error: effect(
+											"environment/audit_diff_unavailable",
+											"Could not read the candidate diff.",
+										),
+									};
+								const failing = auditInput.verification.acceptance.items
+									.filter((item) => item.status !== "pass")
+									.map((item) => item.id);
+								const message = [
+									`Failing ids: ${failing.join(", ")}`,
+									"Verbatim Request:",
+									decoder.decode(
+										parsed.intent.requestBytes ?? auditInput.request,
+									),
+									"Approved Intent:",
+									decoder.decode(auditInput.request),
+									"Acceptance test source:",
+									decoder.decode(auditInput.approval.acceptanceBytes),
+									"Failure output:",
+									formatGateFeedback(auditInput.verification),
+									"Candidate diff:",
+									Array.from(decoder.decode(diff.value.stdout))
+										.slice(0, 60_000)
+										.join(""),
+								].join("\n\n");
+								const auditSession = createSession({
+									runDirectory,
+									provider: "chatgpt",
+									authMode,
+									role: "auditor",
+									model: auditInput.role.effective.model,
+									effort: auditInput.role.effective.effort,
+									stage: "build-audit",
+									attempt: `audit-${rungName}`,
+									rung: rungName,
+									roleInstructions: buildAuditorInstructions,
+									genericInstructions: BUILD_GENERIC_INSTRUCTIONS,
+									toolSchemas: buildToolSchemas(config.build.recipe),
+									toolSchemaVersion: TOOL_SCHEMA_VERSION,
+									promptVersion: "build-prompt-v1",
+									adapterVersion: "responses-v1",
+									roleToolAuthorization: buildToolAuthorization(
+										config.build.recipe,
+									),
+									initialItems: [
+										{ bytes: userMessageBytes(message), kind: "message" },
+									],
+								});
+								const result = await respondWithRetry({
+									session: auditSession,
+									resolvedRole: auditInput.role,
+									mode: "build",
+									clock,
+									random,
+									sendAttempt: sender,
+									remainingBuildBudgetMilliseconds: budget,
+									providerPauseBudget: pauseBudget,
+									buildBudget,
+									...(request.signal === undefined
+										? {}
+										: { signal: request.signal }),
+								});
+								if (result.kind !== "completed")
+									return {
+										ok: false as const,
+										error: effect(
+											"provider/audit_unavailable",
+											"Build audit request did not complete.",
+											4,
+										),
+									};
+								let raw: unknown;
+								try {
+									raw = JSON.parse(result.response.text);
+								} catch {
+									raw = null;
+								}
+								const observation = observeBuildAudit(
+									auditInput.verification,
+									raw,
+								);
+								return {
+									ok: true as const,
+									value: {
+										items: observation.items,
+										warning: observation.warning,
+									},
+								};
 							},
 						},
 						clock,

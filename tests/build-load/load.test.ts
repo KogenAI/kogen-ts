@@ -6,9 +6,13 @@ import {
 	readBuildGitText,
 	resolvePublicBuildAccount,
 } from "../../packages/cli/src/build-composition";
+import { BUILD_GENERIC_INSTRUCTIONS } from "../../packages/core/src/build/develop";
 import { loadBuildApproval } from "../../packages/core/src/build/load";
 import type { GitPort } from "../../packages/core/src/contracts/ports";
 import { GIT_MAX_OUTPUT_LIMIT_BYTES } from "../../packages/core/src/git/command";
+import { StaticPrefixRegistry } from "../../packages/core/src/provider/session/prefix";
+import { createSession } from "../../packages/core/src/provider/session/transition";
+import { TOOL_SCHEMA_VERSION } from "../../packages/core/src/provider/tools/schema";
 
 test("Build reads approval blobs within the supervised Git output bound", async () => {
 	const commit = "a".repeat(40);
@@ -96,6 +100,53 @@ test("public shell Build sends the shell schema set and keeps planner tool calls
 	expect(authorization.planner).toEqual([]);
 	expect(authorization.shaper).toEqual([]);
 	expect(buildToolSchemas("direct")).toHaveLength(7);
+});
+
+test("Build planner, auditor, and escalated builder share one registered model prefix", () => {
+	const registry = new StaticPrefixRegistry();
+	const shared = {
+		runDirectory: "/tmp/build-prefix-regression",
+		provider: "chatgpt" as const,
+		authMode: "injected" as const,
+		model: "gpt-6.1-sol",
+		effort: "high",
+		genericInstructions: BUILD_GENERIC_INSTRUCTIONS,
+		toolSchemas: buildToolSchemas("ladder"),
+		toolSchemaVersion: TOOL_SCHEMA_VERSION,
+		promptVersion: "build-prompt-v1",
+		adapterVersion: "responses-v1",
+		roleToolAuthorization: buildToolAuthorization("ladder"),
+		prefixRegistry: registry,
+	};
+	const planner = createSession({
+		...shared,
+		role: "planner",
+		stage: "plan",
+		roleInstructions:
+			"You are Kogen's planner. Write a one-shot implementation plan for a cheaper coding agent.",
+	});
+	const auditor = createSession({
+		...shared,
+		role: "auditor",
+		stage: "build-audit",
+		roleInstructions: "You are Kogen's acceptance test auditor.",
+	});
+	const builder = createSession({
+		...shared,
+		role: "builder",
+		stage: "build",
+		roleInstructions: "You are Kogen's builder.",
+	});
+	expect(
+		new Set([
+			planner.prefix.sha256,
+			auditor.prefix.sha256,
+			builder.prefix.sha256,
+		]).size,
+	).toBe(1);
+	expect(planner.authorizedTools).toEqual([]);
+	expect(auditor.authorizedTools).toEqual([]);
+	expect(builder.authorizedTools).toEqual(["shell", "finish", "tool_output"]);
 });
 
 test("public Build honors provider-use project selection and benchmark override", async () => {

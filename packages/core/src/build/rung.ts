@@ -53,6 +53,7 @@ export interface BuildAuditAdviceItem {
 
 export interface BuildAuditAdvice {
 	readonly items: readonly BuildAuditAdviceItem[];
+	readonly warning?: boolean;
 }
 
 export interface BuildRungAuditPort {
@@ -214,7 +215,7 @@ function validAuditAdvice(
 	);
 	const seen = new Set<string>();
 	const items: BuildAuditAdviceItem[] = [];
-	let warning = false;
+	let warning = advice.warning === true;
 	for (const item of advice.items) {
 		if (
 			!failing.has(item.id) ||
