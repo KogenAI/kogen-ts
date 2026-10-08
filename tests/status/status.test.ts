@@ -303,6 +303,18 @@ test("overview includes queue head, sections, aligned details, and only five lan
 	expect(rendered).toContain("Drafts:\n  draft-a\n");
 });
 
+test("overview lists queued Intents in scheduler order", () => {
+	const inputValue = input({
+		intents: [
+			intent("alpha", { approval: approval(SHA1_A, 3) }),
+			intent("bravo", { approval: approval(SHA1_A, 1) }),
+			intent("charlie", { approval: approval(SHA1_A, 2) }),
+		],
+	});
+	const rendered = renderStatusOverview(deriveStatus(inputValue));
+	expect(rendered).toContain("Queued:\n  bravo\n  charlie\n  alpha\n");
+});
+
 test("slug text omits legacy verdict and keeps the current Build summary", () => {
 	const build = run("greet", "failed", 1, {
 		runId: "d".repeat(32),

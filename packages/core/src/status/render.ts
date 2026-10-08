@@ -89,7 +89,7 @@ export function renderStatusOverview(status: DerivedStatus): string {
 	const building = status.intents.filter(
 		(intent) => intent.status === "building",
 	);
-	const queued = status.intents.filter((intent) => intent.status === "queued");
+	const queued = status.queue.queued;
 	const blocked = status.intents.filter(
 		(intent) => intent.status === "blocked",
 	);

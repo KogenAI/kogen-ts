@@ -515,7 +515,11 @@ function commandProgramCandidates(spec: CheckSpec): readonly string[] {
 		].includes(name)
 	) {
 		const program = firstNonOption(spec.argv);
-		return program === undefined ? [] : [stripDotSlash(program)];
+		// The acceptance candidate is created in scratch; it is not a base
+		// program path to protect or parse as a glob.
+		return program === undefined || program === "{path}"
+			? []
+			: [stripDotSlash(program)];
 	}
 	return [stripDotSlash(executable)];
 }

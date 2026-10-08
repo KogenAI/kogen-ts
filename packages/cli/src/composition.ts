@@ -5,7 +5,7 @@ import {
 	type FileSystemHostRequest,
 	FileSystemStatus,
 } from "../../core/src/fs/read";
-import { createGitPort } from "../../core/src/git/command";
+import { createGitPort, createPublicGitPort } from "../../core/src/git/command";
 import {
 	lintIntent,
 	renderIntentLintFinding,
@@ -90,10 +90,13 @@ export async function createControllerRuntime(
 	const git = createGitPort(processPort, {
 		environment: createAllowlistedBaseEnvironment(),
 	});
+	const publicGit = createPublicGitPort(processPort);
 	return {
 		bridge,
 		filesystem,
+		filesystemHost,
 		git,
+		publicGit,
 		process: processPort,
 		probeSandbox() {
 			return process.platform === "darwin"

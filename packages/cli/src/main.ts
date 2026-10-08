@@ -1,6 +1,7 @@
 import { isValidIntentSlug } from "../../core/src/intent/parse";
 import { parseArgv } from "./argv";
 import { createControllerRuntime, validateProjectCommand } from "./composition";
+import { runI1Command } from "./i1";
 import {
 	type CliOutput,
 	renderErrorLine,
@@ -29,6 +30,18 @@ async function run(): Promise<CliOutput> {
 			"intent/invalid_slug: Slug must use lowercase letters, digits, and dashes.",
 			2,
 		);
+	if (
+		command.name === "intent approve" ||
+		command.name === "intent remove" ||
+		command.name === "status"
+	) {
+		const runtime = await createControllerRuntime();
+		try {
+			return await runI1Command(command, runtime);
+		} finally {
+			await runtime.close();
+		}
+	}
 	if ("project" in command && command.project !== undefined) {
 		const runtime = await createControllerRuntime();
 		try {

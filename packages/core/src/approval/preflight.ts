@@ -562,7 +562,7 @@ function commandExitFailure(
 			);
 		return failure(
 			"check/acceptance_check_failed",
-			`Acceptance check ${name} failed`,
+			`acceptance check ${name} failed`,
 			1,
 			commandDetails(observation.log.stdout, observation.log.stderr),
 		);
@@ -1132,11 +1132,14 @@ export async function preflightApproval(
 	const persistedWarnings = await loadShapeWarnings(request, approvalSha256);
 	const styleWarnings: ApprovalCardWarning[] = lint
 		.filter((finding) => finding.severity === "style")
-		.map((finding) => ({
-			code: `lint_${finding.rule}`,
-			itemIds: [],
-			message: singleLine(finding.message),
-		}));
+		.map((finding) => {
+			const itemId = /^(A[0-9]+)\s/u.exec(finding.message)?.[1];
+			return {
+				code: `lint_${finding.rule}`,
+				itemIds: itemId === undefined ? [] : [itemId],
+				message: singleLine(finding.message),
+			};
+		});
 	const warnings = [...persistedWarnings, ...styleWarnings];
 	return runInScratch(
 		request,

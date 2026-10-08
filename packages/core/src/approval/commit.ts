@@ -38,6 +38,8 @@ export interface ApprovalCommitRequest {
 	readonly slug: string;
 	readonly intentPath: string;
 	readonly acceptancePath: string;
+	/** The staged candidate path bound by protected_manifest. */
+	readonly protectedAcceptancePath?: string;
 	readonly targetBranch: string;
 	readonly baseSha: string;
 	/** Hash argument typed by the user; approval is refused unless it matches. */
@@ -411,7 +413,8 @@ function manifestForCommit(
 	}
 	if (
 		result[request.intentPath] !== intentSha256 ||
-		result[request.acceptancePath] !== acceptanceSha256
+		result[request.protectedAcceptancePath ?? request.acceptancePath] !==
+			acceptanceSha256
 	)
 		refuse(
 			"environment/approval_manifest_invalid",

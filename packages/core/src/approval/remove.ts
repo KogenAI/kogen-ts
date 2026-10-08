@@ -4,6 +4,7 @@ import type {
 	GitPort,
 	ProcessResult,
 } from "../contracts/ports";
+import { FILESYSTEM_MAX_RESPONSE_BYTES } from "../fs/read";
 import {
 	GIT_DEFAULT_TIMEOUT_MS,
 	GIT_MAX_OUTPUT_LIMIT_BYTES,
@@ -480,7 +481,7 @@ export async function removeIntent(
 		source = await request.filesystem.readFile({
 			root: request.checkout,
 			path: intentPath,
-			maxBytes: 2 * 1024 * 1024,
+			maxBytes: FILESYSTEM_MAX_RESPONSE_BYTES - 1,
 		});
 	} catch (cause) {
 		return portFailure(

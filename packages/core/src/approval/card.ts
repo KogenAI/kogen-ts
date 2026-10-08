@@ -113,7 +113,9 @@ export function renderApprovalCard(input: ApprovalCardInput): string {
 		`Base: ${input.base} at ${input.baseSha}`,
 		"",
 		"Brief",
-		...input.intent.brief.split("\n").map((line) => `  ${line}`),
+		...input.intent.brief
+			.split("\n")
+			.map((line) => (line.length === 0 ? "" : `  ${line}`)),
 		"",
 		"Acceptance",
 		...input.intent.acceptance.map(

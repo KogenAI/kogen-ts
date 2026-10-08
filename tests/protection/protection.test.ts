@@ -385,6 +385,23 @@ test("manifest expands protected globs and effective gate program paths from the
 	expect(protectedWriteRefusal(manifest, "src/feature.ts")).toBeNull();
 });
 
+test("an acceptance syntax check protects no scratch-only {path} program", async () => {
+	const fixture = await createFixture("acceptance-placeholder");
+	const manifest = await manifestFor({
+		...fixture,
+		project: {
+			...fixture.project,
+			acceptanceChecks: [
+				{ name: "syntax", argv: ["sh", "-n", "{path}"], timeoutMs: 60_000 },
+			],
+		},
+	});
+	expect(Object.keys(manifest.hashes)).not.toContain("{path}");
+	expect(manifest.hashes[".kogen/acceptance/greet.t.sh"]).toMatch(
+		/^[0-9a-f]{64}$/u,
+	);
+});
+
 test("approval detects stale non-own protected bytes against the origin base", async () => {
 	const fixture = await createFixture("stale");
 	const manifest = await manifestFor(fixture);
