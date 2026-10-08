@@ -99,3 +99,15 @@ assertions across 55 files**. Log: `~/cx/kts/logs/40-manual-final-check.log`.
 The branch's three-dot diff contains only B40's four landing modules,
 `tests/landing-cas/**`, and this receipt. It remains retained for dispatcher
 integration and was not merged.
+
+## Supplied integration failure follow-up — 8 October 2026
+
+- Recheck started at HEAD `6fb40c83b948eb2e41da30d12def3181855e6af3`, on the retained B40 branch. The original packet base remains `1ec5fe7bd108408fe935f94fef4a001c244b2781`. No rebase was in progress and the worktree was clean.
+- The supplied integration log's only failure is the parent-SIGKILL custody test reading a one-PID report. That log predates shared commit `95b91a36cb69d16273a49922af6145f6f8cfda46`, already present in this branch, which waits for a complete two-PID report before killing the driver. The current `tests/custody/supervise.test.ts` contains that repair, and the rechecked full suite passed the custody case. No B40 production or test change was needed; custody remains outside B40's allowlist.
+- Exact B40 local acceptance, `GIT_CONFIG_GLOBAL=/dev/null bun test --max-concurrency 1 tests/landing-cas`: **10 passed, 0 failed, 87 expectations**.
+- `GIT_CONFIG_GLOBAL=/dev/null make check`: **PASS, 479 passed, 1 Linux-only skip, 0 failed, 3,816 expectations across 58 files**. This includes the repaired parent-SIGKILL custody case. Log from this invocation is in the current worker session; no separate diagnostics receipt was needed.
+- The exact `v1.2-67-build-43` command was run once on this recheck. Result: **0 passed, 0 failed, 1 error, 0 skipped, 0 unimplemented; 1 instance**. The harness could not start because `dist/kogen` is absent (`FileNotFoundError`); it made no provider requests and had **0 unmatched fake requests**. This remains pending CLI integration, not a pass. Result: `/var/folders/8f/khnp6qk51mvgk_jkxz169nr40000gn/T/kts-40-Xf2Pey/results.jsonl`.
+- No mandatory xspec slice is assigned to B40. Replay hand counts, seeds 17/23/41, and first divergence remain not run/not observed. The frozen suite is v1.2, so no v1.3 conformance is claimed. Linux-only behavior remains unverified on this macOS 26.7.1 arm64 host.
+- Next owner: coordinator/I2 for building and wiring `dist/kogen`, then rerun the named case. If the custody readiness failure recurs, packet 05/coordinator owns that test. No B40 implementation change was made in this follow-up.
+- Active effort: approximately 15 minutes for this follow-up; cumulative B40 effort estimate approximately 61 minutes. Model: GPT-6-based Codex; exact serving variant and token telemetry are unavailable.
+- Exact files changed in this follow-up: `docs/work/receipts/40-guarded-commit-and-landing-cas.md` only. Tested source HEAD: `6fb40c83b948eb2e41da30d12def3181855e6af3`; this follow-up adds the receipt record only.
