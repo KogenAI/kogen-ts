@@ -3,7 +3,7 @@
 ## Revision and scope
 
 - Base: `832f3456bb513fe83b47fd5aaff1df46840ffe25`.
-- Implementation commit (tested source): `f0a6bd7` (`Preserve recovery work before cleanup`).
+- Head for tested implementation: `f0a6bd7fb137a5ae4287e539bf74e2dd340f34b0` (`Preserve recovery work before cleanup`). The receipt is committed separately.
 - Owned implementation files: `packages/core/src/recovery/transition.ts`, `packages/core/src/recovery/recover.ts`, and `tests/recovery/recovery.test.ts`.
 - This receipt is the only documentation file added for packet 26.
 - Read `docs/work/REVIEW-MIDBUILD.md`, the packet brief, `PLAN.md`, `QUEUE.md`, `WORKER-RULES.md`, and frozen `CLI-RULE.txt`. No mid-build finding was assigned to recovery.
