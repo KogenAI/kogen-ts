@@ -222,7 +222,7 @@ async function readCommitBlob(
 	const result = await runGit(
 		request,
 		["cat-file", "blob", `${commit}:${path}`],
-		limit,
+		Math.min(limit, GIT_MAX_OUTPUT_LIMIT_BYTES),
 	);
 	if (!result.ok) return { ok: false, error: unavailable(result.error) };
 	if (result.value.timedOut)

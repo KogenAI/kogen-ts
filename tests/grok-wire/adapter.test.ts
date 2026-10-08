@@ -32,6 +32,7 @@ import {
 } from "../../packages/core/src/provider/grok/adapter";
 import { HttpDeadlineError } from "../../packages/core/src/provider/http/deadline";
 import { StickyRoutingContext } from "../../packages/core/src/provider/http/routing";
+import { HttpTransport } from "../../packages/core/src/provider/http/transport";
 import { respondWithRetry } from "../../packages/core/src/provider/retry/respond";
 import {
 	type CreateSessionInput,
@@ -389,6 +390,47 @@ test("P10 Grok wire sends the exact proxy, request headers, model and shared Res
 		output: 15,
 		reasoning: 5,
 	});
+});
+
+test("Grok credential loading spends the response first-byte deadline", async () => {
+	let now = 0;
+	const clock: ClockPort = {
+		monotonicMilliseconds: () => now,
+		unixMilliseconds: () => 1_700_000_000_000,
+		sleep: (_milliseconds, signal) =>
+			new Promise<void>((_resolve, reject) => {
+				signal?.addEventListener("abort", () => reject(signal.reason), {
+					once: true,
+				});
+			}),
+	};
+	const saved = new MemoryCredentials();
+	const credentials: CredentialPort = {
+		read: async (key) => {
+			now = 120_001;
+			return saved.read(key);
+		},
+		write: (key, value) => saved.write(key, value),
+		remove: (key) => saved.remove(key),
+	};
+	let sends = 0;
+	const http = new HttpTransport(clock, {
+		fetch: async () => {
+			sends += 1;
+			return new Response("ok");
+		},
+	});
+	const state = session();
+	const result = await createGrokAttemptSender(
+		options(http, { clock, credentials }),
+	)({
+		request: encodeSessionRequest(state),
+		session: state,
+		attempt: 1,
+	});
+	expect(result.ok).toBe(false);
+	if (!result.ok) expect(result.error.class).toBe("timeout");
+	expect(sends).toBe(0);
 });
 
 test("Grok-pass4 starts a fresh conversation with the effective Grok shaper and sends no ChatGPT request", async () => {

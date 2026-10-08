@@ -19,6 +19,7 @@ import {
 	resolveHostHelperPath,
 	startHostBridge,
 } from "../../packages/core/src/process/host";
+import { superviseProcess } from "../../packages/core/src/process/supervise";
 
 const root = resolve(import.meta.dir, "../..");
 const compiler = "/usr/bin/cc";
@@ -191,6 +192,28 @@ test("concurrent calls serialize frames and preserve each caller's bytes", async
 	expect([...secondResponse]).toEqual([255, 4, 0]);
 	await bridge.close();
 });
+
+test("Build abort closes the command bridge and its child group promptly", async () => {
+	const bridge = await startHostBridge({ compiledExecutablePath: cliPath });
+	const marker = join(scratch, "abort-command.pid");
+	const started = Date.now();
+	const running = superviseProcess(bridge, {
+		argv: ["/bin/sh", "-c", `echo $$ > '${marker}'; sleep 30`],
+		cwd: scratch,
+		environment: { PATH: "/usr/bin:/bin" },
+		timeoutMs: 35_000,
+	}).catch((cause) => cause);
+	try {
+		expect(await waitUntil(() => existsSync(marker), 5_000)).toBe(true);
+		const childPid = Number(readFileSync(marker, "utf8").trim());
+		await bridge.abortRunningProcess();
+		await running;
+		expect(Date.now() - started).toBeLessThan(5_000);
+		expect(await waitUntil(() => !isAlive(childPid), 5_000)).toBe(true);
+	} finally {
+		await bridge.close();
+	}
+}, 15_000);
 
 test("test-only supervisor probe is absent from the product helper", async () => {
 	const bridge = await startHostBridge({ compiledExecutablePath: cliPath });

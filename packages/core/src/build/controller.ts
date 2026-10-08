@@ -67,9 +67,15 @@ export interface BuildRunDirectoryPort {
 }
 
 export interface BuildSandboxPort {
-	probe(
-		runDirectory: string,
-	): Promise<Result<"available" | "unavailable", BuildEffectFailure>>;
+	probe(runDirectory: string): Promise<
+		Result<
+			{
+				readonly mode: "confined" | "unconfined" | "off";
+				readonly unavailableReason: string | null;
+			},
+			BuildEffectFailure
+		>
+	>;
 }
 
 export interface RungWorkspace {
@@ -177,6 +183,8 @@ export interface BuildControllerRequest {
 	readonly rung: BuildRungPort;
 	readonly landing: BuildLandingPort;
 	readonly clock: Pick<ClockPort, "unixMilliseconds">;
+	/** Queue custody records interruption before releasing its owner. */
+	readonly signal?: AbortSignal;
 }
 
 export type BuildOutcome =
@@ -425,6 +433,8 @@ export async function runBuild(
 			runDirectory,
 			runRecord,
 		);
+		const sandbox = await request.sandbox.probe(runDirectory);
+		if (!sandbox.ok) throw new Error(sandbox.error.message);
 		await persistEvent(writer, request.clock, "started", {
 			run_id: request.runId,
 			slug: request.slug,
@@ -433,11 +443,12 @@ export async function runBuild(
 			target_branch: approval.targetBranch,
 			roles: roleSummary(roles),
 			effective_roles: effectiveRoleSummary(roles),
+			sandbox: sandbox.value.mode,
 		});
-		const sandbox = await request.sandbox.probe(runDirectory);
-		if (!sandbox.ok) throw new Error(sandbox.error.message);
-		if (sandbox.value === "unavailable")
-			await persistEvent(writer, request.clock, "sandbox_unavailable", {});
+		if (sandbox.value.unavailableReason !== null)
+			await persistEvent(writer, request.clock, "sandbox_unavailable", {
+				reason: sandbox.value.unavailableReason,
+			});
 
 		const baseResult = await request.base.resolve({
 			origin: request.origin,
@@ -650,12 +661,21 @@ export async function runBuild(
 				await persistEvent(writer, request.clock, "cleanup_failure", {
 					message: cleaned.error.message,
 				});
-			await persistEvent(writer, request.clock, "finished", {
-				status: terminal,
-				...(reason === null ? {} : { reason }),
-				...(landedRung === null ? {} : { rung: landedRung }),
-				verdict: terminal === "landed" ? "green" : terminal,
-			});
+			if (request.signal?.aborted && terminal !== "landed") {
+				const signal = request.signal.reason;
+				await persistEvent(writer, request.clock, "interrupted", {
+					reason: signal === "SIGINT" ? "sigint" : "sigterm",
+				});
+				terminal = "stopped";
+				reason = "interrupted";
+			} else {
+				await persistEvent(writer, request.clock, "finished", {
+					status: terminal,
+					...(reason === null ? {} : { reason }),
+					...(landedRung === null ? {} : { rung: landedRung }),
+					verdict: terminal === "landed" ? "green" : terminal,
+				});
+			}
 		} catch {
 			reason = reason ?? "environment/run_persist_failed";
 			exitCode = 3;

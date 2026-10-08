@@ -46,7 +46,7 @@ import {
 import { watchStatus } from "../../core/src/status/watch";
 import { createApprovalProcess } from "./approval-process";
 import { createApprovalWorkspace } from "./approval-workspace";
-import type { ParsedCommand } from "./argv";
+import type { ParsedCommand, ProjectOptions } from "./argv";
 import { type ControllerRuntime, validateProjectCommand } from "./composition";
 import { type CliOutput, renderErrorLine } from "./output";
 import { readStatusRuns } from "./status-runs";
@@ -58,7 +58,7 @@ type ProjectCommand = Extract<
 const decoder = new TextDecoder("utf-8", { fatal: true });
 const oid = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u;
 
-interface ProjectContext {
+export interface ProjectContext {
 	readonly resolution: ResolvedProject;
 	readonly config: ProjectConfig;
 }
@@ -110,8 +110,8 @@ async function gitText(
 	}
 }
 
-async function projectContext(
-	command: ProjectCommand,
+export async function projectContext(
+	command: ParsedCommand & ProjectOptions,
 	runtime: ControllerRuntime,
 ): Promise<ProjectContext | CliOutput> {
 	const initial = await resolveProject(
@@ -515,7 +515,7 @@ function string(value: unknown): string | null {
 	return typeof value === "string" ? value : null;
 }
 
-async function statusInput(
+export async function statusInput(
 	runtime: ControllerRuntime,
 	resolution: ResolvedProject,
 ): Promise<StatusInput> {

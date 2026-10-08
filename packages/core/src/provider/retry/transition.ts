@@ -52,6 +52,8 @@ export interface RetryState {
 	readonly overloadFallback: ModelRef | null;
 	readonly fallbackEnabled: boolean;
 	readonly attempts: number;
+	/** Attempts that spend the overload/malformed retry cap. */
+	readonly cappedAttempts: number;
 	readonly consecutiveOverloads: number;
 	readonly switched: boolean;
 }
@@ -216,6 +218,7 @@ export function initialRetryState(input: RetryStateInput): RetryState {
 		overloadFallback: fallback === null ? null : Object.freeze({ ...fallback }),
 		fallbackEnabled,
 		attempts: 0,
+		cappedAttempts: 0,
 		consecutiveOverloads: 0,
 		switched: alreadyOnFallback,
 	});
@@ -251,9 +254,28 @@ export function stepRetry(
 		);
 	const consecutiveOverloads =
 		event.failureClass === "overload" ? state.consecutiveOverloads + 1 : 0;
+	const unboundedConfiguredBuildOverload =
+		state.mode === "build" &&
+		state.provider === "chatgpt" &&
+		(state.role === "builder" ||
+			state.role === "context" ||
+			state.role === "reviewer") &&
+		!state.fallbackEnabled;
+	const attemptCapped =
+		state.mode === "shape"
+			? isTransient(event.failureClass)
+			: event.failureClass === "malformed" ||
+				(event.failureClass === "overload" &&
+					!unboundedConfiguredBuildOverload);
+	const cappedAttempts = state.cappedAttempts + (attemptCapped ? 1 : 0);
+	if (!Number.isSafeInteger(cappedAttempts))
+		throw new RangeError(
+			"Capped provider attempt count exceeded the safe integer range.",
+		);
 	const failureState: RetryState = Object.freeze({
 		...state,
 		attempts,
+		cappedAttempts,
 		consecutiveOverloads,
 	});
 
@@ -323,18 +345,7 @@ export function stepRetry(
 		};
 	}
 
-	const unboundedConfiguredBuildOverload =
-		state.mode === "build" &&
-		state.provider === "chatgpt" &&
-		(state.role === "builder" ||
-			state.role === "context" ||
-			state.role === "reviewer") &&
-		!state.fallbackEnabled;
-	const attemptCapped =
-		state.mode === "shape" ||
-		(event.failureClass === "overload" && !unboundedConfiguredBuildOverload) ||
-		event.failureClass === "malformed";
-	if (attemptCapped && attempts >= RETRY_POLICY.attemptCap)
+	if (attemptCapped && cappedAttempts >= RETRY_POLICY.attemptCap)
 		return {
 			state: failureState,
 			decision: stopped(event.failureClass, attempts),
@@ -455,6 +466,10 @@ function validateState(state: RetryState): void {
 			"Retry model does not belong to the selected provider.",
 		);
 	assertNonNegativeSafeInteger(state.attempts, "provider attempt count");
+	assertNonNegativeSafeInteger(
+		state.cappedAttempts,
+		"capped provider attempt count",
+	);
 	assertNonNegativeSafeInteger(
 		state.consecutiveOverloads,
 		"consecutive overload count",

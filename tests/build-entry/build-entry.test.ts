@@ -318,7 +318,10 @@ function createRequest(
 			},
 			sandbox: {
 				async probe() {
-					return { ok: true as const, value: "available" as const };
+					return {
+						ok: true as const,
+						value: { mode: "confined" as const, unavailableReason: null },
+					};
 				},
 			},
 			base: {
@@ -510,6 +513,36 @@ test("B0–B10 runs one planned R1, verifies base acceptance, lands, and release
 	expect(setup.git.claimCommit).toBeNull();
 });
 
+test("unavailable Build sandbox is visible in the started event and report source", async () => {
+	const setup = createRequest();
+	await runBuild({
+		...setup.request,
+		sandbox: {
+			async probe() {
+				return {
+					ok: true as const,
+					value: {
+						mode: "unconfined" as const,
+						unavailableReason: "forced unavailable by test",
+					},
+				};
+			},
+		},
+	});
+	const rows = decoder
+		.decode(
+			setup.host.files.get("/runs/greet/events.jsonl") ?? new Uint8Array(),
+		)
+		.trim()
+		.split("\n")
+		.map((row) => JSON.parse(row) as JournalEvent);
+	expect(rows[0]).toMatchObject({ event: "started", sandbox: "unconfined" });
+	expect(rows[1]).toMatchObject({
+		event: "sandbox_unavailable",
+		reason: "forced unavailable by test",
+	});
+});
+
 test("setup retries once and stops without invoking a rung after the second failure", async () => {
 	const setup = createRequest({ setupFailures: 2 });
 	const result = await runBuild(setup.request);
@@ -521,6 +554,42 @@ test("setup retries once and stops without invoking a rung after the second fail
 	expect(setup.plannerRequests).toBe(1);
 	expect(setup.setupCalls).toBe(2);
 	expect(setup.rungCalls).toBe(0);
+	expect(setup.git.claimCommit).toBeNull();
+});
+
+test("queue interruption durably records the signal before releasing the claim", async () => {
+	const setup = createRequest();
+	const controller = new AbortController();
+	const result = await runBuild({
+		...setup.request,
+		signal: controller.signal,
+		planner: {
+			async complete() {
+				controller.abort("SIGTERM");
+				return {
+					ok: false as const,
+					error: {
+						code: "provider/cancelled",
+						message: "Provider request cancelled.",
+						exitCode: 4 as const,
+					},
+				};
+			},
+		},
+	});
+	const rows = decoder
+		.decode(
+			setup.host.files.get("/runs/greet/events.jsonl") ?? new Uint8Array(),
+		)
+		.trim()
+		.split("\n")
+		.map((row) => JSON.parse(row) as JournalEvent);
+	expect(rows.at(-1)).toMatchObject({
+		event: "interrupted",
+		reason: "sigterm",
+	});
+	expect(rows.some((row) => row.event === "finished")).toBe(false);
+	expect(result.record?.status).toBe("running");
 	expect(setup.git.claimCommit).toBeNull();
 });
 

@@ -234,6 +234,17 @@ export class HostBridge {
 		await this.#stderr;
 	}
 
+	/** End an active supervised command without waiting for its normal timeout. */
+	async abortRunningProcess(): Promise<void> {
+		if (this.#closed) return;
+		this.#closed = true;
+		closeSync(this.#controlFd);
+		await this.#requestQueue;
+		this.#process.stdin.end();
+		await this.#process.exited;
+		await this.#stderr;
+	}
+
 	async #drainStderr(stream: ReadableStream<Uint8Array>): Promise<void> {
 		const decoder = new TextDecoder();
 		for await (const chunk of stream) {

@@ -450,6 +450,50 @@ test("Build transport retries exceed four attempts only while the wall budget ca
 	expect(clock.sleeps).toEqual([1_000, 2_000, 4_000, 8_000, 16_000]);
 });
 
+test("Build retry cap excludes login pauses and budget-funded transport failures", () => {
+	let state = initialRetryState({
+		provider: "chatgpt",
+		role: "planner",
+		model: "gpt-6.1-sol",
+		effort: "high",
+		overloadFallback: null,
+		mode: "build",
+	});
+	for (const failureClass of [
+		"login",
+		"login",
+		"login",
+		"transport",
+		"timeout",
+		"stall",
+	] as const) {
+		const next = stepRetry(state, {
+			failureClass,
+			remainingBuildBudgetMilliseconds: 120_000,
+			remainingPauseBudgetMilliseconds: 86_400_000,
+			hasPartialItems: false,
+		});
+		expect(next.decision.kind).not.toBe("stop");
+		state = next.state;
+	}
+	expect(state.attempts).toBe(6);
+	expect(state.cappedAttempts).toBe(0);
+	for (let capped = 1; capped <= 4; capped += 1) {
+		const next = stepRetry(state, {
+			failureClass: "malformed",
+			remainingBuildBudgetMilliseconds: 120_000,
+			remainingPauseBudgetMilliseconds: 86_400_000,
+			hasPartialItems: false,
+		});
+		expect(next.state.cappedAttempts).toBe(capped);
+		expect(next.decision.kind).toBe(
+			capped === 4 ? "stop" : "retry_with_jitter",
+		);
+		state = next.state;
+	}
+	expect(state.attempts).toBe(10);
+});
+
 test("Shape has no wall budget and caps every transient logical request at four attempts", async () => {
 	const fixture = sessionFor("shaper");
 	const clock = new AdvancingClock();

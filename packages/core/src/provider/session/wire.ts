@@ -20,6 +20,28 @@ export interface EncodedSessionRequest {
 
 const encoder = new TextEncoder();
 
+function supportsExplicitBreakpoint(state: SessionState): boolean {
+	return (
+		state.provider === "chatgpt" &&
+		/^gpt-(?:6(?:[.-]|$)|5\.6(?:[.-]|$))/u.test(state.model)
+	);
+}
+
+function sharedInstructionBreakpoint(state: SessionState): Uint8Array {
+	return encoder.encode(
+		canonicalJson({
+			role: "developer",
+			content: [
+				{
+					type: "input_text",
+					text: state.prefix.genericInstructions,
+					prompt_cache_breakpoint: { mode: "explicit" },
+				},
+			],
+		}),
+	);
+}
+
 function jsonField(name: string, value: unknown): string {
 	return `${JSON.stringify(name)}:${canonicalJson(value)}`;
 }
@@ -33,6 +55,8 @@ function inputItems(state: SessionState): readonly Uint8Array[] {
 			),
 		);
 	}
+	if (supportsExplicitBreakpoint(state))
+		items.push(sharedInstructionBreakpoint(state));
 	items.push(developerMessageBytes(state.roleInstructions));
 	items.push(...state.history.itemBytes());
 	return Object.freeze(items.map((item) => item.slice()));
@@ -71,6 +95,8 @@ function bodyPrefix(
 	if (state.provider === "grok" || state.authMode === "injected")
 		fields.push(jsonField("include", ["reasoning.encrypted_content"]));
 	fields.push(jsonField("prompt_cache_key", state.cacheKey));
+	if (supportsExplicitBreakpoint(state))
+		fields.push(jsonField("prompt_cache_options", { mode: "implicit" }));
 	fields.push(
 		jsonField("tool_choice", allowedToolChoice(state)),
 		jsonField("parallel_tool_calls", false),
