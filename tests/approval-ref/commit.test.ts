@@ -174,6 +174,7 @@ interface Fixture {
 	readonly baseTree: string;
 	readonly filesystem: ReturnType<typeof makeFileSystem>;
 	readonly request: ReturnType<typeof approvalRequest>;
+	disablePublicIdentity(): void;
 	close(): void;
 }
 
@@ -255,9 +256,10 @@ async function createFixture(
 	const processPort = makeProcessPort();
 	const executable = Bun.which("git");
 	if (executable === null) throw new Error("Git is unavailable");
+	const environment = testEnvironment(home);
 	const git = createPublicGitPort(processPort, {
 		executable,
-		environment: testEnvironment(home),
+		environment,
 	});
 	await gitText(git, origin, [
 		"init",
@@ -309,6 +311,10 @@ async function createFixture(
 		baseTree: baseTree.trim(),
 		filesystem,
 		request,
+		disablePublicIdentity() {
+			environment.GIT_AUTHOR_NAME = "";
+			environment.GIT_AUTHOR_EMAIL = "";
+		},
 		close() {
 			rmSync(root, { recursive: true, force: true });
 		},
@@ -433,6 +439,7 @@ test("missing public Git identity refuses without creating an approval ref", asy
 			"--unset-all",
 			"user.email",
 		]);
+		fixture.disablePublicIdentity();
 		const result = await commitApprovalPackage(fixture.request);
 		expect(result.ok).toBe(false);
 		if (result.ok) return;
