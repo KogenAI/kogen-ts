@@ -4,17 +4,18 @@ Status: **IMPLEMENTED, AWAITING INTEGRATION ACCEPTANCE**
 
 Base SHA: `5585601ad1be8cac5b8daa8e3cda92078399d5e8`
 
-Implementation commit: `604b772` (`Implement macOS credential vault`, rebased).
-Latest validated branch head: `ac84f7a0141077688db790c5984a9a5ef30d99c6`.
-Rebase base: `3da7beee2f2eff4feba911143ea46931a86a7057` (`main`).
+Implementation commit: `8c24be67748dd4a2a23982b55b018ec3aeb8605a`
+(`Implement macOS credential vault`, rebased).
+Validated code tree head: `6793e2d41e0bc6954677687b98084f470ed87135`.
+Latest rebase base: `79f3ef53e5852685a5c628404b38f5ffb5310179` (`main`).
 
 Branch: `kts/37-macos-credential-vault`
 
 Target: spec v1.3-draft `e19dd1c21c19c5be1201c3b6a42c59c28b5c2887`; frozen
 conformance suite v1.2.
 
-Active effort: approximately 18 minutes total, including the integration
-diagnosis/rebase and receipt update; automated check wait excluded. Model:
+Active effort: approximately 28 minutes total, including the integration
+diagnosis/rebase and receipt updates; automated check wait excluded. Model:
 GPT-6 Codex; exact served variant and token count are not exposed by this worker
 interface.
 
@@ -111,20 +112,35 @@ Next owner: coordinator/integrator for native operation registration, auth
 composition and directory provisioning, then the isolated I6 OS-Keychain
 fixture.
 
-## Retained branch repair — 8 October 2026
+## Integration scope repair — 8 October 2026
 
-The scope rejection was caused by branch ancestry. Packet 37 was originally
-forked from packet 35 at `3da7bee` before packet 35 reached main. The
-dispatcher compared that history with a newer main where 35 had already been
-integrated, so 35's login files appeared in the three-dot diff. Rebasing onto
-main `95b91a36cb69d16273a49922af6145f6f8cfda46` removed that ancestry
-from the diff. The scope tool itself needed no change. The branch now changes
-only this receipt, `native/keychain.{c,h}`, `vault.ts`, and `tests/vault/**`.
+The supplied integration log reported packet 35's ChatGPT login files outside
+the packet 37 allowlist. At repair start the worktree was clean, no rebase was
+in progress, and the branch merge base was `c3e4ecbb6c15513a570ac8de0722b8216d2edff1`,
+before the current `main` tip. Rebasing onto `main` at
+`79f3ef53e5852685a5c628404b38f5ffb5310179` completed without conflicts. The
+new merge base is that main tip. The dispatcher scope check passed:
+`bun tools/dispatch-scope.ts 37-macos-credential-vault "$PWD" 79f3ef53e5852685a5c628404b38f5ffb5310179`.
+The branch diff contains only this receipt, `native/keychain.c`,
+`native/keychain.h`, `packages/core/src/provider/auth/vault.ts`, and
+`tests/vault/vault.test.ts`.
 
-The required `GIT_CONFIG_GLOBAL=/dev/null make check` after the rebase passed
-with the pinned Git 2.54.0 selected through `GIT_TOOL`: **453 passed, 1
-Linux-only skip, 0 failed, 3,640 assertions across 55 files**. The log is
-`~/cx/kts/logs/37-manual-final-check.log`. An earlier check on the rebased
-branch encountered the unrelated five-second dispatcher fixture timeout; the
-coordinator corrected that shared test on main before this passing recheck.
-The branch remains retained for dispatcher integration; it was not merged.
+At validated code tree head `6793e2d41e0bc6954677687b98084f470ed87135`, named
+local acceptance `GIT_CONFIG_GLOBAL=/dev/null bun --no-install test
+--max-concurrency 1 ./tests/vault` passed: **6 cases, 25 assertions**.
+`GIT_CONFIG_GLOBAL=/dev/null make check` passed: **482 passed, 1 Linux-only
+skip, 0 failed, 3,777 assertions across 59 test files**. The skip is the
+existing Linux-only real-mount case on this macOS host. Biome, TypeScript,
+dispatcher validation, warning-as-error native compilation (including
+`native/keychain.c`), and isolated tests passed. No real Keychain operation
+was invoked. The explicit dispatcher scope check passed. There is no assigned
+B-set: **0 external cases run**, **0 expanded instances**, and **0 unmatched
+fake provider requests**. Replay is not assigned: **0 hand scenarios**, seeds
+17/23/41 not run, first divergence not applicable.
+
+Production integration remains pending: `native/main.c` does not register or
+link operation `0x0304`, and `packages/cli/src/composition.ts` does not select
+`createCredentialPort` or construct its Keychain/random ports. The coordinator
+owns that wiring. I6 still needs the isolated explicit OS-Keychain fixture;
+Linux remains file-backed, and packet 02's Linux helper design gate remains
+unavailable. No public CLI or cross-OS Keychain acceptance is claimed.
