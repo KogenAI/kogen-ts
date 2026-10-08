@@ -1,3 +1,4 @@
+import { type LadderOptions, parseLadderOptions } from "../build/ladder";
 import type { YamlBlockNode, YamlMapNode } from "../yaml/block";
 import { parseYaml } from "../yaml/parse";
 import {
@@ -55,6 +56,8 @@ export interface ShapingConfig {
 
 export interface PartialBuildConfig {
 	readonly recipe?: RecipeName | `${RecipeName}+edge`;
+	readonly ladder?: LadderOptions;
+	readonly budgetMs?: number;
 	readonly roles?: RoleOverrides;
 	readonly wallMinutes?: number;
 	readonly edgeTests?: boolean;
@@ -70,6 +73,8 @@ export interface PartialBuildConfig {
 
 export interface ProjectBuildConfig extends PartialBuildConfig {
 	readonly recipe: RecipeName | `${RecipeName}+edge`;
+	readonly ladder: LadderOptions;
+	readonly budgetMs: number;
 	readonly roles: RoleOverrides;
 	readonly wallMinutes: number;
 	readonly edgeTests: boolean;
@@ -129,6 +134,8 @@ const PROJECT_KEYS = new Set([
 
 const BUILD_KEYS = new Set([
 	"recipe",
+	"ladder",
+	"budget_ms",
 	"roles",
 	"wall_minutes",
 	"edge_tests",
@@ -536,6 +543,41 @@ function parseRoleOverrides(
 	return output;
 }
 
+function parseLadder(
+	node: YamlBlockNode | undefined,
+	issues: ConfigDiagnostic[],
+): LadderOptions | undefined {
+	if (node === undefined) return undefined;
+	if (!isMap(node)) {
+		issues.push({ message: "build.ladder must be a map" });
+		return undefined;
+	}
+	const raw: Record<string, unknown> = {};
+	for (const [key, value] of node.entries) {
+		const text = scalar(value);
+		if (key === "max_rungs" || key === "repeat_from") {
+			raw[key] =
+				key === "repeat_from" && text === "null"
+					? null
+					: text !== undefined && /^(?:0|[1-9][0-9]*)$/u.test(text)
+						? Number(text)
+						: (text ?? "invalid");
+		} else if (key === "experimental_r4") {
+			raw[key] =
+				text === "true" ? true : text === "false" ? false : (text ?? "invalid");
+		} else {
+			raw[key] = text ?? "invalid";
+		}
+	}
+	const parsed = parseLadderOptions(raw);
+	if (!parsed.ok) {
+		for (const diagnostic of parsed.diagnostics)
+			issues.push({ message: diagnostic.message });
+		return undefined;
+	}
+	return parsed.value;
+}
+
 function parseBuild(
 	node: YamlBlockNode | undefined,
 	issues: ConfigDiagnostic[],
@@ -568,6 +610,13 @@ function parseBuild(
 		}
 	}
 	const roles = parseRoleOverrides(node.entries.get("roles"), issues);
+	const ladder = parseLadder(node.entries.get("ladder"), issues);
+	const budgetMs = parseInteger(
+		node.entries.get("budget_ms"),
+		"build.budget_ms",
+		issues,
+		{ minimum: 1 },
+	);
 	const wallMinutes = parseInteger(
 		node.entries.get("wall_minutes"),
 		"build.wall_minutes",
@@ -656,6 +705,8 @@ function parseBuild(
 	}
 	return {
 		...(recipe === undefined ? {} : { recipe }),
+		...(ladder === undefined ? {} : { ladder }),
+		...(budgetMs === undefined ? {} : { budgetMs }),
 		roles,
 		...(wallMinutes === undefined ? {} : { wallMinutes }),
 		...(edgeTests === undefined ? {} : { edgeTests }),
@@ -772,8 +823,12 @@ function parseShaping(
 }
 
 function finishProjectBuild(build: PartialBuildConfig): ProjectBuildConfig {
+	const ladder = parseLadderOptions();
+	if (!ladder.ok) throw new Error("Default ladder configuration is invalid.");
 	return {
 		recipe: build.recipe ?? "ladder",
+		ladder: build.ladder ?? ladder.value,
+		budgetMs: build.budgetMs ?? 3_600_000,
 		roles: build.roles ?? new Map(),
 		wallMinutes: build.wallMinutes ?? 60,
 		edgeTests: build.edgeTests ?? false,

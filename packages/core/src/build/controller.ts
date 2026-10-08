@@ -26,6 +26,9 @@ import {
 	type RunRecord,
 	writeRunSnapshot,
 } from "../run/store";
+import { runSerialLadder } from "./attempts";
+import type { BuildEarlierAttempt } from "./develop";
+import { createLadderPlan, type LadderAttempt } from "./ladder";
 import {
 	type BuildApprovalLoadFailure,
 	type LoadedBuildApproval,
@@ -111,7 +114,7 @@ export interface RungOutcome {
 export interface BuildRungPort {
 	createWorkspace(request: {
 		readonly runId: string;
-		readonly rung: "R1";
+		readonly rung: string;
 		readonly base: BuildBaseSnapshot;
 		readonly approval: LoadedBuildApproval;
 	}): Promise<Result<RungWorkspace, BuildEffectFailure>>;
@@ -132,6 +135,11 @@ export interface BuildRungPort {
 		readonly base: BuildBaseSnapshot;
 		readonly plan: BuildPlan;
 		readonly roles: RoleResolution;
+		readonly attempt?: LadderAttempt;
+		readonly earlierAttempts?: readonly BuildEarlierAttempt[];
+		readonly baseAcceptance?: BaseAcceptanceObservation;
+		readonly wallMilliseconds?: number;
+		readonly remainingBuildBudgetMilliseconds?: () => number;
 		readonly emit: (
 			event: string,
 			fields?: Readonly<Record<string, JsonValue>>,
@@ -183,6 +191,7 @@ export interface BuildControllerRequest {
 	readonly rung: BuildRungPort;
 	readonly landing: BuildLandingPort;
 	readonly clock: Pick<ClockPort, "unixMilliseconds">;
+	readonly remainingBuildBudgetMilliseconds?: () => number;
 	/** Queue custody records interruption before releasing its owner. */
 	readonly signal?: AbortSignal;
 }
@@ -499,10 +508,23 @@ export async function runBuild(
 				model: plannerRole.effective.model,
 				effort: plannerRole.effective.effort,
 			});
-			await persistEvent(writer, request.clock, "rung_started", {
-				rung: "R1",
-				name: "builder",
-			});
+			const ladder =
+				typeof request.project.build.recipe === "string"
+					? createLadderPlan({
+							recipe: request.project.build.recipe,
+							roles,
+							options: request.project.build.ladder,
+						})
+					: null;
+			const serialLadder =
+				ladder !== null &&
+				(plan.difficulty !== "hard" || ladder.rungs.length === 1) &&
+				request.remainingBuildBudgetMilliseconds !== undefined;
+			if (!serialLadder)
+				await persistEvent(writer, request.clock, "rung_started", {
+					rung: "R1",
+					name: "builder",
+				});
 			const workspaceResult = await request.rung.createWorkspace({
 				runId: request.runId,
 				rung: "R1",
@@ -543,23 +565,93 @@ export async function runBuild(
 					output: [...item.output],
 				})),
 			});
-			const rungResult = await request.rung.run({
-				workspace,
-				runId: request.runId,
-				approval,
-				base,
-				plan,
-				roles,
-				emit: async (name, fields = {}) =>
-					persistEvent(
-						writer as NonNullable<typeof writer>,
-						request.clock,
-						name,
-						fields,
-					),
-			});
-			if (!rungResult.ok) throw new BuildStopped(rungResult.error);
-			const rung = rungResult.value;
+			const emit = async (
+				name: string,
+				fields: Readonly<Record<string, JsonValue>> = {},
+			) =>
+				persistEvent(
+					writer as NonNullable<typeof writer>,
+					request.clock,
+					name,
+					fields,
+				);
+			let rung: RungOutcome;
+			if (serialLadder && ladder !== null) {
+				const serial = await runSerialLadder({
+					runId: request.runId,
+					approval,
+					base,
+					plan,
+					baseAcceptance: acceptance,
+					roles,
+					ladder,
+					remainingBuildBudgetMilliseconds:
+						request.remainingBuildBudgetMilliseconds as () => number,
+					emit,
+					effects: {
+						async createWorkspace(input) {
+							if (input.attempt.ordinal === 1)
+								return { ok: true as const, value: workspace };
+							const created = await request.rung.createWorkspace({
+								runId: input.runId,
+								rung: input.attempt.rung,
+								base: input.base,
+								approval: input.approval,
+							});
+							if (created.ok) workspaces.push(created.value);
+							return created;
+						},
+						setup: async (candidate) =>
+							candidate.id === workspace.id
+								? { ok: true as const, value: undefined }
+								: request.rung.setup(candidate),
+						async run(input) {
+							const executed = await request.rung.run({
+								workspace: input.workspace,
+								runId: input.runId,
+								approval: input.approval,
+								base: input.base,
+								plan,
+								roles: input.roles,
+								attempt: input.attempt,
+								earlierAttempts: input.earlierAttempts,
+								baseAcceptance: input.baseAcceptance,
+								wallMilliseconds: input.wallMilliseconds,
+								remainingBuildBudgetMilliseconds:
+									input.remainingBuildBudgetMilliseconds,
+								emit: input.emit,
+							});
+							return executed.ok
+								? {
+										ok: true as const,
+										value: { outcome: executed.value, failureLines: [] },
+									}
+								: executed;
+						},
+					},
+				});
+				if (serial.kind === "stopped") throw new BuildStopped(serial.failure);
+				if (serial.kind === "green")
+					rung = { kind: "green", reason: "green", candidate: serial.winner };
+				else
+					rung = {
+						kind: "red",
+						reason: serial.kind === "budget" ? "budget" : "verification/red",
+						candidate: serial.candidates.at(-1) ?? null,
+					};
+			} else {
+				const rungResult = await request.rung.run({
+					workspace,
+					runId: request.runId,
+					approval,
+					base,
+					plan,
+					roles,
+					emit,
+				});
+				if (!rungResult.ok) throw new BuildStopped(rungResult.error);
+				rung = rungResult.value;
+			}
 			bestCandidate = rung.candidate;
 			if (rung.kind !== "stopped")
 				await persistEvent(writer, request.clock, "verification", {
@@ -569,11 +661,12 @@ export async function runBuild(
 						? {}
 						: { tree: rung.candidate.verifiedTree }),
 				});
-			await persistEvent(writer, request.clock, "rung_finished", {
-				rung: "R1",
-				reason: rung.reason,
-				verdict: rung.kind === "stopped" ? "stopped" : rung.kind,
-			});
+			if (!serialLadder)
+				await persistEvent(writer, request.clock, "rung_finished", {
+					rung: "R1",
+					reason: rung.reason,
+					verdict: rung.kind === "stopped" ? "stopped" : rung.kind,
+				});
 			if (rung.kind === "stopped")
 				throw new BuildStopped(
 					rung.failure ?? portFailure(rung.reason, rung.reason, 4),

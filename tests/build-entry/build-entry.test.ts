@@ -255,6 +255,7 @@ function createRequest(
 		readonly trailerBy?: string;
 		readonly setupFailures?: number;
 		readonly runnerUnavailable?: boolean;
+		readonly serialRed?: boolean;
 	} = {},
 ) {
 	const git = new FakeGit(options);
@@ -266,7 +267,21 @@ function createRequest(
 		["planner" as const, { model: "machine-planner", effort: "low" }],
 	]);
 	const project = {
-		build: { roles, modelFallback: true, planMaxWords: 500 },
+		build: {
+			roles,
+			modelFallback: true,
+			planMaxWords: 500,
+			...(options.serialRed
+				? {
+						recipe: "ladder",
+						ladder: {
+							maxRungs: 2,
+							experimentalR4: false,
+							repeatFrom: null,
+						},
+					}
+				: {}),
+		},
 	} as unknown as ProjectConfig;
 	const machine = { build: { roles: machineRoles } } as MachineConfig;
 	let plannerRequests = 0;
@@ -357,8 +372,13 @@ function createRequest(
 				},
 			},
 			rung: {
-				async createWorkspace() {
-					return { ok: true as const, value: { id: "r1", root: "/work/r1" } };
+				async createWorkspace(
+					input: Parameters<BuildRungPort["createWorkspace"]>[0],
+				) {
+					return {
+						ok: true as const,
+						value: { id: input.rung, root: `/work/${input.rung}` },
+					};
 				},
 				async setup() {
 					setupCalls += 1;
@@ -404,13 +424,22 @@ function createRequest(
 					return {
 						ok: true as const,
 						value: {
-							kind: "green" as const,
-							reason: "green",
+							kind:
+								options.serialRed && input.attempt?.rung === "R1"
+									? ("red" as const)
+									: ("green" as const),
+							reason:
+								options.serialRed && input.attempt?.rung === "R1"
+									? "verification/red"
+									: "green",
 							candidate: {
-								rung: "R1",
+								rung: input.attempt?.rung ?? "R1",
 								workspace: input.workspace,
 								verifiedTree: tree,
-								verdict: "green" as const,
+								verdict:
+									options.serialRed && input.attempt?.rung === "R1"
+										? ("red" as const)
+										: ("green" as const),
 							},
 						},
 					};
@@ -443,6 +472,9 @@ function createRequest(
 				},
 			},
 			clock: { unixMilliseconds: () => 1_790_000_000_100 },
+			...(options.serialRed
+				? { remainingBuildBudgetMilliseconds: () => 60_000 }
+				: {}),
 		},
 	};
 }
@@ -511,6 +543,25 @@ test("B0–B10 runs one planned R1, verifies base acceptance, lands, and release
 		},
 	});
 	expect(setup.git.claimCommit).toBeNull();
+});
+
+test("public Build escalates a red R1 into a fresh R2 workspace", async () => {
+	const setup = createRequest({ serialRed: true });
+	const result = await runBuild(setup.request);
+	expect(result).toMatchObject({ outcome: "landed", exitCode: 0 });
+	expect(setup.rungCalls).toBe(2);
+	expect(setup.setupCalls).toBe(2);
+	const rows = decoder
+		.decode(
+			setup.host.files.get("/runs/greet/events.jsonl") ?? new Uint8Array(),
+		)
+		.trim()
+		.split("\n")
+		.map((row) => JSON.parse(row) as JournalEvent);
+	expect(
+		rows.filter((row) => row.event === "rung_started").map((row) => row.rung),
+	).toEqual(["R1", "R2"]);
+	expect(rows.find((row) => row.event === "commit_result")?.rung).toBe("R2");
 });
 
 test("unavailable Build sandbox is visible in the started event and report source", async () => {

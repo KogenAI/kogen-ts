@@ -93,6 +93,46 @@ account: default
 	});
 });
 
+test("project schema admits the I4 ladder and active budget with closed nested keys", () => {
+	const accepted = parseProjectConfig(
+		encode(`name: kt
+checks: []
+build:
+  ladder:
+    max_rungs: 1
+    experimental_r4: false
+    repeat_from: null
+  budget_ms: 120000
+`),
+	);
+	expect(accepted.ok).toBe(true);
+	if (accepted.ok) {
+		expect(accepted.value.build.ladder).toEqual({
+			maxRungs: 1,
+			experimentalR4: false,
+			repeatFrom: null,
+		});
+		expect(accepted.value.build.budgetMs).toBe(120_000);
+	}
+	const rejected = parseProjectConfig(
+		encode(`name: kt
+checks: []
+build:
+  ladder:
+    max_rungs: 5
+    unknown: yes
+  budget_ms: 0
+`),
+	);
+	expect(rejected.ok).toBe(false);
+	if (!rejected.ok)
+		expect(rejected.diagnostics.map((issue) => issue.message)).toEqual([
+			'build.ladder has unknown key "unknown"',
+			"build.ladder.max_rungs must be an integer from 1 to 4",
+			"build.budget_ms must be an integer ≥ 1",
+		]);
+});
+
 test("project schema reports all closed-schema issues with stable messages", () => {
 	const result = parseProjectConfig(
 		encode(`name: kt

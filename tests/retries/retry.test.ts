@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { BuildBudget } from "../../packages/core/src/build/budget";
 import type { ClockPort } from "../../packages/core/src/contracts/clock";
 import type { RandomPort } from "../../packages/core/src/contracts/ports";
 import type {
@@ -181,7 +182,10 @@ function respondInput(
 	mode: "build" | "shape" = "build",
 	remainingBuildBudgetMilliseconds: () => number = () => 100_000,
 	providerPauseBudget = new ProviderPauseBudget(),
-	options: Pick<RespondInput, "fallbackEnabled" | "timeScale"> = {},
+	options: Pick<
+		RespondInput,
+		"fallbackEnabled" | "timeScale" | "buildBudget"
+	> = {},
 ): RespondInput {
 	if (session.resolved.name !== role)
 		throw new TypeError("Retry test role does not match its session.");
@@ -524,6 +528,7 @@ test("Build pauses for 5 minutes regardless of a shorter Retry-After and keeps b
 	const clock = new AdvancingClock();
 	const random = new FixedRandom();
 	const pauseBudget = new ProviderPauseBudget();
+	const buildBudget = new BuildBudget(50_000, clock);
 	const bodies: Uint8Array[] = [];
 	let attempts = 0;
 	const result = await respondWithRetry(
@@ -542,9 +547,9 @@ test("Build pauses for 5 minutes regardless of a shorter Retry-After and keeps b
 					: success("continued after pause");
 			},
 			"build",
-			() => 50_000,
+			() => buildBudget.remainingMilliseconds(),
 			pauseBudget,
-			{ timeScale: 0.02 },
+			{ timeScale: 0.02, buildBudget },
 		),
 	);
 
@@ -552,6 +557,11 @@ test("Build pauses for 5 minutes regardless of a shorter Retry-After and keeps b
 	expect(bodies[0]).toEqual(bodies[1]);
 	expect(clock.sleeps).toEqual([6_000]);
 	expect(pauseBudget.usedMilliseconds).toBe(300_000);
+	expect(buildBudget.snapshot()).toMatchObject({
+		usedMilliseconds: 0,
+		pausedMilliseconds: 6_000,
+		remainingMilliseconds: 50_000,
+	});
 	expect(result.events).toEqual([
 		{
 			event: "provider_wait",

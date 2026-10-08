@@ -4,6 +4,7 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { createCommandAdapter } from "../../core/src/adapters/command";
 import type { AcceptanceAdapter } from "../../core/src/adapters/interface";
+import { BuildBudget } from "../../core/src/build/budget";
 import {
 	type BuildControllerResult,
 	type BuildEffectFailure,
@@ -401,7 +402,8 @@ export async function executePublicBuild(request: {
 }): Promise<BuildControllerResult> {
 	const { slug, runId, stateRoot, resolution, config, runtime } = request;
 	const runDirectory = join(stateRoot, "runs", runId);
-	const workspace = join(stateRoot, `${runId}-R1`);
+	const workspaceForRung = (rung: string) =>
+		join(stateRoot, `${runId}-${rung}`);
 	const adapter = commandAdapter(config);
 	const http = new HttpTransport(clock);
 	const homeDirectory = process.env.HOME ?? homedir();
@@ -477,15 +479,8 @@ export async function executePublicBuild(request: {
 						? {}
 						: { testEndpointOverride: process.env.KOGEN_PROVIDER_URL }),
 				});
-	const started = clock.monotonicMilliseconds();
-	const budget = () =>
-		Math.max(
-			0,
-			Math.floor(
-				config.build.wallMinutes * 60_000 -
-					(clock.monotonicMilliseconds() - started),
-			),
-		);
+	const buildBudget = new BuildBudget(config.build.budgetMs, clock);
+	const budget = () => buildBudget.remainingMilliseconds();
 	const pauseBudget = new ProviderPauseBudget();
 	// A separate bridge lets a queue signal kill every Build-owned child group
 	// while the main bridge remains available to append the interrupt event.
@@ -541,6 +536,7 @@ export async function executePublicBuild(request: {
 			project: config,
 			machine: machine.value,
 			clock,
+			remainingBuildBudgetMilliseconds: budget,
 			runDirectory: {
 				host: runtime.filesystemHost,
 				async create() {
@@ -648,6 +644,7 @@ export async function executePublicBuild(request: {
 						sendAttempt: sender,
 						remainingBuildBudgetMilliseconds: budget,
 						providerPauseBudget: pauseBudget,
+						buildBudget,
 						...(request.signal === undefined ? {} : { signal: request.signal }),
 					});
 					return result.kind === "completed"
@@ -667,21 +664,22 @@ export async function executePublicBuild(request: {
 			},
 			rung: {
 				async createWorkspace(input) {
+					const workspaceRoot = workspaceForRung(input.rung);
 					const cloned = await cloneFreshWorkspace(childRuntime.process, {
 						sourceRepository: resolution.origin,
-						destination: workspace,
+						destination: workspaceRoot,
 						baseCommit: input.base.commit,
 					});
 					if (!cloned.ok)
 						return fromPort(cloned, "environment/workspace_unavailable");
-					mkdirSync(dirname(join(workspace, input.approval.intentPath)), {
+					mkdirSync(dirname(join(workspaceRoot, input.approval.intentPath)), {
 						recursive: true,
 					});
-					mkdirSync(dirname(join(workspace, adapter.candidatePath(slug))), {
+					mkdirSync(dirname(join(workspaceRoot, adapter.candidatePath(slug))), {
 						recursive: true,
 					});
 					const intent = await runtime.filesystem.writeFileAtomically({
-						root: workspace,
+						root: workspaceRoot,
 						path: input.approval.intentPath,
 						bytes: input.approval.intentBytes,
 						mode: 0o644,
@@ -689,21 +687,21 @@ export async function executePublicBuild(request: {
 					if (!intent.ok)
 						return fromPort(intent, "environment/workspace_unavailable");
 					const acceptance = await runtime.filesystem.writeFileAtomically({
-						root: workspace,
+						root: workspaceRoot,
 						path: adapter.candidatePath(slug),
 						bytes: input.approval.acceptanceBytes,
 						mode: 0o644,
 					});
 					if (!acceptance.ok)
 						return fromPort(acceptance, "environment/workspace_unavailable");
-					const metadata = join(runDirectory, "private-git");
-					mkdirSync(metadata, { mode: 0o700 });
+					const metadata = join(runDirectory, `private-git-${input.rung}`);
+					mkdirSync(metadata, { recursive: true, mode: 0o700 });
 					const created = await createPrivateGitRepository(
 						childRuntime.process,
 						{
 							sourceRepository: resolution.origin,
 							gitDirectory: metadata,
-							workTree: workspace,
+							workTree: workspaceRoot,
 						},
 					);
 					if (!created.ok)
@@ -743,14 +741,17 @@ export async function executePublicBuild(request: {
 						hostEnvironment: process.env,
 						checkout: resolution.checkout,
 						origin: resolution.origin,
-						workspace,
+						workspace: workspaceRoot,
 						runDirectory,
 						home: process.env.HOME ?? homedir(),
 					});
 					sandboxProcess = confinement.process;
 					if (confinement.warning !== null)
 						process.stderr.write(`${confinement.warning}\n`);
-					return { ok: true as const, value: { id: "R1", root: workspace } };
+					return {
+						ok: true as const,
+						value: { id: input.rung, root: workspaceRoot },
+					};
 				},
 				async setup(workspaceValue) {
 					const environment = await buildChildEnvironment({
@@ -899,19 +900,25 @@ export async function executePublicBuild(request: {
 							? {}
 							: { miseBinaryPath: null }),
 					});
+					const attempt = input.attempt;
+					const rungName = attempt?.rung ?? "R1";
+					const role = attempt?.role ?? input.roles.roles.builder;
 					const session = createBuilderSession({
 						runDirectory,
 						provider: "chatgpt",
-						role: input.roles.roles.builder,
+						role,
 						authMode,
 						recipe: config.build.recipe,
-						attempt: "builder",
-						rung: "R1",
+						attempt: attempt?.name ?? "builder",
+						rung: rungName,
 						promptVersion: "build-prompt-v1",
 						adapterVersion: "responses-v1",
 						intentBytes: input.approval.intentBytes,
-						acceptance: baseAcceptance,
-						plan: input.plan.text,
+						acceptance: input.baseAcceptance?.items ?? baseAcceptance,
+						plan: attempt?.input === "request" ? null : input.plan.text,
+						...(input.earlierAttempts === undefined
+							? {}
+							: { earlierAttempts: input.earlierAttempts }),
 						repairsLeft: 6,
 						genericInstructions: `${BUILD_GENERIC_INSTRUCTIONS}\n\n${BUILD_BUILDER_INSTRUCTIONS}`,
 						toolSchemas: buildToolSchemas(config.build.recipe),
@@ -939,7 +946,7 @@ export async function executePublicBuild(request: {
 					});
 					const outcome = await runRungMachine({
 						runId,
-						rung: "R1",
+						rung: rungName,
 						workspace: input.workspace,
 						approval: input.approval,
 						baseCommit: input.base.commit,
@@ -950,13 +957,14 @@ export async function executePublicBuild(request: {
 							async complete(turn) {
 								const result = await respondWithRetry({
 									session: turn.session,
-									resolvedRole: input.roles.roles.builder,
+									resolvedRole: role,
 									mode: "build",
 									clock,
 									random,
 									sendAttempt: sender,
 									remainingBuildBudgetMilliseconds: budget,
 									providerPauseBudget: pauseBudget,
+									buildBudget,
 									...(request.signal === undefined
 										? {}
 										: { signal: request.signal }),
@@ -1030,7 +1038,7 @@ export async function executePublicBuild(request: {
 									sourceRepository: resolution.origin,
 									manifest: protectedManifest,
 									filesystem: runtime.filesystemHost,
-									rung: "R1",
+									rung: rungName,
 									previousRestoreCount: previous,
 								});
 								return restored.ok
@@ -1075,7 +1083,11 @@ export async function executePublicBuild(request: {
 							},
 						},
 						clock,
-						remainingBuildBudgetMilliseconds: budget,
+						remainingBuildBudgetMilliseconds:
+							input.remainingBuildBudgetMilliseconds ?? budget,
+						...(input.wallMilliseconds === undefined
+							? {}
+							: { wallMilliseconds: input.wallMilliseconds }),
 						emit: input.emit,
 					});
 					return { ok: true as const, value: outcome };
@@ -1083,8 +1095,9 @@ export async function executePublicBuild(request: {
 				async parkCandidate() {
 					return { ok: true as const, value: undefined };
 				},
-				async cleanup() {
-					rmSync(workspace, { recursive: true, force: true });
+				async cleanup(input) {
+					for (const candidate of input.workspaces)
+						rmSync(candidate.root, { recursive: true, force: true });
 					return { ok: true as const, value: undefined };
 				},
 			} satisfies BuildRungPort,

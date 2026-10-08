@@ -1,3 +1,4 @@
+import type { BuildBudget } from "../../build/budget";
 import type { ClockPort } from "../../contracts/clock";
 import type { RandomPort } from "../../contracts/ports";
 import type { ResolvedRole } from "../../project/roles";
@@ -124,6 +125,8 @@ export interface RespondInput {
 	readonly remainingBuildBudgetMilliseconds?: () => number;
 	/** One instance is shared by every request in the Build. */
 	readonly providerPauseBudget?: ProviderPauseBudget;
+	/** Excludes provider login/usage waits from the shared active Build clock. */
+	readonly buildBudget?: Pick<BuildBudget, "pause">;
 	/** Test-only scale; policy events and counters remain unscaled. */
 	readonly timeScale?: number;
 	readonly signal?: AbortSignal;
@@ -284,12 +287,17 @@ export async function respondWithRetry(
 				budget_paused: true,
 			});
 			try {
-				await sleepScaled(
-					input.clock,
-					decision.delayMilliseconds,
-					timeScale,
-					input.signal,
-				);
+				const resumeBuildClock = input.buildBudget?.pause();
+				try {
+					await sleepScaled(
+						input.clock,
+						decision.delayMilliseconds,
+						timeScale,
+						input.signal,
+					);
+				} finally {
+					resumeBuildClock?.();
+				}
 				pauseBudget.complete(reservation);
 			} catch (cause) {
 				pauseBudget.release(reservation);
