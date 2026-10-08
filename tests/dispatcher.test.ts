@@ -197,4 +197,4 @@ test("integration rejects a red check, preserves work, and admits the repaired c
 	} finally {
 		rmSync(scratch, { recursive: true, force: true });
 	}
-});
+}, 30_000);

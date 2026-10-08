@@ -276,13 +276,18 @@ test("parent SIGKILL closes control EOF and the helper kills the process group",
 			true,
 		);
 		helperPid = Number(readFileSync(helperReportPath, "utf8"));
-		expect(await waitUntil(() => existsSync(processReportPath), 5000)).toBe(
-			true,
-		);
-		processPids = readFileSync(processReportPath, "utf8")
-			.trim()
-			.split(/\s+/)
-			.map(Number);
+		// The shell creates the report before its echo has written both PIDs.
+		// Wait for the complete report so this test observes process readiness.
+		expect(
+			await waitUntil(() => {
+				if (!existsSync(processReportPath)) return false;
+				processPids = readFileSync(processReportPath, "utf8")
+					.trim()
+					.split(/\s+/)
+					.map(Number);
+				return processPids.length === 2 && processPids.every((pid) => pid > 0);
+			}, 5000),
+		).toBe(true);
 		expect(processPids).toHaveLength(2);
 		expect(isAlive(processPids[0] ?? -1, "sh")).toBe(true);
 		expect(isAlive(processPids[1] ?? -1, "sleep")).toBe(true);
