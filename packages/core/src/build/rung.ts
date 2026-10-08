@@ -419,18 +419,22 @@ export async function runRungMachine(
 				advice = validated.items;
 				auditWarning = validated.warning;
 				await request.emit("audit", {
+					mode: "observational",
 					rung: request.rung,
 					items: jsonAuditItems(advice),
 					warning: auditWarning,
 					demoted: false,
+					advisory_items: [],
 				});
 			} else {
 				auditWarning = true;
 				await request.emit("audit", {
+					mode: "observational",
 					rung: request.rung,
 					items: [],
 					warning: true,
 					demoted: false,
+					advisory_items: [],
 				});
 			}
 		}

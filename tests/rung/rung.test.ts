@@ -537,7 +537,11 @@ test("a controller repair note does not reset the conversation and unchanged rep
 	const candidate: BuildCandidate | null = outcome.candidate;
 	expect(candidate?.verifiedTree).toBe("tree-base");
 	const auditEvent = run.emitted.find((value) => value.event === "audit");
-	expect(auditEvent?.fields).toMatchObject({ demoted: false });
+	expect(auditEvent?.fields).toMatchObject({
+		mode: "observational",
+		demoted: false,
+		advisory_items: [],
+	});
 });
 
 test("turn, wall, and budget caps verify the saved-base snapshot", async () => {
