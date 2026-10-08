@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { homedir } from "node:os";
+import { loadBuildApproval } from "../../core/src/build/load";
 import type { Result } from "../../core/src/contracts/errors";
 import { projectStateRootPath } from "../../core/src/project/resolve";
 import type { ProcessIdentityPort } from "../../core/src/queue/lock";
@@ -11,6 +12,7 @@ import { handleQueueCommand } from "./handlers/queue";
 import { projectContext, statusInput } from "./i1";
 import { type CliOutput, renderErrorLine } from "./output";
 import { FileQueueLockStorage } from "./queue-storage";
+import { recoverPublicRuns } from "./recover-runs";
 import { inspectOwnerPid } from "./status-runs";
 
 type QueueCommand = Extract<
@@ -52,8 +54,7 @@ export async function runI2QueueCommand(
 			cwd: process.cwd(),
 		},
 		async recover(): Promise<Result<void>> {
-			// Preservation and dead-owner replay enter at I3 after package 59.
-			return { ok: true, value: undefined };
+			return recoverPublicRuns(stateRoot, context.resolution, runtime);
 		},
 		async status() {
 			const input = await statusInput(runtime, context.resolution);
@@ -77,6 +78,24 @@ export async function runI2QueueCommand(
 			};
 		},
 		async startBuild(slug) {
+			const approved = await loadBuildApproval({
+				git: runtime.git,
+				origin: context.resolution.origin,
+				slug,
+			});
+			if (
+				approved.ok &&
+				approved.value.targetBranch !== context.resolution.base
+			)
+				return {
+					started: false,
+					completion: Promise.resolve({
+						outcome: "skipped" as const,
+						runId: null,
+						reason: "environment/approval_branch_mismatch",
+					}),
+					async interrupt() {},
+				};
 			const runId = randomBytes(16).toString("hex");
 			const controller = new AbortController();
 			const completion = executePublicBuild({

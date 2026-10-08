@@ -336,11 +336,14 @@ describe("queue command effects", () => {
 				lines,
 				snapshots: [snapshot([queueIntent("alpha")]), snapshot([])],
 				async startBuild() {
-					return execution({
-						outcome: "skipped",
-						runId: null,
-						reason: "environment/approval_branch_mismatch",
-					});
+					return {
+						...execution({
+							outcome: "skipped",
+							runId: null,
+							reason: "environment/approval_branch_mismatch",
+						}),
+						started: false,
+					};
 				},
 			}),
 		);
@@ -350,7 +353,10 @@ describe("queue command effects", () => {
 			throw new Error("Expected completed drain.");
 		expect(result.state.builds).toBe(0);
 		expect(result.state.line).toBe("nothing_to_build");
-		expect(lines.at(-1)).toBe("queue: nothing to build");
+		expect(lines).toEqual([
+			"skipped alpha: environment/approval_branch_mismatch",
+			"queue: nothing to build",
+		]);
 	});
 
 	test("stopped Build lines keep the Intent queued and B0 refusals have no run suffix", () => {

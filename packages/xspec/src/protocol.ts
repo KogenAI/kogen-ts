@@ -1,4 +1,10 @@
-export type XspecSliceName = "approve" | "intent";
+export type XspecSliceName =
+	| "approve"
+	| "intent"
+	| "queue"
+	| "status"
+	| "stream"
+	| "session";
 
 export interface XspecSlice {
 	reset(): Promise<unknown>;

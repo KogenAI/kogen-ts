@@ -7,6 +7,10 @@ import {
 } from "./protocol";
 import { createApproveSlice } from "./slices/approve";
 import { createIntentSlice } from "./slices/intent";
+import { createQueueSlice } from "./slices/queue";
+import { createSessionSlice } from "./slices/session";
+import { createStatusSlice } from "./slices/status";
+import { createStreamSlice } from "./slices/stream";
 
 const MAX_LINE_BYTES = 2 * 1024 * 1024;
 const DECODER = new TextDecoder("utf-8", { fatal: true });
@@ -54,19 +58,43 @@ async function* inputLines(): AsyncGenerator<Uint8Array> {
 function selectedSlice(): XspecSliceName {
 	const fromArguments = process.argv
 		.slice(1)
-		.find((value) => value === "approve" || value === "intent");
+		.find((value) =>
+			["approve", "intent", "queue", "status", "stream", "session"].includes(
+				value,
+			),
+		);
 	const fromEnvironment = process.env.XSPEC_SLICE?.split("/").at(-1);
 	const selected = fromArguments ?? fromEnvironment;
-	if (selected !== "approve" && selected !== "intent")
+	if (
+		selected !== "approve" &&
+		selected !== "intent" &&
+		selected !== "queue" &&
+		selected !== "status" &&
+		selected !== "stream" &&
+		selected !== "session"
+	)
 		throw new XspecProtocolError(
 			"invalid_request",
-			"select one xspec slice: approve or intent",
+			"select one xspec slice: approve, intent, queue, status, stream, or session",
 		);
 	return selected;
 }
 
-function createSlice(name: XspecSliceName): Promise<XspecSlice> {
-	return name === "approve" ? createApproveSlice() : createIntentSlice();
+async function createSlice(name: XspecSliceName): Promise<XspecSlice> {
+	switch (name) {
+		case "approve":
+			return createApproveSlice();
+		case "intent":
+			return createIntentSlice();
+		case "queue":
+			return createQueueSlice();
+		case "status":
+			return createStatusSlice();
+		case "stream":
+			return createStreamSlice();
+		case "session":
+			return createSessionSlice();
+	}
 }
 
 async function run(): Promise<void> {

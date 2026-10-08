@@ -119,6 +119,37 @@ test("xspec main keeps one process across reset/apply and exits on a malformed l
 	expect(result.stderr.toString()).toContain("kogen-xspec invalid_json:");
 });
 
+test("compiled replay entrypoint registers every implemented I3 slice", () => {
+	const executable = Bun.which("bun");
+	if (executable === null) throw new Error("Bun is unavailable");
+	for (const slice of [
+		"approve",
+		"intent",
+		"queue",
+		"status",
+		"stream",
+		"session",
+	]) {
+		const result = spawnSync(
+			executable,
+			[
+				"--no-install",
+				resolve(process.cwd(), "packages/xspec/src/main.ts"),
+				slice,
+			],
+			{
+				cwd: process.cwd(),
+				input: '{"op":"reset"}\n',
+				encoding: "utf8",
+				timeout: 30_000,
+			},
+		);
+		expect(result.status).toBe(0);
+		expect(result.stderr.toString()).toBe("");
+		expect(JSON.parse(result.stdout.toString())).toHaveProperty("last", "ok");
+	}
+});
+
 test("fixture hashes exact bytes and publishes a real approval CAS commit", async () => {
 	const driver = await createApprovalFixtureDriver();
 	try {

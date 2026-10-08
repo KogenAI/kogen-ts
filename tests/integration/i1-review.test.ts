@@ -10,13 +10,21 @@ import {
 	createControllerRuntime,
 } from "../../packages/cli/src/composition";
 import { classifyCliException } from "../../packages/cli/src/errors";
+import { statusInput } from "../../packages/cli/src/i1";
 import {
 	inspectOwnerPid,
 	readStatusRuns,
 } from "../../packages/cli/src/status-runs";
 import type { ProcessPort } from "../../packages/core/src/contracts/ports";
 import { HostBridgeError } from "../../packages/core/src/process/host";
+import { projectStateRootPath } from "../../packages/core/src/project/resolve";
+import { acquireBuildClaim } from "../../packages/core/src/queue/claim";
 import type { RunRecord } from "../../packages/core/src/run/store";
+import { deriveStatus } from "../../packages/core/src/status/derive";
+import {
+	createApprovalFixtureDriver,
+	sourceHashes,
+} from "../../packages/test-support/src/approval-fixture";
 
 const roots: string[] = [];
 let runtime: ControllerRuntime;
@@ -106,6 +114,76 @@ test("status keeps the parsed landing, recovery and cleanup obligation for a liv
 		(await readStatusRuns(root, async () => ({ kind: "unknown" })))[0]
 			?.ownerLiveness,
 	).toBe("unknown");
+});
+
+test("public status binds a real claim and verified queue owner to an active Build", async () => {
+	const driver = await createApprovalFixtureDriver();
+	const previousHome = process.env.HOME;
+	try {
+		const source = driver.readSources("alpha");
+		const approved = await driver.approve({
+			slug: "alpha",
+			givenHash: sourceHashes(source).approvalSha256.slice(0, 8),
+		});
+		expect(approved.ok).toBe(true);
+		if (!approved.ok) return;
+		const observed = await inspectOwnerPid(process.pid);
+		expect(observed.kind).toBe("alive");
+		if (observed.kind !== "alive") return;
+		const owner = { pid: process.pid, startedMs: observed.startedMs };
+		const runId = "a".repeat(32);
+		process.env.HOME = driver.root;
+		const stateRoot = projectStateRootPath(driver.root, driver.checkout);
+		const runDirectory = join(stateRoot, "runs", runId);
+		mkdirSync(runDirectory, { recursive: true });
+		writeFileSync(join(stateRoot, "queue.owner.json"), JSON.stringify(owner));
+		const claim = await acquireBuildClaim(
+			driver.git,
+			driver.origin,
+			runId,
+			owner,
+			async () => ({ ok: true, value: "stale" }),
+		);
+		expect(claim.ok).toBe(true);
+		const record: RunRecord = {
+			schema: 2,
+			run_id: runId,
+			slug: "alpha",
+			approval_sha256: sourceHashes(source).approvalSha256,
+			approval_commit: approved.value.approvalCommit,
+			target_branch: "main",
+			status: "running",
+			landing: null,
+			owner_pid: owner.pid,
+			owner_started_ms: owner.startedMs,
+			started_ms: Date.now(),
+			recovery: [],
+			cleanup_pending: false,
+		};
+		writeFileSync(
+			join(runDirectory, "run.json"),
+			`${JSON.stringify(record)}\n`,
+		);
+		writeFileSync(
+			join(runDirectory, "events.jsonl"),
+			'{"event":"rung_started","ts":1,"rung":"R1"}\n',
+		);
+		const input = await statusInput(runtime, {
+			checkout: driver.checkout,
+			origin: driver.origin,
+			originIsCheckout: false,
+			base: "main",
+			baseRef: "refs/heads/main",
+			baseSha: driver.baseSha,
+		});
+		expect(input.claimRunId).toBe(runId);
+		expect(input.queuePid).toBe(owner.pid);
+		expect(deriveStatus(input).bySlug.get("alpha")?.status).toBe("building");
+	} finally {
+		if (previousHome === undefined) delete process.env.HOME;
+		else process.env.HOME = previousHome;
+		driver.close();
+	}
 });
 
 test("status retains valid events and snapshot after a torn journal tail", async () => {

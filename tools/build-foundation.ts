@@ -51,3 +51,12 @@ run([
 	"--outfile",
 	join(destination, "kogen"),
 ]);
+run([
+	process.execPath,
+	"--no-install",
+	"build",
+	"--compile",
+	"packages/xspec/src/main.ts",
+	"--outfile",
+	join(destination, "kogen-xspec"),
+]);

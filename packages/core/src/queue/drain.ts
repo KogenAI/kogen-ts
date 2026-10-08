@@ -40,6 +40,8 @@ export interface QueueBuildResult {
 }
 
 export interface QueueBuildExecution {
+	/** False when B0 skips before a Build record exists. */
+	readonly started?: boolean;
 	readonly completion: Promise<QueueBuildResult>;
 	/**
 	 * Must stop every run-owned child group and durably append the interrupted
@@ -433,7 +435,6 @@ async function runDrainBody(
 			const current = state.current;
 			if (current === null) break;
 			const slug = current.slug;
-			await ports.writeLine(`building ${slug}`);
 			let build: QueueBuildResult = {
 				outcome: "stopped_controller",
 				runId: null,
@@ -441,7 +442,10 @@ async function runDrainBody(
 			};
 			try {
 				runtime.active = await ports.startBuild(slug);
+				if (runtime.active.started !== false)
+					await ports.writeLine(`building ${slug}`);
 			} catch (cause) {
+				await ports.writeLine(`building ${slug}`);
 				build = {
 					outcome: "stopped_controller",
 					runId: null,

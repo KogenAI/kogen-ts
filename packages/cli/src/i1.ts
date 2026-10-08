@@ -3,6 +3,7 @@ import {
 	mkdirSync,
 	mkdtempSync,
 	readdirSync,
+	readFileSync,
 	rmSync,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
@@ -49,7 +50,8 @@ import { createApprovalWorkspace } from "./approval-workspace";
 import type { ParsedCommand, ProjectOptions } from "./argv";
 import { type ControllerRuntime, validateProjectCommand } from "./composition";
 import { type CliOutput, renderErrorLine } from "./output";
-import { readStatusRuns } from "./status-runs";
+import { recoverPublicRuns } from "./recover-runs";
+import { inspectOwnerPid, readStatusRuns } from "./status-runs";
 
 type ProjectCommand = Extract<
 	ParsedCommand,
@@ -620,12 +622,41 @@ export async function statusInput(
 		process.env.HOME ?? homedir(),
 		resolution.checkout,
 	);
+	const claimText = await gitText(runtime.git, resolution.origin, [
+		"show",
+		"refs/kogen/claim:.kogen/claim",
+	]);
+	const claimRunId = /^[a-f0-9]{32}$/u.test(claimText?.trim() ?? "")
+		? (claimText?.trim() ?? null)
+		: null;
+	let queuePid: number | null = null;
+	try {
+		const owner: unknown = JSON.parse(
+			readFileSync(join(stateRoot, "queue.owner.json"), "utf8"),
+		);
+		if (
+			owner !== null &&
+			typeof owner === "object" &&
+			"pid" in owner &&
+			"startedMs" in owner &&
+			Number.isSafeInteger(owner.pid) &&
+			Number.isSafeInteger(owner.startedMs) &&
+			(owner.pid as number) > 0
+		) {
+			const observed = await inspectOwnerPid(owner.pid as number);
+			if (
+				observed.kind === "alive" &&
+				Math.abs(observed.startedMs - (owner.startedMs as number)) < 1000
+			)
+				queuePid = owner.pid as number;
+		}
+	} catch {}
 	return {
 		intents,
 		reachableLandings: landingsFromReachableCommits(commits),
 		runs: await readStatusRuns(stateRoot),
-		claimRunId: null,
-		queuePid: null,
+		claimRunId,
+		queuePid,
 		agents: [],
 		nowMs: Date.now(),
 	};
@@ -636,7 +667,34 @@ async function status(
 	runtime: ControllerRuntime,
 	context: ProjectContext,
 ): Promise<CliOutput> {
+	const recovered = await recoverPublicRuns(
+		projectStateRootPath(
+			process.env.HOME ?? homedir(),
+			context.resolution.checkout,
+		),
+		context.resolution,
+		runtime,
+	);
+	if (!recovered.ok)
+		return renderErrorLine(
+			`environment/recovery_failed: ${recovered.error.message}`,
+			3,
+		);
+	let firstRead = true;
 	const read = async () => {
+		if (!firstRead) {
+			const replayed = await recoverPublicRuns(
+				projectStateRootPath(
+					process.env.HOME ?? homedir(),
+					context.resolution.checkout,
+				),
+				context.resolution,
+				runtime,
+			);
+			if (!replayed.ok)
+				throw new Error(`Recovery failed: ${replayed.error.message}`);
+		}
+		firstRead = false;
 		const input = await statusInput(runtime, context.resolution);
 		return { input, status: deriveStatus(input) };
 	};
